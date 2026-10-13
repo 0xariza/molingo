@@ -34,7 +34,9 @@ for (const file of files) {
     });
 }
 if (failures) {
-  console.error(`\n${failures} physical-direction class(es). Use logical utilities (ms/me/ps/pe/start/end).`);
+  console.error(
+    `\n${failures} physical-direction class(es). Use logical utilities (ms/me/ps/pe/start/end).`,
+  );
   process.exit(1);
 }
 console.log(`rtl: ${files.length} files clean.`);

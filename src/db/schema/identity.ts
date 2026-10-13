@@ -76,11 +76,8 @@ export const students = pgTable(
     messengerHandle: text(),
     status: studentStatusEnum().notNull().default("lead"),
     preferredLocale: localeEnum().notNull().default("fa"),
-    /** FK to level_stages is added with the levels schema (M9). */
-    currentStageId: uuid(),
     /** Private admin notes. */
     notes: text(),
-    leadId: uuid(),
     startedAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatTime, formatToman, toLatinDigits } from "./format";
+import { formatDate, formatTime, formatToman, toLatinDigits } from "../format";
 
 // 2026-10-13 14:30 UTC = 18:00 Tehran = Tuesday 21 Mehr 1405
 const d = new Date("2026-10-13T14:30:00Z");

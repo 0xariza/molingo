@@ -31,9 +31,7 @@ export function formatDate(
     month: locale === "fa" ? "long" : "short",
     year: "numeric",
   });
-  return [weekday && p.weekday, p.day, p.month, year && p.year]
-    .filter(Boolean)
-    .join(" ");
+  return [weekday && p.weekday, p.day, p.month, year && p.year].filter(Boolean).join(" ");
 }
 
 /** "۱۸:۰۰" / "18:00" (Tehran time, 24-hour in both locales). */

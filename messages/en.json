@@ -6,12 +6,12 @@
   "Common": {
     "brand": "Molingo",
     "skipToContent": "Skip to content",
-    "language": "Language",
     "switchTo": "فارسی",
     "switchToLabel": "Switch to Persian",
     "login": "Log in",
     "bookLevelCheck": "Book a level check",
-    "primaryNav": "Main navigation"
+    "primaryNav": "Main navigation",
+    "logout": "Log out"
   },
   "Home": {
     "eyebrow": "Live English classes with Mona",
@@ -41,5 +41,55 @@
     "sessionTime": "Session time",
     "price": "Course price",
     "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}"
+  },
+  "Auth": {
+    "loginTitle": "Log in",
+    "loginLead": "Use the mobile number Mona registered for you.",
+    "phone": "Mobile number",
+    "phoneHint": "0912 123 4567",
+    "password": "Password",
+    "newPassword": "New password",
+    "confirmPassword": "Repeat password",
+    "passwordHint": "At least 8 characters.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "submitLogin": "Log in",
+    "submitting": "Please wait…",
+    "forgot": "Forgot your password? Ask Mona to send you a new link.",
+    "activateTitle": "Welcome, {name}",
+    "activateLead": "Choose a password for your Molingo account. You'll log in with your mobile number and this password.",
+    "submitActivate": "Save and continue",
+    "resetTitle": "Set a new password",
+    "resetLead": "Hi {name}, choose a new password for your account.",
+    "submitReset": "Save new password",
+    "linkInvalidTitle": "This link doesn't work anymore",
+    "linkInvalidBody": "It may have expired or already been used. Ask Mona to send you a new link.",
+    "goToLogin": "Go to login",
+    "errors": {
+      "invalid": "The mobile number or password is incorrect.",
+      "rate_limited": "Too many attempts. Please wait 15 minutes and try again.",
+      "phone": "Enter a valid mobile number.",
+      "required": "Please fill in this field.",
+      "too_short": "The password must be at least 8 characters.",
+      "too_common": "This password is too easy to guess. Choose another one.",
+      "mismatch": "The two passwords don't match.",
+      "link": "This link has expired or was already used. Ask Mona for a new one."
+    },
+    "activatePageTitle": "Activate your account"
+  },
+  "Admin": {
+    "title": "Dashboard",
+    "greeting": "Hello, {name}",
+    "placeholder": "Students, classes and the schedule arrive in the next milestones."
+  },
+  "Student": {
+    "title": "My dashboard",
+    "greeting": "Hi {name}",
+    "placeholder": "Your classes, homework and level will appear here soon."
+  },
+  "Error": {
+    "title": "Something went wrong",
+    "body": "Please try again. If it keeps happening, let Mona know.",
+    "retry": "Try again"
   }
 }

@@ -55,8 +55,14 @@ export default function StyleguidePage({ params }: PageProps<"/[locale]/stylegui
               <Logo variant="dark" className="text-4xl" />
             </span>
           </div>
-          <p className="font-heading text-6xl font-bold text-ocean">Speak. Don&apos;t just study.</p>
-          <p lang="fa" dir="rtl" className="text-3xl font-extrabold text-ocean [font-family:Vazirmatn]">
+          <p className="font-heading text-6xl font-bold text-ocean">
+            Speak. Don&apos;t just study.
+          </p>
+          <p
+            lang="fa"
+            dir="rtl"
+            className="text-3xl font-extrabold text-ocean [font-family:Vazirmatn]"
+          >
             حرف بزن، فقط درس نخوان.
           </p>
         </section>
@@ -64,12 +70,25 @@ export default function StyleguidePage({ params }: PageProps<"/[locale]/stylegui
         <section className="space-y-4">
           <h2 className="text-3xl">{t("buttons")}</h2>
           <div className="flex flex-wrap gap-3">
-            <button className="min-h-touch rounded-pill bg-brand px-6 font-bold text-white">{t("primary")}</button>
-            <button className="min-h-touch rounded-pill bg-sand px-6 font-bold text-ocean">{t("secondary")}</button>
-            <button className="min-h-touch rounded-pill border border-brand px-6 font-bold text-brand">{t("ghost")}</button>
+            <button className="min-h-touch rounded-pill bg-brand px-6 font-bold text-white">
+              {t("primary")}
+            </button>
+            <button className="min-h-touch rounded-pill bg-sand px-6 font-bold text-ocean">
+              {t("secondary")}
+            </button>
+            <button className="min-h-touch rounded-pill border border-brand px-6 font-bold text-brand">
+              {t("ghost")}
+            </button>
             <button className="inline-flex min-h-touch items-center gap-2 rounded-pill bg-ocean ps-6 pe-4 font-bold text-white">
               {t("next")}
-              <svg aria-hidden="true" viewBox="0 0 24 24" className="icon-directional size-5" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 24 24"
+                className="icon-directional size-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
                 <path d="M5 12h14M13 6l6 6-6 6" />
               </svg>
             </button>

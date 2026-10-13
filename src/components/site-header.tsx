@@ -3,7 +3,8 @@ import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
 
-export function SiteHeader() {
+/** Public header. Auth pages hide the login button (the user is already there). */
+export function SiteHeader({ showLogin = true }: { showLogin?: boolean }) {
   const t = useTranslations("Common");
   return (
     <header className="sticky top-0 z-30 border-b border-mist bg-surface/90 backdrop-blur">
@@ -16,6 +17,14 @@ export function SiteHeader() {
         </Link>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
+          {showLogin && (
+            <Link
+              href="/login"
+              className="inline-flex min-h-touch items-center rounded-pill bg-ocean px-5 text-sm font-bold text-white hover:bg-deep"
+            >
+              {t("login")}
+            </Link>
+          )}
         </div>
       </nav>
     </header>

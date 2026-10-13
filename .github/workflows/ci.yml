@@ -28,6 +28,19 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Known high/critical vulnerabilities in production dependencies fail the build
+      - run: pnpm audit:prod
+      # Formatting, types, lint, i18n parity, RTL lint, unit + integration tests
       - run: pnpm check
       - run: pnpm db:migrate
-      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium webkit
+      # Builds the app and runs the end-to-end suite against it (own molingo_e2e database)
+      - run: pnpm test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

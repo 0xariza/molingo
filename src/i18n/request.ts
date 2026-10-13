@@ -7,9 +7,7 @@ export default getRequestConfig(async ({ locale }) => {
   // `next/root-params` is unavailable in Server Actions and Route Handlers;
   // those callers pass an explicit locale instead.
   const candidate = locale ?? (await rootLocale().catch(() => undefined));
-  const resolved = hasLocale(routing.locales, candidate)
-    ? candidate
-    : routing.defaultLocale;
+  const resolved = hasLocale(routing.locales, candidate) ? candidate : routing.defaultLocale;
 
   return {
     locale: resolved,

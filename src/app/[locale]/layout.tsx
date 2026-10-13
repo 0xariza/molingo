@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { SkipLink } from "@/components/skip-link";
 import { notFound } from "next/navigation";
 import { locale as rootLocale } from "next/root-params";
 import { localeDirection, routing } from "@/i18n/routing";
@@ -46,7 +47,10 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
         />
       </head>
       <body className="flex min-h-dvh flex-col">
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <SkipLink />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -1,26 +1,8 @@
-import { index, jsonb, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
-import { id } from "./_shared";
-import { users } from "./identity";
+import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-export const settings = pgTable("settings", {
+/** Fixed-window counters for login and token endpoints (no Redis on the VPS). */
+export const rateLimits = pgTable("rate_limits", {
   key: text().primaryKey(),
-  value: jsonb().notNull(),
-  updatedAt: timestamp({ withTimezone: true })
-    .notNull()
-    .defaultNow()
-    .$onUpdate(() => new Date()),
+  windowStart: timestamp({ withTimezone: true }).notNull(),
+  count: integer().notNull(),
 });
-
-export const auditLog = pgTable(
-  "audit_log",
-  {
-    id: id(),
-    actorId: uuid().references(() => users.id, { onDelete: "set null" }),
-    action: text().notNull(),
-    entity: text().notNull(),
-    entityId: text(),
-    diff: jsonb(),
-    at: timestamp({ withTimezone: true }).notNull().defaultNow(),
-  },
-  (t) => [index().on(t.entity, t.entityId), index().on(t.at)],
-);
