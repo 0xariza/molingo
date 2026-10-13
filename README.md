@@ -1,36 +1,33 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Molingo
 
-## Getting Started
+Live small-group English classes with Mona. Bilingual (Persian default, English), mobile-first.
+See [PLAN.md](PLAN.md) for the full implementation plan and the decisions log.
 
-First, run the development server:
+## Local development
+
+Requirements: Node 22+, pnpm 10, Docker.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local      # first time only
+pnpm db:up                      # Postgres in Docker
+pnpm db:migrate
+pnpm dev                        # http://localhost:3000 → /fa
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- `/fa/styleguide` and `/en/styleguide` show the design tokens, type and formatting (dev only).
+- LiveKit for the live classroom (M6): `docker compose -f compose.dev.yml --profile live up -d`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Checks
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+pnpm check   # typecheck, lint (incl. no hard-coded JSX text), i18n key parity, RTL lint, tests
+```
 
-## Learn More
+## Conventions
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Text**: every UI string lives in `messages/fa.json` and `messages/en.json` (same keys).
+- **Direction**: logical utilities only (`ms-*`, `pe-*`, `start-*`, `text-start`, `border-s`); `pnpm check:rtl` rejects `ml-*`, `left-*`, `text-right`, etc. Directional icons get `icon-directional`.
+- **Dates and money**: use `src/lib/format.ts` (Jalali + Persian digits for `fa`, Tehran time, integer Toman).
+- **No external requests at runtime**: fonts are self-hosted in `public/fonts`, no CDNs, no Google services.
+- **Database**: Drizzle schema in `src/db/schema`, migrations in `drizzle/` (`pnpm db:generate` after schema changes).

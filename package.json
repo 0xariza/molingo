@@ -6,22 +6,45 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "check:i18n": "node scripts/check-i18n.mjs",
+    "check:rtl": "node scripts/check-rtl.mjs",
+    "check": "pnpm typecheck && pnpm lint && pnpm check:i18n && pnpm check:rtl && pnpm test",
+    "db:up": "docker compose -f compose.dev.yml up -d db",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@date-fns/tz": "1.5.0",
+    "date-fns": "4.4.0",
+    "drizzle-orm": "0.45.4",
     "next": "16.4.0",
+    "next-intl": "4.14.9",
+    "postgres": "3.4.9",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "server-only": "^0.0.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
+    "@fontsource-variable/manrope": "5.3.0",
+    "@fontsource-variable/vazirmatn": "5.3.0",
+    "@fontsource/barlow-condensed": "5.3.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^18.0.7",
+    "drizzle-kit": "0.31.11",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "5.0.4"
   },
   "packageManager": "pnpm@10.14.0"
 }

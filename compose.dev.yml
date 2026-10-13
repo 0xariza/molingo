@@ -1,0 +1,28 @@
+# Local development services. The app itself runs on the host with `pnpm dev`.
+# If Docker Hub is unreachable, load these images from tarballs (`docker load`) or a domestic mirror.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: molingo
+      POSTGRES_PASSWORD: molingo
+      POSTGRES_DB: molingo
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U molingo"]
+      interval: 5s
+      retries: 10
+
+  livekit:
+    image: livekit/livekit-server:v1.9
+    # Dev mode: API key `devkey`, secret `secret`, signaling on ws://localhost:7880.
+    command: --dev --bind 0.0.0.0
+    ports:
+      - "7880:7880"
+      - "7881:7881"
+      - "50000-50100:50000-50100/udp"
+    profiles: [live]
+
+volumes:
+  pgdata:

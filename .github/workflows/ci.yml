@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: molingo
+          POSTGRES_PASSWORD: molingo
+          POSTGRES_DB: molingo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U molingo" --health-interval 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://molingo:molingo@localhost:5432/molingo
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm db:migrate
+      - run: pnpm build

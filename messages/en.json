@@ -1,0 +1,45 @@
+{
+  "Metadata": {
+    "title": "Molingo — Live small-group English classes",
+    "description": "Live online English classes with Mona. Up to three students per class. Speak. Don't just study."
+  },
+  "Common": {
+    "brand": "Molingo",
+    "skipToContent": "Skip to content",
+    "language": "Language",
+    "switchTo": "فارسی",
+    "switchToLabel": "Switch to Persian",
+    "login": "Log in",
+    "bookLevelCheck": "Book a level check",
+    "primaryNav": "Main navigation"
+  },
+  "Home": {
+    "eyebrow": "Live English classes with Mona",
+    "title": "Speak. Don't just study.",
+    "lead": "Small live classes, three students at most, so you spend the hour talking, not listening.",
+    "comingSoon": "The full site is on its way."
+  },
+  "NotFound": {
+    "title": "Page not found",
+    "body": "The page you're looking for doesn't exist or has moved.",
+    "back": "Back to home"
+  },
+  "Styleguide": {
+    "title": "Design tokens",
+    "colors": "Colors",
+    "type": "Typography",
+    "buttons": "Buttons",
+    "cards": "Cards",
+    "formatting": "Dates & numbers",
+    "primary": "Primary",
+    "secondary": "Secondary",
+    "ghost": "Ghost",
+    "cardTitle": "B1 Evening",
+    "cardBody": "Saturdays and Mondays · 2 seats left",
+    "next": "Next",
+    "sessionDate": "Session date",
+    "sessionTime": "Session time",
+    "price": "Course price",
+    "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}"
+  }
+}
