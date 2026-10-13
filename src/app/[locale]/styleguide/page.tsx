@@ -1,4 +1,5 @@
 /* eslint-disable react/jsx-no-literals -- dev-only specimen page shows fixed sample text in both scripts */
+import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { hasLocale, useTranslations } from "next-intl";
 import { notFound } from "next/navigation";
 import { use } from "react";
@@ -81,16 +82,7 @@ export default function StyleguidePage({ params }: PageProps<"/[locale]/stylegui
             </button>
             <button className="inline-flex min-h-touch items-center gap-2 rounded-pill bg-ocean ps-6 pe-4 font-bold text-white">
               {t("next")}
-              <svg
-                aria-hidden="true"
-                viewBox="0 0 24 24"
-                className="icon-directional size-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <path d="M5 12h14M13 6l6 6-6 6" />
-              </svg>
+              <ArrowRight aria-hidden size={20} weight="bold" className="icon-directional" />
             </button>
           </div>
         </section>

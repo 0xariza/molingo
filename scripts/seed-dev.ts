@@ -1,5 +1,6 @@
 /**
- * Local development data: Mona (admin) and Sara (student), both with the password below.
+ * Local development data: Mona (admin) and Sara (student), both with the password below, and a
+ * few open free-session times over the next days.
  * Refuses to run in production. Usage: pnpm db:seed
  */
 import { config } from "dotenv";
@@ -12,6 +13,8 @@ async function main() {
   const { db } = await import("../src/db");
   const { students, teachers, users } = await import("../src/db/schema");
   const { hashPassword } = await import("../src/server/auth/password");
+  const { addSlot } = await import("../src/server/funnel/level-check");
+  const { fromTehranTime, tehranDateKey } = await import("../src/lib/format");
 
   const passwordHash = await hashPassword(DEV_PASSWORD);
   await db.transaction(async (tx) => {
@@ -35,6 +38,11 @@ async function main() {
         status: "active",
       });
   });
+  // Already-present or past times are skipped by addSlot.
+  for (let day = 1; day <= 5; day++) {
+    const date = tehranDateKey(new Date(Date.now() + day * 24 * 60 * 60 * 1000));
+    for (const time of ["10:00", "17:30", "18:30"]) await addSlot(fromTehranTime(date, time));
+  }
   console.log("Dev accounts ready: 09120000001 (admin), 09120000002 (student).");
 }
 

@@ -45,6 +45,15 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
           type="font/woff2"
           crossOrigin="anonymous"
         />
+        {locale === "fa" && (
+          <link
+            rel="preload"
+            href="/fonts/lalezar-arabic-400-normal.woff2"
+            as="font"
+            type="font/woff2"
+            crossOrigin="anonymous"
+          />
+        )}
       </head>
       <body className="flex min-h-dvh flex-col">
         <NextIntlClientProvider>

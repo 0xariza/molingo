@@ -4,12 +4,13 @@ import { hasLocale } from "next-intl";
 import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
-import { endSession, getClientIp, getCurrentUser, startSession } from "./current";
+import { getClientIp } from "../request";
+import { endSession, getCurrentUser, startSession } from "./current";
 import { recordLogin, setPreferredLocale } from "./account";
 import { authenticate } from "./login";
 import { checkPasswordPolicy } from "./password";
 import { homePathFor, safeNextPath } from "./policy";
-import { consumeRateLimit } from "./rate-limit";
+import { consumeRateLimit } from "../rate-limit";
 import { findValidAuthToken, redeemAuthToken } from "./tokens";
 
 /** Error keys map to messages under `Auth.errors`. */

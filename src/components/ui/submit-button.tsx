@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
+import { buttonClass } from "./button";
 
 const noopSubscribe = () => () => {};
 
@@ -12,9 +13,11 @@ const noopSubscribe = () => () => {};
 export function SubmitButton({
   children,
   pendingLabel,
+  className = "w-full",
 }: {
   children: ReactNode;
   pendingLabel: string;
+  className?: string;
 }) {
   const { pending } = useFormStatus();
   const hydrated = useSyncExternalStore(
@@ -28,7 +31,7 @@ export function SubmitButton({
       type="submit"
       disabled={disabled}
       aria-disabled={disabled}
-      className="inline-flex min-h-touch w-full items-center justify-center rounded-pill bg-brand px-6 text-base font-bold text-white transition hover:bg-deep disabled:opacity-70"
+      className={buttonClass("primary", className)}
     >
       {pending ? pendingLabel : children}
     </button>

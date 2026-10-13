@@ -2,7 +2,8 @@ import { test as base, expect, type Page } from "@playwright/test";
 import en from "../messages/en.json" with { type: "json" };
 import fa from "../messages/fa.json" with { type: "json" };
 import { connectTestDb, type TestDb } from "@/test/database";
-import { createAuthToken, createUser, resetDb } from "@/test/factories";
+import { fromTehranTime, tehranDateKey } from "@/lib/format";
+import { createAuthToken, createLevelCheckSlot, createUser, resetDb } from "@/test/factories";
 import { E2E_DATABASE_URL } from "@/test/urls";
 
 /** UI copy comes from the real message files, so tests don't break when wording changes. */
@@ -22,6 +23,11 @@ type Fixtures = {
     kind: "activation" | "reset",
     expiresAt?: Date,
   ) => Promise<string>;
+  /** Opens a free-session time Mona offers (optionally already booked). */
+  createSlot: (
+    startsAt: Date,
+    bookedBy?: { name: string; phone: string },
+  ) => ReturnType<typeof createLevelCheckSlot>;
 };
 
 export const test = base.extend<Fixtures, { workerDb: TestDb }>({
@@ -44,6 +50,9 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
   createAuthToken: async ({ db }, use) => {
     await use((userId, kind, expiresAt) => createAuthToken(db, userId, kind, expiresAt));
   },
+  createSlot: async ({ db }, use) => {
+    await use((startsAt, bookedBy) => createLevelCheckSlot(db, startsAt, bookedBy));
+  },
   seedAccounts: async ({ db }, use) => {
     await use(async () => {
       const admin = await createUser(db, {
@@ -64,6 +73,10 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
 });
 
 export { expect };
+
+/** Tomorrow (Tehran) at a Tehran wall-clock time such as "18:00". */
+export const tomorrowAt = (time: string) =>
+  fromTehranTime(tehranDateKey(new Date(Date.now() + 24 * 60 * 60 * 1000)), time);
 
 /** The form's error message. Scoped to <main>: Next's route announcer also has role="alert". */
 export const formAlert = (page: Page) => page.getByRole("main").getByRole("alert");

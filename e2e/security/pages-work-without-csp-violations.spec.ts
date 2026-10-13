@@ -24,7 +24,7 @@ test.describe("Security headers", () => {
 
     // 1. Open the home page, switch language, open the login page, log in as Sara
     await page.goto("/fa");
-    await page.getByRole("button", { name: messages.fa.Common.switchToLabel }).click();
+    await page.getByRole("button", { name: messages.fa.Common.english }).first().click();
     await expect(page).toHaveURL(/\/en$/);
     await collect();
     await login(page, STUDENT.local, PASSWORD);

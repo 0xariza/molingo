@@ -15,6 +15,20 @@
       "when": 1791908301699,
       "tag": "0001_init",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791912792072,
+      "tag": "0002_funnel",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791917748104,
+      "tag": "0003_level_check_slots",
+      "breakpoints": true
     }
   ]
 }

@@ -1,23 +1,19 @@
 {
   "Metadata": {
-    "title": "Molingo — Live small-group English classes",
-    "description": "Live online English classes with Mona. Up to three students per class. Speak. Don't just study."
+    "title": "Molingo: English with a roadmap made for you",
+    "description": "Live English classes with Mona, private or in a group, with a personal roadmap for your goal and an AI assistant. Book your free session."
   },
   "Common": {
     "brand": "Molingo",
     "skipToContent": "Skip to content",
-    "switchTo": "فارسی",
-    "switchToLabel": "Switch to Persian",
     "login": "Log in",
-    "bookLevelCheck": "Book a level check",
     "primaryNav": "Main navigation",
-    "logout": "Log out"
-  },
-  "Home": {
-    "eyebrow": "Live English classes with Mona",
-    "title": "Speak. Don't just study.",
-    "lead": "Small live classes, three students at most, so you spend the hour talking, not listening.",
-    "comingSoon": "The full site is on its way."
+    "logout": "Log out",
+    "language": "Site language",
+    "english": "EN · English",
+    "persian": "FA · فارسی",
+    "freeSession": "Get my free roadmap",
+    "areaNav": "Panel menu"
   },
   "NotFound": {
     "title": "Page not found",
@@ -43,8 +39,8 @@
     "seatsLeft": "{count, plural, =0 {Full} one {# seat left} other {# seats left}}"
   },
   "Auth": {
-    "loginTitle": "Log in",
-    "loginLead": "Use the mobile number Mona registered for you.",
+    "loginTitle": "Welcome back",
+    "loginLead": "Log in with the mobile number Mona registered for you.",
     "phone": "Mobile number",
     "phoneHint": "0912 123 4567",
     "password": "Password",
@@ -55,7 +51,7 @@
     "hidePassword": "Hide password",
     "submitLogin": "Log in",
     "submitting": "Please wait…",
-    "forgot": "Forgot your password? Ask Mona to send you a new link.",
+    "forgot": "Ask Mona to send you a new link.",
     "activateTitle": "Welcome, {name}",
     "activateLead": "Choose a password for your Molingo account. You'll log in with your mobile number and this password.",
     "submitActivate": "Save and continue",
@@ -75,21 +71,339 @@
       "mismatch": "The two passwords don't match.",
       "link": "This link has expired or was already used. Ask Mona for a new one."
     },
-    "activatePageTitle": "Activate your account"
+    "activatePageTitle": "Activate your account",
+    "loginPageTitle": "Log in",
+    "forgotTitle": "Forgot your password?",
+    "noAccount": "No account yet?",
+    "bookFree": "Book your free session",
+    "panel": {
+      "eyebrow": "Your Molingo account",
+      "title1": "Your roadmap",
+      "title2": "is waiting.",
+      "body": "Everything you need for your next step, in one place.",
+      "classes": "Upcoming classes, one tap to join",
+      "homework": "Homework and Mona's feedback",
+      "roadmap": "The next stop on your roadmap"
+    }
   },
   "Admin": {
     "title": "Dashboard",
-    "greeting": "Hello, {name}",
-    "placeholder": "Students, classes and the schedule arrive in the next milestones."
+    "levelChecks": {
+      "title": "Free session times",
+      "lead": "Add the times you're free for a 20-minute session. Visitors only see these times, and each can be booked once.",
+      "addTitle": "Add a free time",
+      "date": "Day",
+      "time": "Time",
+      "timeHint": "Tehran time, e.g. 18:30",
+      "add": "Add",
+      "adding": "Adding…",
+      "added": "Added.",
+      "upcoming": "Upcoming times",
+      "empty": "You haven't added any times yet.",
+      "free": "Free",
+      "booked": "Booked",
+      "remove": "Remove",
+      "removeLabel": "Remove {when}",
+      "errors": {
+        "date": "Choose a day.",
+        "time": "Enter the time like 18:30.",
+        "past": "That time has already passed.",
+        "overlap": "That time overlaps another one (each session is 20 minutes)."
+      }
+    },
+    "role": "Teacher & admin",
+    "nav": {
+      "dashboard": "Dashboard",
+      "levelChecks": "Free sessions"
+    },
+    "home": {
+      "summaryNone": "No free sessions today.",
+      "summary": "You have {count, plural, one {# free session} other {# free sessions}} today. The first is at {time}.",
+      "statBooked": "Upcoming free sessions",
+      "statOpen": "Open times to book",
+      "statToday": "Sessions today",
+      "bookedTitle": "Booked free sessions",
+      "bookedEmpty": "Nobody has booked yet. Add your free times so they show on the landing page.",
+      "manage": "Manage times",
+      "call": "Call {name}"
+    }
   },
   "Student": {
     "title": "My dashboard",
-    "greeting": "Hi {name}",
-    "placeholder": "Your classes, homework and level will appear here soon."
+    "role": "Student",
+    "nav": {
+      "home": "Home"
+    },
+    "home": {
+      "greeting": "Hi {name}, welcome.",
+      "nextTitle": "Next class",
+      "nextEmpty": "Once Mona places you in a class, your next class and its join button will appear here.",
+      "aiTag": "Always-on tutor · Coming soon",
+      "aiTitle": "Practise speaking, any time",
+      "aiBody": "Soon you'll practise between classes with an AI tutor that knows your roadmap."
+    }
   },
   "Error": {
     "title": "Something went wrong",
     "body": "Please try again. If it keeps happening, let Mona know.",
     "retry": "Try again"
+  },
+  "Landing": {
+    "nav": {
+      "roadmap": "Roadmap",
+      "ai": "AI",
+      "classes": "Classes",
+      "mona": "Mona",
+      "faq": "FAQ"
+    },
+    "hero": {
+      "eyebrow": "A real teacher · Your own path · AI",
+      "title1": "Name your goal.",
+      "title2": "We'll map the way.",
+      "lead": "Mona draws a step-by-step roadmap for your goal, teaches you live, and an AI assistant keeps you moving between classes.",
+      "secondary": "See a sample roadmap",
+      "ctaNote": "20 minutes with Mona · Free · No strings attached",
+      "card": {
+        "owner": "Sara's roadmap",
+        "goal": "Goal: job interview",
+        "levels": "B1 → B2",
+        "progress": "Sara's progress on this roadmap",
+        "now": "this week"
+      },
+      "assistant": "“Sara, want a quick practice round on the weakness question before tomorrow's class?”"
+    },
+    "highlights": {
+      "label": "Highlights",
+      "roadmap": "Personal roadmap",
+      "teacher": "Real teacher",
+      "assistant": "AI assistant",
+      "formats": "Private or group"
+    },
+    "roadmap": {
+      "eyebrow": "Personal roadmap",
+      "title1": "English, with a map",
+      "title2": "that's yours alone.",
+      "lead": "Moving abroad? Job interview? Next trip? Mona plots your route stop by stop. Every class ticks one off, so you always know where you are and what's next.",
+      "try": "Try it: what do you need English for?",
+      "badges": {
+        "done": "Done",
+        "now": "This week",
+        "next": "Next"
+      },
+      "promises": {
+        "p1": "Yours after the free session",
+        "p2": "Updated after every class",
+        "p3": "Goal changed? So does the map"
+      },
+      "goals": {
+        "work": {
+          "label": "Work & interviews",
+          "s1": "Introduce yourself in 30 seconds",
+          "s2": "Talk about your experience",
+          "s3": "Answer “What's your weakness?”",
+          "s4": "Mock interview with Mona"
+        },
+        "move": {
+          "label": "Moving abroad",
+          "s1": "Shops, banks and the doctor",
+          "s2": "Small talk with neighbours",
+          "s3": "Phone calls without panic",
+          "s4": "Chat freely about anything"
+        },
+        "travel": {
+          "label": "Travel",
+          "s1": "Airports and hotels, stress-free",
+          "s2": "Order food like a local",
+          "s3": "Sort it out when things go wrong",
+          "s4": "Make new friends"
+        },
+        "exam": {
+          "label": "Exams",
+          "s1": "Speaking part 1 without pauses",
+          "s2": "Describe pictures and charts",
+          "s3": "Argue and discuss",
+          "s4": "Mock exam with feedback"
+        }
+      }
+    },
+    "ai": {
+      "eyebrow": "Molingo AI assistant · Coming soon",
+      "title1": "Class ends.",
+      "title2": "Your learning doesn't.",
+      "lead": "Mona is your teacher and always will be. The AI assistant knows your roadmap and stays with you before, during and after every class, so no day on your path goes to waste.",
+      "before": {
+        "tag": "Before class",
+        "title": "Walk in ready",
+        "body": "A five-minute warm-up with the words and topic of your next session, so you speak from minute one.",
+        "exampleLabel": "Today, before class",
+        "example": "6 words for “presenting in a meeting” · 5 min"
+      },
+      "during": {
+        "tag": "In class",
+        "title": "You talk. It takes notes.",
+        "body": "Corrections and new words are captured as they happen, and it helps you and your classmates in group work.",
+        "exampleLabel": "Live correction",
+        "wrong": "I have went",
+        "right": "I went"
+      },
+      "after": {
+        "tag": "After class, 24/7",
+        "title": "A tutor that's up at 2 a.m.",
+        "body": "Get your personal session summary and practise conversation whenever you like, with no one watching.",
+        "chatLabel": "Sample chat with the assistant",
+        "chatQ": "So, what’s your biggest weakness?",
+        "chatA": "I am too much perfectionist…",
+        "chatFix": "Nice! Try “I’m a bit of a perfectionist.”"
+      }
+    },
+    "waitlist": {
+      "title": "Be the first to try the assistant",
+      "lead": "We'll tell you before anyone else when it's ready.",
+      "email": "Email address",
+      "submit": "Notify me",
+      "sending": "Saving…",
+      "success": "You're on the list. We'll email you first when the assistant is ready.",
+      "errors": {
+        "email": "Enter a valid email address.",
+        "rate_limited": "Too many attempts. Please try again later."
+      }
+    },
+    "week": {
+      "eyebrow": "A week on Sara's roadmap",
+      "title1": "Mona shows the way.",
+      "title2": "The assistant keeps you going.",
+      "who": {
+        "mona": "Mona",
+        "assistant": "Assistant",
+        "roadmap": "Roadmap"
+      },
+      "d1": {
+        "day": "Saturday",
+        "body": "Live class: handling tough interview questions"
+      },
+      "d2": {
+        "day": "Saturday night",
+        "body": "Personal summary: 4 corrections, 6 new words"
+      },
+      "d3": {
+        "day": "Sunday",
+        "body": "Ten minutes of practice conversation over breakfast"
+      },
+      "d4": {
+        "day": "Monday",
+        "body": "Homework feedback and a short mock interview"
+      },
+      "d5": {
+        "day": "Thursday",
+        "body": "Stop ticked off: “What's your weakness?”"
+      }
+    },
+    "formats": {
+      "eyebrow": "Choose your class",
+      "title1": "Solo or with fellow travellers?",
+      "title2": "Your roadmap is always yours.",
+      "lead": "Whichever you choose, your personal roadmap and the AI assistant come with you. The only difference is who you practise with.",
+      "private": {
+        "title": "Private",
+        "tag": "You and Mona",
+        "body": "The whole session is yours. Pace, topics and timing are set around your goal.",
+        "f1": "Best for urgent goals: interviews, exams, moving",
+        "f2": "You choose when class happens",
+        "f3": "Personal roadmap and AI assistant",
+        "cta": "Book a private class"
+      },
+      "group": {
+        "title": "Group",
+        "tag": "Up to 5 people",
+        "body": "Talk with people at your level who share your goal. Small enough that you get your turn, big enough for a real conversation.",
+        "f1": "Groups are matched by level",
+        "f2": "Role-plays and discussions with real people",
+        "f3": "Personal roadmap and AI assistant",
+        "emptyTitle": "New groups are forming",
+        "emptyBody": "Book your free session and Mona will place you in a group that matches your level and goal.",
+        "cta": "Book the free session"
+      }
+    },
+    "booking": {
+      "eyebrow": "Free session with Mona",
+      "title1": "A 20-minute chat,",
+      "title2": "a free roadmap.",
+      "lead": "It's not a test, just a friendly conversation. Mona listens to your level and your goal and hands you the first stops of your roadmap, even if you don't sign up.",
+      "perks": {
+        "p1": "Pick the time yourself from Mona's calendar",
+        "p2": "No payment or card needed",
+        "p3": "We'll help you choose private or group"
+      },
+      "dayLabel": "Which day?",
+      "timeLabel": "What time?",
+      "timeZone": "Times are in Tehran time",
+      "noSlots": "All of Mona's times are taken right now. Check back in a few days.",
+      "pickTime": "Pick a time; the form has just three fields.",
+      "summary": "{date} at {time} · 20 minutes with Mona",
+      "name": "Your name",
+      "phone": "Mobile number",
+      "phoneHint": "Mona will call you on this number.",
+      "level": "Your current level",
+      "levels": {
+        "unsure": "Not sure",
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced"
+      },
+      "submit": "Confirm my session",
+      "sending": "Booking…",
+      "success": "Booked: {date} at {time}. Mona will call you then.",
+      "errors": {
+        "slot": "Choose a day and time.",
+        "name": "Please enter your name.",
+        "phone": "Enter a valid mobile number.",
+        "levelGuess": "Please choose an option.",
+        "rate_limited": "You've booked several times already. Please try again later.",
+        "slot_taken": "Someone just took that time. Please pick another one."
+      }
+    },
+    "mona": {
+      "eyebrow": "The one who draws your map",
+      "quote1": "“No two people learn English for the same reason,",
+      "quote2": "so why follow the same path?”",
+      "body": "I teach English through conversation, and I plan a separate route for every learner, built around their goal.",
+      "name": "Mona",
+      "photoAlt": "Photo of Mona"
+    },
+    "faq": {
+      "title1": "Ask before",
+      "title2": "you book.",
+      "items": {
+        "groupRoadmap": {
+          "q": "Is my roadmap personal in a group class too?",
+          "a": "Yes. Groups are matched by level, but your stops, homework and between-class practice follow your own goal."
+        },
+        "privateOrGroup": {
+          "q": "Private or group: which is better?",
+          "a": "Private if your goal is urgent or your schedule changes a lot. Group if you enjoy practising with real people. We decide together in the free session."
+        },
+        "aiWhen": {
+          "q": "When will the AI assistant be ready?",
+          "a": "We're building it now. Leave your email to be the first to try it. Until then, Mona and your roadmap have you covered."
+        },
+        "aiReplace": {
+          "q": "Will AI replace Mona?",
+          "a": "Never. Mona is your teacher and draws your route. The assistant just helps you stay on it between classes."
+        },
+        "need": {
+          "q": "What do I need for class?",
+          "a": "A phone or laptop, headphones and an internet connection. Nothing to install. Weak connection? You can join with audio only."
+        }
+      }
+    },
+    "footer": {
+      "ctaTitle1": "You know where you're going.",
+      "ctaTitle2": "Let's map the way.",
+      "ctaLead": "20 minutes with Mona and the first stops of your roadmap. Free.",
+      "about": "English with a roadmap made for you. A real teacher, your own path, and an AI assistant.",
+      "explore": "Molingo",
+      "help": "We're here for you",
+      "rights": "© {brand}. All rights reserved."
+    }
   }
 }

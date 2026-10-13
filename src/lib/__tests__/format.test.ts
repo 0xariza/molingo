@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatDate, formatTime, formatToman, toLatinDigits } from "../format";
+import {
+  formatDate,
+  formatDayParts,
+  formatTime,
+  formatToman,
+  fromTehranTime,
+  tehranDateKey,
+  toLatinDigits,
+} from "../format";
 
 // 2026-10-13 14:30 UTC = 18:00 Tehran = Tuesday 21 Mehr 1405
 const d = new Date("2026-10-13T14:30:00Z");
@@ -27,6 +35,31 @@ describe("formatTime", () => {
   it("formats Tehran time in both locales", () => {
     expect(formatTime(d, "fa")).toBe("۱۸:۰۰");
     expect(formatTime(d, "en")).toBe("18:00");
+  });
+});
+
+describe("formatDayParts", () => {
+  it("splits a Tehran date into calendar-chip labels", () => {
+    expect(formatDayParts(d, "fa")).toEqual({ weekday: "سه‌شنبه", day: "۲۱", month: "مهر" });
+    expect(formatDayParts(d, "en")).toEqual({ weekday: "Tue", day: "13", month: "October" });
+  });
+});
+
+describe("tehranDateKey", () => {
+  it("returns the Tehran day, not the UTC day", () => {
+    expect(tehranDateKey(d)).toBe("2026-10-13");
+    expect(tehranDateKey(new Date("2026-10-13T21:00:00Z"))).toBe("2026-10-14");
+  });
+});
+
+describe("fromTehranTime", () => {
+  it("converts Tehran wall-clock time to the instant", () => {
+    expect(fromTehranTime("2026-10-13", "18:00").toISOString()).toBe("2026-10-13T14:30:00.000Z");
+  });
+  it("round-trips with the formatters", () => {
+    const t = fromTehranTime("2027-03-21", "09:30");
+    expect(tehranDateKey(t)).toBe("2027-03-21");
+    expect(formatTime(t, "en")).toBe("09:30");
   });
 });
 

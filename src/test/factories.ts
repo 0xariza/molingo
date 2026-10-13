@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { authTokens, users } from "@/db/schema";
+import { authTokens, leads, levelCheckSlots, users } from "@/db/schema";
 import { generateToken, hashToken } from "@/server/auth/crypto";
 import { hashPassword } from "@/server/auth/password";
 import type { TestDb } from "./database";
@@ -42,4 +42,23 @@ export async function createAuthToken(
   const token = generateToken();
   await db.insert(authTokens).values({ id: hashToken(token), userId, kind, expiresAt });
   return token;
+}
+
+/** Opens a free-session time; with `bookedBy`, it is already taken by a lead with that name. */
+export async function createLevelCheckSlot(
+  db: TestDb,
+  startsAt: Date,
+  bookedBy?: { name: string; phone: string },
+) {
+  const [lead] = bookedBy
+    ? await db
+        .insert(leads)
+        .values({ ...bookedBy, locale: "en", status: "scheduled" })
+        .returning()
+    : [];
+  const [slot] = await db
+    .insert(levelCheckSlots)
+    .values({ startsAt, leadId: lead?.id })
+    .returning();
+  return slot;
 }

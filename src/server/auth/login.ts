@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { users } from "@/db/schema";
 import { normalizePhone } from "@/lib/phone";
 import { getDummyHash, verifyPassword } from "./password";
-import { consumeRateLimit, resetRateLimit } from "./rate-limit";
+import { consumeRateLimit, resetRateLimit } from "../rate-limit";
 
 export type LoginError = "invalid" | "rate_limited";
 export type LoginResult =

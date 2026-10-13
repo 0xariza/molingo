@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { cache } from "react";
 import { redirect } from "@/i18n/navigation";
+import { getClientIp } from "../request";
 import { homePathFor, isAdmin, isStudent } from "./policy";
 import { SESSION_COOKIE, sessionCookieOptions } from "./constants";
 import {
@@ -46,12 +47,6 @@ export async function requireStudent(): Promise<SessionUser> {
   const user = await requireUser();
   if (isStudent(user.role)) return user;
   return redirect({ href: homePathFor(user.role), locale: await getLocale() });
-}
-
-export async function getClientIp(): Promise<string> {
-  const h = await headers();
-  // Caddy sets X-Forwarded-For; the left-most entry is the client.
-  return h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "unknown";
 }
 
 /** Server Actions only (cookies can't be set while rendering). */

@@ -109,18 +109,19 @@ duplicate-charge prevention, and Mona-vs-student permissions.
 
 ## 5. Checks — when to run what
 
-Fast checks run on every task; the slow, whole-app checks run **once at the end of each phase**
-(milestone), not after every step.
+Fast checks run on every task. The slow, whole-app checks (e2e with the production build, and the
+audit) run **only when the user asks for them** — never automatically after a task or a phase.
 
-| When                       | Command           | What it runs                                                                                                             |
-| -------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Every task / change        | `pnpm check`      | Prettier check, typecheck, ESLint (incl. no hard-coded JSX text), i18n key parity, RTL lint, Vitest (unit + integration) |
-| End of phase               | `pnpm test:e2e`   | Production build + the full Playwright suite on both mobile browsers                                                     |
-| End of phase               | `pnpm audit:prod` | Fails on high/critical vulnerabilities in production dependencies (needs internet)                                       |
-| End of phase (in test:e2e) | `pnpm build`      | Production build                                                                                                         |
+| When                | Command           | What it runs                                                                                                             |
+| ------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Every task / change | `pnpm check`      | Prettier check, typecheck, ESLint (incl. no hard-coded JSX text), i18n key parity, RTL lint, Vitest (unit + integration) |
+| When the user asks  | `pnpm test:e2e`   | Production build + the full Playwright suite on both mobile browsers                                                     |
+| When the user asks  | `pnpm audit:prod` | Fails on high/critical vulnerabilities in production dependencies (needs internet)                                       |
+| With test:e2e       | `pnpm build`      | Production build                                                                                                         |
 
 While developing a user-facing feature, a single Playwright scenario may be run or debugged on its own
-(`pnpm exec playwright test <file>`) to author it; the full suite waits for the end of the phase.
+(`pnpm exec playwright test <file>`) to author it, if the user wants e2e work at that point; the full
+suite runs when the user asks.
 CI (`.github/workflows/ci.yml`) runs everything on every push and pull request.
 
 ## 6. Workflow
@@ -136,7 +137,8 @@ During a phase, for each task:
 
 At the end of the phase:
 
-6. Run `pnpm test:e2e` (includes the production build) and `pnpm audit:prod`; fix failures.
+6. When the user asks: run `pnpm test:e2e` (includes the production build) and `pnpm audit:prod`;
+   fix failures. Otherwise report them as not run.
 7. Review for duplication, dead code, unnecessary complexity; update docs only where behaviour or
    architecture materially changed.
 
@@ -150,8 +152,8 @@ A task is done when the first five items hold and `pnpm check` passes. A **phase
 - [ ] No unnecessary code, dependencies, duplication, or dead code was introduced.
 - [ ] Unit/integration tests added or updated.
 - [ ] Playwright plan + tests added or updated for affected user workflows.
-- [ ] `pnpm check` (every task) and, at the end of the phase, `pnpm test:e2e` (with the build) and
-      `pnpm audit:prod` were **actually run** and pass.
+- [ ] `pnpm check` (every task) was **actually run** and passes; `pnpm test:e2e` (with the build)
+      and `pnpm audit:prod` were run when the user asked and pass before the phase is closed.
 - [ ] Data integrity, permissions and financial implications reviewed where relevant.
 - [ ] The report states what was built, which checks ran, and any remaining limitations. Never claim a
       test passed unless it ran and passed; say explicitly when something couldn't be run.

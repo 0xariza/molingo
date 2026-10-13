@@ -9,6 +9,8 @@ test.describe("Language and direction", () => {
     await expect(page).toHaveURL(/\/fa$/);
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator("html")).toHaveAttribute("lang", "fa");
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(messages.fa.Home.title);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      messages.fa.Landing.hero.title1,
+    );
   });
 });

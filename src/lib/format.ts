@@ -1,3 +1,4 @@
+import { TZDate } from "@date-fns/tz";
 import type { Locale } from "@/i18n/routing";
 
 export const TEHRAN = "Asia/Tehran";
@@ -32,6 +33,29 @@ export function formatDate(
     year: "numeric",
   });
   return [weekday && p.weekday, p.day, p.month, year && p.year].filter(Boolean).join(" ");
+}
+
+/** Weekday, day and month as separate labels, for calendar chips ("سه‌شنبه", "۲۱", "مهر"). */
+export function formatDayParts(date: Date, locale: Locale) {
+  const p = parts(date, locale, { weekday: "short", day: "numeric", month: "long" });
+  return { weekday: p.weekday ?? "", day: p.day ?? "", month: p.month ?? "" };
+}
+
+/** The Tehran calendar day of an instant, as "YYYY-MM-DD" (Gregorian), for grouping by day. */
+export function tehranDateKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: TEHRAN,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+/** The instant of a Tehran wall-clock time: ("2026-10-13", "18:00") → 14:30 UTC. */
+export function fromTehranTime(dateKey: string, time: string): Date {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const [h, min] = time.split(":").map(Number);
+  return new Date(new TZDate(y, m - 1, d, h, min, TEHRAN).getTime());
 }
 
 /** "۱۸:۰۰" / "18:00" (Tehran time, 24-hour in both locales). */
