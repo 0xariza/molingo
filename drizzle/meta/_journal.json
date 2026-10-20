@@ -29,6 +29,41 @@
       "when": 1791917748104,
       "tag": "0003_level_check_slots",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791931558474,
+      "tag": "0004_learners",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791938900882,
+      "tag": "0005_classes",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791938901262,
+      "tag": "0006_session_overlap",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791940856947,
+      "tag": "0007_class_names",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791987503198,
+      "tag": "0008_schedule",
+      "breakpoints": true
     }
   ]
 }

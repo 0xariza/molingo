@@ -32,7 +32,8 @@ export function Booking() {
             ))}
           </ul>
         </div>
-        <div className="rounded-[2rem] bg-white p-5 text-body shadow-[0_24px_60px_-28px_rgb(0_0_0/0.5)] sm:p-8">
+        {/* min-w-0 here and on the form's fieldset keep the scrolling day row from widening the page. */}
+        <div className="min-w-0 rounded-[2rem] bg-white p-5 text-body shadow-[0_24px_60px_-28px_rgb(0_0_0/0.5)] sm:p-8">
           <Suspense fallback={<CalendarSkeleton />}>
             <OpenSlots />
           </Suspense>

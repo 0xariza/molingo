@@ -1,5 +1,17 @@
 import { sql } from "drizzle-orm";
-import { authTokens, leads, levelCheckSlots, users } from "@/db/schema";
+import {
+  authTokens,
+  classSlots,
+  classes,
+  enrollments,
+  leads,
+  levelCheckSlots,
+  sessions,
+  students,
+  teachers,
+  users,
+} from "@/db/schema";
+import { parseClock, sessionTimes, type Weekday } from "@/lib/schedule";
 import { generateToken, hashToken } from "@/server/auth/crypto";
 import { hashPassword } from "@/server/auth/password";
 import type { TestDb } from "./database";
@@ -61,4 +73,75 @@ export async function createLevelCheckSlot(
     .values({ startsAt, leadId: lead?.id })
     .returning();
   return slot;
+}
+
+/** Mona's teacher record (the MVP has one teacher). */
+export async function createTeacher(db: TestDb, userId: string) {
+  const [teacher] = await db.insert(teachers).values({ userId }).returning();
+  return teacher;
+}
+
+let learnerCount = 0;
+
+/** A learner; without a phone, a unique one is made up. */
+export async function createLearner(
+  db: TestDb,
+  overrides: Partial<typeof students.$inferInsert> = {},
+) {
+  const n = ++learnerCount;
+  const [learner] = await db
+    .insert(students)
+    .values({
+      fullNameFa: `زبان‌آموز ${n}`,
+      phone: `+98935000${String(n).padStart(4, "0")}`,
+      status: "active",
+      ...overrides,
+    })
+    .returning();
+  return learner;
+}
+
+export type ClassInput = Partial<Omit<typeof classes.$inferInsert, "teacherId">> & {
+  teacherId: string;
+  /** Weekly times in Tehran time; weekday 0 = Saturday. */
+  slots: { weekday: Weekday; time: string }[];
+  startsOn: string;
+  studentIds?: string[];
+};
+
+/**
+ * A class with every session generated and its learners placed. Unlike the app, it allows
+ * sessions in the past, so tests can start mid-course.
+ */
+export async function createClass(db: TestDb, { slots, studentIds = [], ...input }: ClassInput) {
+  const values = {
+    nameFa: "صبح A2",
+    nameEn: "Morning A2",
+    level: "A2",
+    type: "group",
+    capacity: 3,
+    sessionCount: 12,
+    sessionMinutes: 90,
+    priceToman: 6_500_000,
+    ...input,
+  } satisfies typeof classes.$inferInsert;
+  const [cls] = await db.insert(classes).values(values).returning();
+  await db
+    .insert(classSlots)
+    .values(slots.map((s) => ({ classId: cls.id, weekday: s.weekday, startTime: s.time })));
+  const times = sessionTimes({
+    startsOn: values.startsOn,
+    slots: slots.map((s) => ({ weekday: s.weekday, minutes: parseClock(s.time)! })),
+    count: values.sessionCount,
+    sessionMinutes: values.sessionMinutes,
+  });
+  const rows = await db
+    .insert(sessions)
+    .values(times.map((t) => ({ ...t, teacherId: values.teacherId, classId: cls.id })))
+    .returning();
+  if (studentIds.length > 0)
+    await db
+      .insert(enrollments)
+      .values(studentIds.map((studentId) => ({ classId: cls.id, studentId })));
+  return { ...cls, sessions: rows };
 }

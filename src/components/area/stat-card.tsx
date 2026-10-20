@@ -12,11 +12,14 @@ export function StatCard({
   tone,
   label,
   value,
+  detail,
 }: {
   icon: Icon;
   tone: keyof typeof tones;
   label: string;
   value: string;
+  /** A short line of context under the number. */
+  detail?: string;
 }) {
   return (
     <div className="flex items-center gap-4 rounded-3xl border border-line/40 bg-white p-5">
@@ -26,6 +29,7 @@ export function StatCard({
       <div className="leading-tight">
         <p className="text-sm">{label}</p>
         <p className="font-heading text-4xl text-ocean">{value}</p>
+        {detail && <p className="mt-1 text-sm">{detail}</p>}
       </div>
     </div>
   );

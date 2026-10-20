@@ -16,12 +16,16 @@ pnpm db:seed                    # dev accounts (see scripts/seed-dev.ts)
 pnpm dev                        # http://localhost:3000 → /fa
 ```
 
+The `Makefile` wraps these: `make setup` the first time, then `make dev`. Run `make` to list all targets.
+
 - `/fa/styleguide` and `/en/styleguide` show the design tokens, type and formatting (dev only).
 - LiveKit for the live classroom (M6): `docker compose -f compose.dev.yml --profile live up -d`.
 
-## Accounts (until the admin UI in M4)
+## Accounts
 
-Everyone logs in with **mobile number + password**. Accounts are activated with a one-time link:
+Everyone logs in with **mobile number + password**. Accounts are activated with a one-time link.
+Mona adds learners and creates their logins on `/admin/students`; the command line is mainly for
+admin accounts:
 
 ```bash
 pnpm user create --role admin --phone 0912xxxxxxx --name "Mona"     # prints an activation link

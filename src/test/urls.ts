@@ -1,4 +1,4 @@
-const base = process.env.TEST_DATABASE_BASE ?? "postgres://molingo:molingo@127.0.0.1:5432";
+const base = process.env.TEST_DATABASE_BASE ?? "postgres://molingo:molingo@127.0.0.1:5433";
 
 /** Vitest integration tests. */
 export const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL ?? `${base}/molingo_test`;

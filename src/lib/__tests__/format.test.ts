@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatJalaliMonth,
+  jalaliMonthKey,
+  recentJalaliMonths,
   formatDate,
   formatDayParts,
   formatTime,
@@ -75,5 +78,29 @@ describe("toLatinDigits", () => {
     expect(toLatinDigits("۰۹۱۲۳۴۵۶۷۸۹")).toBe("09123456789");
     expect(toLatinDigits("٠١٢٣٤٥٦٧٨٩")).toBe("0123456789");
     expect(toLatinDigits("abc 12")).toBe("abc 12");
+  });
+});
+
+describe("Jalali months", () => {
+  it("keys an instant by its Tehran month, across the month boundary", () => {
+    expect(jalaliMonthKey(fromTehranTime("2026-09-22", "23:59"))).toBe("1405-06");
+    expect(jalaliMonthKey(fromTehranTime("2026-09-23", "00:00"))).toBe("1405-07");
+  });
+
+  it("lists recent months oldest first, each starting at 00:00 Tehran on the 1st", () => {
+    const months = recentJalaliMonths(fromTehranTime("2026-10-14", "12:00"), 3);
+    expect(months.map((m) => m.key)).toEqual(["1405-05", "1405-06", "1405-07"]);
+    expect(months[2].date).toEqual(fromTehranTime("2026-09-23", "00:00"));
+  });
+
+  it("crosses into the previous year", () => {
+    const months = recentJalaliMonths(fromTehranTime("2026-04-01", "12:00"), 2);
+    expect(months.map((m) => m.key)).toEqual(["1404-12", "1405-01"]);
+  });
+
+  it("names the month in both locales", () => {
+    const mehr = fromTehranTime("2026-10-14", "12:00");
+    expect(formatJalaliMonth(mehr, "fa")).toBe("مهر");
+    expect(formatJalaliMonth(mehr, "en")).toBe("Mehr");
   });
 });

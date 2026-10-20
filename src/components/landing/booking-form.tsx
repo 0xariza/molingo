@@ -61,7 +61,8 @@ export function BookingForm({ now, slots }: Props) {
     <div className="space-y-6">
       {state.error && <ErrorAlert>{t(`errors.${state.error as "slot_taken"}`)}</ErrorAlert>}
 
-      <fieldset className="space-y-3">
+      {/* min-w-0: a fieldset is min-content wide by default, which would widen the page. */}
+      <fieldset className="min-w-0 space-y-3">
         <legend className="flex w-full items-baseline justify-between gap-3 font-extrabold text-ocean">
           {t("dayLabel")}
           <span className="text-sm font-normal text-body">{t("timeZone")}</span>

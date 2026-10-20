@@ -1,5 +1,6 @@
 /**
- * Account helper until the admin UI exists (M4).
+ * Account helper for the command line. Mona creates learners and their logins in the admin area
+ * (/admin/students); this is mainly for admin accounts.
  *
  *   pnpm user create --role admin --phone 09121234567 --name "Mona" [--locale fa]
  *   pnpm user link --phone 09121234567 [--reset]
@@ -52,10 +53,10 @@ async function main() {
       else
         await tx.insert(students).values({
           userId: user.id,
-          fullName: values.name!,
+          fullNameFa: values.name!,
           phone,
           status: "active",
-          preferredLocale: locale,
+          startedAt: new Date(),
         });
       return user.id;
     });

@@ -20,6 +20,8 @@ jobs:
           --health-cmd "pg_isready -U molingo" --health-interval 5s --health-retries 10
     env:
       DATABASE_URL: postgres://molingo:molingo@localhost:5432/molingo
+      # The CI service listens on 5432 (local development uses 5433).
+      TEST_DATABASE_BASE: postgres://molingo:molingo@localhost:5432
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

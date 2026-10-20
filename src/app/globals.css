@@ -180,3 +180,28 @@
     }
   }
 }
+
+/* ---------- Date picker (react-day-picker) in the brand colours ---------- */
+/* `:root` raises specificity: the library's own stylesheet loads after this one. */
+:root .rdp-root {
+  --rdp-accent-color: var(--color-brand);
+  --rdp-accent-background-color: var(--color-mist);
+  --rdp-day-height: 42px;
+  --rdp-day-width: 42px;
+  --rdp-day_button-height: 40px;
+  --rdp-day_button-width: 40px;
+  --rdp-today-color: var(--color-brand);
+  --rdp-disabled-opacity: 0.35;
+  color: var(--color-ocean);
+}
+:root .rdp-root .rdp-selected .rdp-day_button {
+  background: var(--color-ocean);
+  border-color: var(--color-ocean);
+  color: var(--color-white);
+}
+:root .rdp-root .rdp-today:not(.rdp-selected) .rdp-day_button {
+  border-color: var(--color-brand);
+}
+:root .rdp-root .rdp-chevron {
+  fill: var(--color-ocean);
+}

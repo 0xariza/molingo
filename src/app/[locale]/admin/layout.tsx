@@ -1,7 +1,10 @@
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { AreaShell, AreaSkeleton } from "@/components/area-shell";
+import type { Locale } from "@/i18n/routing";
+import { formatNumber } from "@/lib/format";
 import { requireAdmin } from "@/server/auth/current";
+import { listUpcomingSlots } from "@/server/funnel/level-check";
 
 export default function AdminLayout({ children }: LayoutProps<"/[locale]/admin">) {
   return (
@@ -14,14 +17,28 @@ export default function AdminLayout({ children }: LayoutProps<"/[locale]/admin">
 // Pages and data functions call requireAdmin() too: layouts and pages render in parallel,
 // so a layout check alone does not protect page data.
 async function AdminGate({ children }: { children: React.ReactNode }) {
-  const [user, t] = await Promise.all([requireAdmin(), getTranslations("Admin")]);
+  // The session check comes first: it marks the request dynamic before the bookings read the clock.
+  const user = await requireAdmin();
+  const [t, locale, slots] = await Promise.all([
+    getTranslations("Admin"),
+    getLocale() as Promise<Locale>,
+    listUpcomingSlots(),
+  ]);
+  const booked = slots.filter((s) => s.lead).length;
   return (
     <AreaShell
       home="/admin"
       user={{ name: user.displayName, role: t("role") }}
       items={[
         { href: "/admin", label: t("nav.dashboard"), icon: "home" },
-        { href: "/admin/level-checks", label: t("nav.levelChecks"), icon: "freeSessions" },
+        {
+          href: "/admin/schedule",
+          label: t("nav.schedule"),
+          icon: "schedule",
+          badge: booked ? formatNumber(booked, locale) : undefined,
+        },
+        { href: "/admin/students", label: t("nav.learners"), icon: "learners" },
+        { href: "/admin/classes", label: t("nav.classes"), icon: "classes" },
       ]}
     >
       {children}

@@ -10,8 +10,7 @@ M4/M5), free-session booking, about Mona, FAQ and a closing call to action.
 
 Booking works like Calendly: visitors see only the times Mona opened (next two weeks, Tehran time),
 pick a day and a time, then leave a name, mobile number and level. The booking saves a `scheduled`
-lead and takes the slot, so nobody else can book it. Mona adds and removes free times on
-`/admin/level-checks` and sees who booked. Both public forms have a honeypot and rate limits.
+lead and takes the slot, so nobody else can book it. Mona adds and removes free times and sees who booked on her weekly schedule (`specs/schedule.plan.md`). Both public forms have a honeypot and rate limits.
 
 ## Test Scenarios
 
@@ -25,9 +24,10 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. Open `/en` - expect: section headings for the roadmap, AI assistant, sample week, class formats,
+1. With an open time tomorrow, open `/en` - expect: section headings for the roadmap, AI assistant, sample week, class formats,
    booking and FAQ - expect: the group card shows "New groups are forming" - expect: the hero's
-   "Get my free roadmap" link points to the booking section (`#book`)
+   "Get my free roadmap" link points to the booking section (`#book`) - expect: the page doesn't
+   scroll sideways on a phone
 
 #### 1.2. roadmap-changes-with-the-goal
 
@@ -35,7 +35,8 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. Open `/en` - expect: "Work & interviews" is pressed and its first stop is shown
+1. Open `/en` - expect: in the roadmap section, "Work & interviews" is pressed and its first stop
+   is shown (the hero shows the same stops, so look inside the section)
 2. Press "Moving abroad" - expect: it is pressed - expect: the moving-abroad stops replace the
    interview stops
 
@@ -108,29 +109,3 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 2. Enter a valid email, submit - expect: the "You're on the list" status
 3. Reload and join again with the same email in different case - expect: the same success message -
    expect: exactly one waitlist row
-
-### 2. Mona's free-session times
-
-**Seed:** `e2e/seed.spec.ts`
-
-#### 2.1. admin-adds-and-removes-a-time
-
-**File:** `e2e/landing/admin-adds-and-removes-a-time.spec.ts`
-
-**Steps:**
-
-1. Log in as Mona, open "Free sessions" from the panel menu - expect: "You haven't added any
-   times yet"
-2. Choose tomorrow, enter 18:30, press "Add" - expect: "Added." - expect: tomorrow 18:30 is listed as
-   free
-3. Add the same time again - expect: the overlap error
-4. Remove it - expect: the empty message again
-
-#### 2.2. admin-sees-who-booked
-
-**File:** `e2e/landing/admin-sees-who-booked.spec.ts`
-
-**Steps:**
-
-1. With a booked time, log in as Mona and open `/en/admin/level-checks` - expect: the time shows
-   "Booked" with the visitor's name, number and level, and no "Remove" button

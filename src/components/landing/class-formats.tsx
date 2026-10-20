@@ -1,13 +1,15 @@
-import { Check, UsersThree } from "@phosphor-icons/react/dist/ssr";
+import { Check } from "@phosphor-icons/react/dist/ssr";
 import { useTranslations } from "next-intl";
+import { Suspense } from "react";
 import { buttonClass } from "@/components/ui/button";
+import { FormingEmpty, FormingGroups } from "./forming-groups";
 import { Eyebrow, SectionTitle } from "./section-heading";
 
 const FEATURES = ["f1", "f2", "f3"] as const;
 
 /**
- * Private and group classes. Open groups arrive with classes and scheduling (M4/M5); until then
- * the group card shows the "groups are forming" state.
+ * Private and group classes. The group card lists Mona's open public groups (streamed in), or the
+ * "groups are forming" note when there are none.
  */
 export function ClassFormats() {
   const t = useTranslations("Landing.formats");
@@ -34,13 +36,11 @@ export function ClassFormats() {
             <Header title={t("group.title")} tag={t("group.tag")} />
             <p className="text-lg">{t("group.body")}</p>
             <Features base="group" />
-            <div className="mt-auto flex items-start gap-4 rounded-3xl border border-dashed border-whale bg-white p-5">
-              <UsersThree aria-hidden size={36} weight="duotone" className="shrink-0 text-brand" />
-              <div>
-                <h4 className="font-extrabold text-ocean">{t("group.emptyTitle")}</h4>
-                <p className="mt-1 text-sm">{t("group.emptyBody")}</p>
-              </div>
-            </div>
+            <Suspense
+              fallback={<FormingEmpty title={t("group.emptyTitle")} body={t("group.emptyBody")} />}
+            >
+              <FormingGroups />
+            </Suspense>
             <a href="#book" className={buttonClass("primary")}>
               {t("group.cta")}
             </a>

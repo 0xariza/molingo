@@ -1,18 +1,31 @@
+import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { leads, levelCheckSlots } from "@/db/schema";
-import { resetDb } from "@/test/factories";
+import { classes, leads, levelCheckSlots, sessions } from "@/db/schema";
+import { createUser, resetDb } from "@/test/factories";
+import { teacherIdFor } from "../../classes/classes";
 import {
   addSlot,
+  assignLeadSchema,
+  assignNewPersonSchema,
+  assignSlot,
   bookingInputSchema,
   bookLevelCheck,
+  cancelBooking,
   listOpenSlots,
   listUpcomingSlots,
+  listWaitingLeads,
   removeFreeSlot,
   slotInputSchema,
+  slotsBetween,
 } from "../level-check";
 
-beforeEach(() => resetDb(db));
+let teacherId: string;
+beforeEach(async () => {
+  await resetDb(db);
+  const mona = await createUser(db, { phone: "+989120000001", role: "admin" });
+  teacherId = await teacherIdFor(mona.id);
+});
 
 const HOUR = 60 * 60 * 1000;
 const inHours = (h: number) => new Date(Date.now() + h * HOUR);
@@ -126,25 +139,51 @@ describe("slotInputSchema", () => {
 
 describe("addSlot", () => {
   it("opens a future slot", async () => {
-    expect(await addSlot(inHours(5))).toEqual({ ok: true });
+    expect(await addSlot(inHours(5), teacherId)).toEqual({ ok: true });
     expect(await db.select().from(levelCheckSlots)).toHaveLength(1);
   });
 
   it("refuses past times", async () => {
-    expect(await addSlot(inHours(-1))).toEqual({ ok: false, error: "past" });
+    expect(await addSlot(inHours(-1), teacherId)).toEqual({ ok: false, error: "past" });
   });
 
   it("refuses a time that overlaps another slot, but allows back-to-back slots", async () => {
     const start = inHours(5);
-    await addSlot(start);
+    await addSlot(start, teacherId);
     const tenMinutes = 10 * 60 * 1000;
     const twentyMinutes = 2 * tenMinutes;
-    expect(await addSlot(start)).toEqual({ ok: false, error: "overlap" });
-    expect(await addSlot(new Date(start.getTime() + tenMinutes))).toEqual({
+    expect(await addSlot(start, teacherId)).toEqual({ ok: false, error: "overlap" });
+    expect(await addSlot(new Date(start.getTime() + tenMinutes), teacherId)).toEqual({
       ok: false,
       error: "overlap",
     });
-    expect(await addSlot(new Date(start.getTime() + twentyMinutes))).toEqual({ ok: true });
+    expect(await addSlot(new Date(start.getTime() + twentyMinutes), teacherId)).toEqual({
+      ok: true,
+    });
+  });
+
+  it("refuses a time during one of Mona's sessions, unless that session is cancelled", async () => {
+    const [cls] = await db
+      .insert(classes)
+      .values({
+        teacherId,
+        nameFa: "صبح A2",
+        level: "A2",
+        type: "private",
+        capacity: 1,
+        sessionCount: 1,
+        sessionMinutes: 60,
+        startsOn: "2026-10-24",
+        priceToman: 1,
+      })
+      .returning();
+    const [session] = await db
+      .insert(sessions)
+      .values({ teacherId, classId: cls.id, startsAt: inHours(5), endsAt: inHours(6) })
+      .returning();
+    expect(await addSlot(inHours(5.5), teacherId)).toEqual({ ok: false, error: "overlap" });
+    await db.update(sessions).set({ status: "cancelled" }).where(eq(sessions.id, session.id));
+    expect(await addSlot(inHours(5.5), teacherId)).toEqual({ ok: true });
   });
 });
 
@@ -175,5 +214,80 @@ describe("listUpcomingSlots", () => {
         lead: { name: "Sara Ahmadi", phone: "+989121234567", levelGuess: "unsure" },
       },
     ]);
+  });
+});
+
+describe("assignSlot", () => {
+  const assign = (input: Record<string, string>) =>
+    assignSlot(
+      "leadId" in input
+        ? assignLeadSchema.parse(input)
+        : assignNewPersonSchema.parse({ locale: "fa", ...input }),
+    );
+
+  it("reports a bad mobile for a new person as a phone error", () => {
+    const r = assignNewPersonSchema.safeParse({
+      slotId: crypto.randomUUID(),
+      name: "Sina",
+      phone: "123",
+      locale: "en",
+    });
+    expect(r.error!.issues.map((i) => [i.path[0], i.message])).toEqual([["phone", "phone"]]);
+  });
+
+  it("books an open time for a new person as a manual booking", async () => {
+    const slot = await slotAt(inHours(3));
+    expect(await assign({ slotId: slot.id, name: "سینا مرادی", phone: "09352104417" })).toEqual({
+      ok: true,
+    });
+    const [lead] = await db.select().from(leads);
+    expect(lead).toMatchObject({ phone: "+989352104417", source: "manual", status: "scheduled" });
+    expect((await slotsBetween(inHours(0), inHours(4)))[0].lead).toMatchObject({
+      name: "سینا مرادی",
+      source: "manual",
+    });
+  });
+
+  it("books it for someone on the list who holds no time, once", async () => {
+    const [lead] = await db
+      .insert(leads)
+      .values({ name: "Mahsa", phone: "+989017723305", locale: "fa" })
+      .returning();
+    expect(await listWaitingLeads()).toMatchObject([{ id: lead.id, status: "new" }]);
+    const [a, b] = [await slotAt(inHours(3)), await slotAt(inHours(4))];
+
+    expect(await assign({ slotId: a.id, leadId: lead.id })).toEqual({ ok: true });
+    expect(await listWaitingLeads()).toEqual([]);
+    expect(await assign({ slotId: b.id, leadId: lead.id })).toEqual({ ok: false, error: "lead" });
+  });
+
+  it("refuses a time that is taken or past, and saves nothing", async () => {
+    const taken = await slotAt(inHours(3));
+    await bookLevelCheck(booking(taken.id));
+    const past = await slotAt(inHours(-1));
+    for (const slot of [taken, past])
+      expect(await assign({ slotId: slot.id, name: "Sina", phone: "09352104417" })).toEqual({
+        ok: false,
+        error: "slot_taken",
+      });
+    expect(await db.select().from(leads)).toHaveLength(1);
+  });
+});
+
+describe("cancelBooking", () => {
+  it("opens the time again and puts the person back on the list", async () => {
+    const slot = await slotAt(inHours(3));
+    await bookLevelCheck(booking(slot.id));
+
+    expect(await cancelBooking(slot.id)).toBe(true);
+    expect((await listOpenSlots()).map((s) => s.id)).toEqual([slot.id]);
+    expect(await listWaitingLeads()).toMatchObject([{ name: "Sara Ahmadi", status: "new" }]);
+    expect(await cancelBooking(slot.id)).toBe(false);
+  });
+
+  it("leaves past bookings alone", async () => {
+    const slot = await slotAt(inHours(3));
+    await bookLevelCheck(booking(slot.id));
+    expect(await cancelBooking(slot.id, inHours(4))).toBe(false);
   });
 });

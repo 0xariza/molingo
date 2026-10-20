@@ -1,16 +1,20 @@
 "use server";
 
-import { hasLocale } from "next-intl";
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { routing } from "@/i18n/routing";
 import { requireAdmin } from "../auth/current";
+import { fieldErrors, formLocale, text } from "../forms";
 import { consumeRateLimit } from "../rate-limit";
 import { getClientIp } from "../request";
+import { teacherIdFor } from "../classes/classes";
 import {
   addSlot,
+  assignLeadSchema,
+  assignNewPersonSchema,
+  assignSlot,
   bookingInputSchema,
   bookLevelCheck,
+  cancelBooking,
   removeFreeSlot,
   slotInputSchema,
 } from "./level-check";
@@ -22,31 +26,15 @@ const HOUR = 60 * 60;
 export type FormState = {
   status: "idle" | "success" | "error";
   /** Form-level error. */
-  error?: "rate_limited" | "slot_taken" | "past" | "overlap";
+  error?: "rate_limited" | "slot_taken" | "past" | "overlap" | "lead";
   /** Field name → error key. */
   fieldErrors?: Record<string, string>;
   /** Submitted values, echoed back so React's post-action form reset doesn't wipe them. */
   values?: Record<string, string>;
 };
 
-const text = (form: FormData, key: string) => String(form.get(key) ?? "");
-
 /** Bots fill every field; people never see this one. */
 const isBot = (form: FormData) => text(form, "website") !== "";
-
-const formLocale = (form: FormData) => {
-  const locale = text(form, "locale");
-  return hasLocale(routing.locales, locale) ? locale : routing.defaultLocale;
-};
-
-function fieldErrors(issues: { path: PropertyKey[]; message: string }[]) {
-  const out: Record<string, string> = {};
-  for (const issue of issues) {
-    const field = String(issue.path[0] ?? "");
-    out[field] ??= issue.message;
-  }
-  return out;
-}
 
 export async function bookLevelCheckAction(_: FormState, form: FormData): Promise<FormState> {
   const values = Object.fromEntries(
@@ -95,13 +83,13 @@ export async function joinWaitlistAction(_: FormState, form: FormData): Promise<
 }
 
 export async function addSlotAction(_: FormState, form: FormData): Promise<FormState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const values = { date: text(form, "date"), time: text(form, "time") };
   const parsed = slotInputSchema.safeParse(values);
   if (!parsed.success) {
     return { status: "error", fieldErrors: fieldErrors(parsed.error.issues), values };
   }
-  const result = await addSlot(parsed.data);
+  const result = await addSlot(parsed.data, await teacherIdFor(admin.id));
   if (!result.ok) return { status: "error", error: result.error, values };
   refresh();
   // Keep the chosen day so Mona can add several times on it in a row.
@@ -114,4 +102,35 @@ export async function removeSlotAction(form: FormData): Promise<void> {
   if (!slotId.success) return;
   await removeFreeSlot(slotId.data);
   refresh();
+}
+
+/** Mona gives an open time to someone on her list (`leadId`) or to a new person (name, phone). */
+export async function assignSlotAction(_: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const values = Object.fromEntries(
+    ["slotId", "leadId", "name", "phone"].map((k) => [k, text(form, k)]),
+  );
+  const parsed = values.leadId
+    ? assignLeadSchema.safeParse({ slotId: values.slotId, leadId: values.leadId })
+    : assignNewPersonSchema.safeParse({
+        slotId: values.slotId,
+        name: values.name,
+        phone: values.phone,
+        locale: formLocale(form),
+      });
+  if (!parsed.success) {
+    return { status: "error", fieldErrors: fieldErrors(parsed.error.issues), values };
+  }
+  const result = await assignSlot(parsed.data);
+  refresh();
+  return result.ok ? { status: "success" } : { status: "error", error: result.error, values };
+}
+
+export async function cancelBookingAction(_: FormState, form: FormData): Promise<FormState> {
+  await requireAdmin();
+  const slotId = z.uuid().safeParse(text(form, "slotId"));
+  if (!slotId.success) return { status: "error", error: "slot_taken" };
+  const ok = await cancelBooking(slotId.data);
+  refresh();
+  return ok ? { status: "success" } : { status: "error", error: "slot_taken" };
 }

@@ -1,15 +1,23 @@
 "use client";
 
-import { ChatsCircle, House, type Icon } from "@phosphor-icons/react";
+import { CalendarDots, ChalkboardTeacher, House, Users, type Icon } from "@phosphor-icons/react";
 import { Link, usePathname } from "@/i18n/navigation";
 
 /** Icons by name: server layouts can't pass components to this client component. */
-const ICONS = { home: House, freeSessions: ChatsCircle } satisfies Record<string, Icon>;
+const ICONS = {
+  home: House,
+  schedule: CalendarDots,
+  learners: Users,
+  classes: ChalkboardTeacher,
+} satisfies Record<string, Icon>;
 
 export type AreaNavItem = {
-  href: "/admin" | "/admin/level-checks" | "/app";
+  href:
+    "/admin" | "/admin/schedule" | "/admin/students" | "/admin/classes" | "/app" | "/app/schedule";
   label: string;
   icon: keyof typeof ICONS;
+  /** A small count next to the label (e.g. upcoming bookings). */
+  badge?: string;
 };
 
 type Props = {
@@ -31,7 +39,7 @@ export function AreaNav({ items, label, variant }: Props) {
         aria-label={label}
         className="fixed inset-x-0 bottom-0 z-30 grid auto-cols-fr grid-flow-col gap-1 bg-ocean px-2 pt-2 pb-safe lg:hidden"
       >
-        {items.map(({ href, label, icon }) => {
+        {items.map(({ href, label, icon, badge }) => {
           const Icon = ICONS[icon];
           const active = current(href);
           return (
@@ -39,12 +47,17 @@ export function AreaNav({ items, label, variant }: Props) {
               key={href}
               href={href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-bold ${
+              className={`relative flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-bold ${
                 active ? "bg-whale/15 text-whale" : "text-mist/70 hover:text-white"
               }`}
             >
               <Icon aria-hidden size={22} weight={active ? "fill" : "regular"} />
               {label}
+              {badge && (
+                <span className="absolute end-2 top-1 grid h-4.5 min-w-4.5 place-items-center rounded-pill bg-sand px-1 text-[10px] font-extrabold text-ocean">
+                  {badge}
+                </span>
+              )}
             </Link>
           );
         })}
@@ -54,7 +67,7 @@ export function AreaNav({ items, label, variant }: Props) {
 
   return (
     <nav aria-label={label} className="flex flex-col gap-1">
-      {items.map(({ href, label, icon }) => {
+      {items.map(({ href, label, icon, badge }) => {
         const Icon = ICONS[icon];
         const active = current(href);
         return (
@@ -69,7 +82,12 @@ export function AreaNav({ items, label, variant }: Props) {
             }`}
           >
             <Icon aria-hidden size={20} weight={active ? "fill" : "regular"} />
-            {label}
+            <span className="flex-1">{label}</span>
+            {badge && (
+              <span className="grid h-5.5 min-w-5.5 place-items-center rounded-pill bg-sand px-1.5 text-xs font-extrabold text-ocean">
+                {badge}
+              </span>
+            )}
           </Link>
         );
       })}

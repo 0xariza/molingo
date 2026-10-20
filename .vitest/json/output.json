@@ -1,11 +1,11 @@
 {
-  "numTotalTestSuites": 20,
-  "numPassedTestSuites": 20,
-  "numFailedTestSuites": 0,
+  "numTotalTestSuites": 4,
+  "numPassedTestSuites": 0,
+  "numFailedTestSuites": 4,
   "numPendingTestSuites": 0,
-  "numTotalTests": 41,
-  "numPassedTests": 41,
-  "numFailedTests": 0,
+  "numTotalTests": 3,
+  "numPassedTests": 0,
+  "numFailedTests": 3,
   "numPendingTests": 0,
   "numTodoTests": 0,
   "snapshot": {
@@ -24,495 +24,65 @@
     "updated": 0,
     "didUpdate": false
   },
-  "startTime": 1791917836274,
-  "success": true,
+  "startTime": 1791987869366,
+  "success": false,
   "testResults": [
     {
       "assertionResults": [
         {
-          "ancestorTitles": ["formatDate"],
-          "fullName": "formatDate uses the Jalali calendar and Persian digits for fa",
-          "status": "passed",
-          "title": "uses the Jalali calendar and Persian digits for fa",
-          "duration": 9.380749999999999,
-          "failureMessages": [],
+          "ancestorTitles": ["learnerSchedule"],
+          "fullName": "learnerSchedule lists the next two weeks of the learner's sessions, numbered, cancelled ones included",
+          "status": "failed",
+          "title": "lists the next two weeks of the learner's sessions, numbered, cancelled ones included",
+          "duration": 62.22779200000002,
+          "failureMessages": [
+            "ZodError: [\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"nameEn\"\n    ],\n    \"message\": \"Invalid input: expected string, received undefined\"\n  }\n]\n    at setup (/Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/scheduling/__tests__/learner.test.ts:29:20)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at /Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/scheduling/__tests__/learner.test.ts:57:33\n    at async file:///Users/rezahedayati/Documents/Claude/Projects/molingo/node_modules/.pnpm/vitest@5.0.4_@types+node@20.19.43_vite@8.3.4_@types+node@20.19.43_esbuild@0.28.2_jiti@2.7.0_tsx@4.23.15_/node_modules/vitest/dist/chunks/run.Cm2sd7-x.js:2794:20"
+          ],
           "meta": {},
           "tags": [],
           "benchmarks": []
         },
         {
-          "ancestorTitles": ["formatDate"],
-          "fullName": "formatDate uses the Gregorian calendar for en",
-          "status": "passed",
-          "title": "uses the Gregorian calendar for en",
-          "duration": 0.48562499999999886,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["formatDate"],
-          "fullName": "formatDate uses the Tehran date, not UTC",
-          "status": "passed",
-          "title": "uses the Tehran date, not UTC",
-          "duration": 0.13125000000000853,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["formatDate"],
-          "fullName": "formatDate handles the Jalali new year (Nowruz)",
-          "status": "passed",
-          "title": "handles the Jalali new year (Nowruz)",
-          "duration": 0.2626669999999933,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["formatTime"],
-          "fullName": "formatTime formats Tehran time in both locales",
-          "status": "passed",
-          "title": "formats Tehran time in both locales",
-          "duration": 0.2452080000000052,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["formatDayParts"],
-          "fullName": "formatDayParts splits a Tehran date into calendar-chip labels",
-          "status": "passed",
-          "title": "splits a Tehran date into calendar-chip labels",
-          "duration": 0.3930419999999941,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["tehranDateKey"],
-          "fullName": "tehranDateKey returns the Tehran day, not the UTC day",
-          "status": "passed",
-          "title": "returns the Tehran day, not the UTC day",
-          "duration": 0.40579199999999105,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["fromTehranTime"],
-          "fullName": "fromTehranTime converts Tehran wall-clock time to the instant",
-          "status": "passed",
-          "title": "converts Tehran wall-clock time to the instant",
-          "duration": 0.5204159999999973,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["fromTehranTime"],
-          "fullName": "fromTehranTime round-trips with the formatters",
-          "status": "passed",
-          "title": "round-trips with the formatters",
-          "duration": 0.4289589999999919,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["formatToman"],
-          "fullName": "formatToman groups digits per locale",
-          "status": "passed",
-          "title": "groups digits per locale",
-          "duration": 1.8542499999999933,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["toLatinDigits"],
-          "fullName": "toLatinDigits normalizes Persian and Arabic digits",
-          "status": "passed",
-          "title": "normalizes Persian and Arabic digits",
-          "duration": 0.1700830000000053,
-          "failureMessages": [],
+          "ancestorTitles": ["learnerSchedule"],
+          "fullName": "learnerSchedule shows make-ups only to the learners invited, and nothing after the place ends",
+          "status": "failed",
+          "title": "shows make-ups only to the learners invited, and nothing after the place ends",
+          "duration": 39.677166,
+          "failureMessages": [
+            "ZodError: [\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"nameEn\"\n    ],\n    \"message\": \"Invalid input: expected string, received undefined\"\n  }\n]\n    at setup (/Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/scheduling/__tests__/learner.test.ts:29:20)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at /Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/scheduling/__tests__/learner.test.ts:73:46\n    at async file:///Users/rezahedayati/Documents/Claude/Projects/molingo/node_modules/.pnpm/vitest@5.0.4_@types+node@20.19.43_vite@8.3.4_@types+node@20.19.43_esbuild@0.28.2_jiti@2.7.0_tsx@4.23.15_/node_modules/vitest/dist/chunks/run.Cm2sd7-x.js:2794:20"
+          ],
           "meta": {},
           "tags": [],
           "benchmarks": []
         }
       ],
-      "startTime": 1791917837569,
-      "endTime": 1791917837584.1702,
-      "status": "passed",
+      "startTime": 1791987869954,
+      "endTime": 1791987870056.6772,
+      "status": "failed",
       "message": "",
-      "name": "/Users/rezahedayati/Documents/Claude/Projects/molingo/src/lib/__tests__/format.test.ts"
+      "name": "/Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/scheduling/__tests__/learner.test.ts"
     },
     {
       "assertionResults": [
         {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes 09121234567",
-          "status": "passed",
-          "title": "normalizes 09121234567",
-          "duration": 1.8074999999999903,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes 9121234567",
-          "status": "passed",
-          "title": "normalizes 9121234567",
-          "duration": 0.45350000000000534,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes +989121234567",
-          "status": "passed",
-          "title": "normalizes +989121234567",
-          "duration": 0.13724999999999454,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes 00989121234567",
-          "status": "passed",
-          "title": "normalizes 00989121234567",
-          "duration": 0.21512500000000045,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes 0912 123 4567",
-          "status": "passed",
-          "title": "normalizes 0912 123 4567",
-          "duration": 0.2017500000000041,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes 0912-123-4567",
-          "status": "passed",
-          "title": "normalizes 0912-123-4567",
-          "duration": 0.1011659999999921,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes ۰۹۱۲۱۲۳۴۵۶۷",
-          "status": "passed",
-          "title": "normalizes ۰۹۱۲۱۲۳۴۵۶۷",
-          "duration": 0.5251659999999987,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone normalizes ٠٩١٢١٢٣٤٥٦٧",
-          "status": "passed",
-          "title": "normalizes ٠٩١٢١٢٣٤٥٦٧",
-          "duration": 0.12425000000000352,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone keeps foreign numbers given with a + prefix",
-          "status": "passed",
-          "title": "keeps foreign numbers given with a + prefix",
-          "duration": 1.1519579999999934,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone rejects ",
-          "status": "passed",
-          "title": "rejects ",
-          "duration": 0.11949999999998795,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone rejects abc",
-          "status": "passed",
-          "title": "rejects abc",
-          "duration": 0.1004169999999931,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone rejects 0912",
-          "status": "passed",
-          "title": "rejects 0912",
-          "duration": 0.05416700000000674,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone rejects 091212345678901",
-          "status": "passed",
-          "title": "rejects 091212345678901",
-          "duration": 0.08083299999999838,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["normalizePhone"],
-          "fullName": "normalizePhone rejects +98 21",
-          "status": "passed",
-          "title": "rejects +98 21",
-          "duration": 0.03804200000000435,
-          "failureMessages": [],
+          "ancestorTitles": ["weekSchedule"],
+          "fullName": "weekSchedule gathers the Sat–Fri week's sessions and level-check times, with Mona's limits",
+          "status": "failed",
+          "title": "gathers the Sat–Fri week's sessions and level-check times, with Mona's limits",
+          "duration": 57.698125000000005,
+          "failureMessages": [
+            "ZodError: [\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"nameEn\"\n    ],\n    \"message\": \"Invalid input: expected string, received undefined\"\n  }\n]\n    at /Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/scheduling/__tests__/week.test.ts:20:22\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async file:///Users/rezahedayati/Documents/Claude/Projects/molingo/node_modules/.pnpm/vitest@5.0.4_@types+node@20.19.43_vite@8.3.4_@types+node@20.19.43_esbuild@0.28.2_jiti@2.7.0_tsx@4.23.15_/node_modules/vitest/dist/chunks/run.Cm2sd7-x.js:2794:20"
+          ],
           "meta": {},
           "tags": [],
           "benchmarks": []
         }
       ],
-      "startTime": 1791917837657,
-      "endTime": 1791917837662.1519,
-      "status": "passed",
+      "startTime": 1791987870336,
+      "endTime": 1791987870393.6982,
+      "status": "failed",
       "message": "",
-      "name": "/Users/rezahedayati/Documents/Claude/Projects/molingo/src/lib/__tests__/phone.test.ts"
-    },
-    {
-      "assertionResults": [
-        {
-          "ancestorTitles": ["bookingInputSchema"],
-          "fullName": "bookingInputSchema normalizes the phone and defaults the level",
-          "status": "passed",
-          "title": "normalizes the phone and defaults the level",
-          "duration": 35.60079200000001,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["bookingInputSchema"],
-          "fullName": "bookingInputSchema reports each invalid field with its key",
-          "status": "passed",
-          "title": "reports each invalid field with its key",
-          "duration": 15.198292000000038,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["listOpenSlots"],
-          "fullName": "listOpenSlots offers only free, future slots inside the two-week window, earliest first",
-          "status": "passed",
-          "title": "offers only free, future slots inside the two-week window, earliest first",
-          "duration": 25.314041999999972,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["bookLevelCheck"],
-          "fullName": "bookLevelCheck saves a scheduled lead and takes the slot",
-          "status": "passed",
-          "title": "saves a scheduled lead and takes the slot",
-          "duration": 21.948375,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["bookLevelCheck"],
-          "fullName": "bookLevelCheck refuses a slot that is already taken and saves nothing",
-          "status": "passed",
-          "title": "refuses a slot that is already taken and saves nothing",
-          "duration": 19.92791699999998,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["bookLevelCheck"],
-          "fullName": "bookLevelCheck gives a slot to only one of two simultaneous visitors",
-          "status": "passed",
-          "title": "gives a slot to only one of two simultaneous visitors",
-          "duration": 22.945082999999954,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["bookLevelCheck"],
-          "fullName": "bookLevelCheck refuses past and unknown slots",
-          "status": "passed",
-          "title": "refuses past and unknown slots",
-          "duration": 18.578958,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["slotInputSchema"],
-          "fullName": "slotInputSchema reads Mona's input as Tehran time",
-          "status": "passed",
-          "title": "reads Mona's input as Tehran time",
-          "duration": 20.703624999999988,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["slotInputSchema"],
-          "fullName": "slotInputSchema rejects malformed dates and times",
-          "status": "passed",
-          "title": "rejects malformed dates and times",
-          "duration": 12.559082999999987,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["addSlot"],
-          "fullName": "addSlot opens a future slot",
-          "status": "passed",
-          "title": "opens a future slot",
-          "duration": 13.058042,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["addSlot"],
-          "fullName": "addSlot refuses past times",
-          "status": "passed",
-          "title": "refuses past times",
-          "duration": 11.423000000000002,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["addSlot"],
-          "fullName": "addSlot refuses a time that overlaps another slot, but allows back-to-back slots",
-          "status": "passed",
-          "title": "refuses a time that overlaps another slot, but allows back-to-back slots",
-          "duration": 15.841709000000037,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["removeFreeSlot"],
-          "fullName": "removeFreeSlot removes free slots but keeps booked ones",
-          "status": "passed",
-          "title": "removes free slots but keeps booked ones",
-          "duration": 18.795000000000073,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["listUpcomingSlots"],
-          "fullName": "listUpcomingSlots lists future slots with who booked them",
-          "status": "passed",
-          "title": "lists future slots with who booked them",
-          "duration": 15.085874999999987,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        }
-      ],
-      "startTime": 1791917836941,
-      "endTime": 1791917837208.086,
-      "status": "passed",
-      "message": "",
-      "name": "/Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/funnel/__tests__/level-check.test.ts"
-    },
-    {
-      "assertionResults": [
-        {
-          "ancestorTitles": ["waitlist"],
-          "fullName": "waitlist rejects invalid addresses",
-          "status": "passed",
-          "title": "rejects invalid addresses",
-          "duration": 35.08808300000001,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        },
-        {
-          "ancestorTitles": ["waitlist"],
-          "fullName": "waitlist stores each address once, case-insensitively, without failing on repeats",
-          "status": "passed",
-          "title": "stores each address once, case-insensitively, without failing on repeats",
-          "duration": 19.897333000000003,
-          "failureMessages": [],
-          "meta": {},
-          "tags": [],
-          "benchmarks": []
-        }
-      ],
-      "startTime": 1791917837450,
-      "endTime": 1791917837504.8972,
-      "status": "passed",
-      "message": "",
-      "name": "/Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/funnel/__tests__/waitlist.test.ts"
+      "name": "/Users/rezahedayati/Documents/Claude/Projects/molingo/src/server/scheduling/__tests__/week.test.ts"
     }
   ]
 }

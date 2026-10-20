@@ -1,5 +1,6 @@
 import { boolean, index, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { citext, id, timestamps } from "./_shared";
+import { leads } from "./funnel";
 import { authTokenKindEnum, localeEnum, studentStatusEnum, userRoleEnum } from "./enums";
 
 export const users = pgTable("users", {
@@ -66,20 +67,27 @@ export const students = pgTable(
   "students",
   {
     id: id(),
-    /** Null for leads that have not been given an account yet. */
+    /** Null until Mona creates the learner's login. */
     userId: uuid()
       .unique()
       .references(() => users.id, { onDelete: "set null" }),
-    fullName: text().notNull(),
-    phone: text().notNull(),
+    fullNameFa: text().notNull(),
+    /** Shown in the English UI; falls back to the Persian name when empty. */
+    fullNameEn: text(),
+    /** E.164. One learner per number. */
+    phone: text().notNull().unique(),
     email: citext(),
     messengerHandle: text(),
     status: studentStatusEnum().notNull().default("lead"),
-    preferredLocale: localeEnum().notNull().default("fa"),
     /** Private admin notes. */
     notes: text(),
+    /** The free-session booking this learner came from. */
+    leadId: uuid()
+      .unique()
+      .references(() => leads.id, { onDelete: "set null" }),
+    /** First time the learner became active (drives "new learners per month"). */
     startedAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
-  (t) => [index().on(t.status), index().on(t.phone)],
+  (t) => [index().on(t.status), index().on(t.startedAt)],
 );

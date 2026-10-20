@@ -17,7 +17,10 @@ async function StudentGate({ children }: { children: React.ReactNode }) {
     <AreaShell
       home="/app"
       user={{ name: user.displayName, role: t("role") }}
-      items={[{ href: "/app", label: t("nav.home"), icon: "home" }]}
+      items={[
+        { href: "/app", label: t("nav.home"), icon: "home" },
+        { href: "/app/schedule", label: t("nav.schedule"), icon: "schedule" },
+      ]}
     >
       {children}
     </AreaShell>

@@ -22,7 +22,7 @@ created by the `seedAccounts` fixture. The database is reset before every test.
 
 **Steps:**
 
-1. On `/en/login`, enter Mona's number and password, press "Log in" - expect: the URL is `/en/admin` - expect: the heading greets Mona
+1. On `/en/login`, enter Mona's number and password, press "Log in" - expect: the URL is `/en/admin` - expect: the dashboard heading sums up her day ("Nothing scheduled today.")
 
 #### 1.2. student-logs-in
 

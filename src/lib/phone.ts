@@ -14,3 +14,10 @@ export function normalizePhone(input: string): string | null {
   const parsed = parsePhoneNumberFromString(cleaned, "IR");
   return parsed?.isValid() ? parsed.number : null;
 }
+
+/** E.164 → how people write it: "0912 345 6789" for Iranian numbers, international otherwise. */
+export function formatPhone(e164: string): string {
+  const parsed = parsePhoneNumberFromString(e164);
+  if (!parsed) return e164;
+  return parsed.country === "IR" ? parsed.formatNational() : parsed.formatInternational();
+}

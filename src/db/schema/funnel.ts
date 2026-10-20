@@ -1,6 +1,6 @@
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { citext, id, timestamps } from "./_shared";
-import { leadStatusEnum, levelGuessEnum, localeEnum } from "./enums";
+import { leadSourceEnum, leadStatusEnum, levelGuessEnum, localeEnum } from "./enums";
 
 /** Free level-check bookings from the landing page. Mona follows up and converts them (M4). */
 export const leads = pgTable(
@@ -13,6 +13,7 @@ export const leads = pgTable(
     levelGuess: levelGuessEnum().notNull().default("unsure"),
     locale: localeEnum().notNull(),
     status: leadStatusEnum().notNull().default("new"),
+    source: leadSourceEnum().notNull().default("online"),
     ...timestamps,
   },
   (t) => [index().on(t.status, t.createdAt), index().on(t.phone)],

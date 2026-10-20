@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizePhone } from "../phone";
+import { formatPhone, normalizePhone } from "../phone";
 
 describe("normalizePhone", () => {
   it.each([
@@ -21,5 +21,12 @@ describe("normalizePhone", () => {
 
   it.each(["", "abc", "0912", "091212345678901", "+98 21"])("rejects %s", (input) => {
     expect(normalizePhone(input)).toBeNull();
+  });
+});
+
+describe("formatPhone", () => {
+  it("writes Iranian numbers the local way and others internationally", () => {
+    expect(formatPhone("+989123456789")).toBe("0912 345 6789");
+    expect(formatPhone("+447700900123")).toBe("+44 7700 900123");
   });
 });

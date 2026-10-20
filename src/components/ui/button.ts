@@ -13,8 +13,12 @@ const variants = {
   ocean: "bg-ocean text-white hover:bg-deep",
   /** Secondary action on light backgrounds. */
   ghost: "border border-brand text-brand hover:bg-mist",
+  /** Destructive confirmation (e.g. cancel a session). */
+  danger: "bg-red-700 text-white hover:bg-red-800",
 } as const;
 
-export function buttonClass(variant: keyof typeof variants = "primary", extra = "") {
+export type ButtonVariant = keyof typeof variants;
+
+export function buttonClass(variant: ButtonVariant = "primary", extra = "") {
   return `${base} ${variants[variant]} ${extra}`.trim();
 }

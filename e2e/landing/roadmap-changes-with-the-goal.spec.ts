@@ -8,12 +8,14 @@ test.describe("Landing page", () => {
   test("roadmap-changes-with-the-goal", async ({ page }) => {
     // 1. Open /en
     await page.goto("/en");
-    const goals = page.getByRole("group", { name: t.try });
+    // The hero shows a sample roadmap too, so look inside the roadmap section.
+    const roadmap = page.locator("#roadmap");
+    const goals = roadmap.getByRole("group", { name: t.try });
     await expect(goals.getByRole("button", { name: t.goals.work.label })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    await expect(page.getByText(t.goals.work.s1)).toBeVisible();
+    await expect(roadmap.getByText(t.goals.work.s1)).toBeVisible();
 
     // 2. Press "Moving abroad"
     await goals.getByRole("button", { name: t.goals.move.label }).click();
@@ -21,7 +23,7 @@ test.describe("Landing page", () => {
       "aria-pressed",
       "true",
     );
-    await expect(page.getByText(t.goals.move.s1)).toBeVisible();
-    await expect(page.getByText(t.goals.work.s1)).toBeHidden();
+    await expect(roadmap.getByText(t.goals.move.s1)).toBeVisible();
+    await expect(roadmap.getByText(t.goals.work.s1)).toBeHidden();
   });
 });

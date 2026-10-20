@@ -2,7 +2,7 @@
 
 import { useSyncExternalStore, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
-import { buttonClass } from "./button";
+import { buttonClass, type ButtonVariant } from "./button";
 
 const noopSubscribe = () => () => {};
 
@@ -14,10 +14,12 @@ export function SubmitButton({
   children,
   pendingLabel,
   className = "w-full",
+  variant = "primary",
 }: {
   children: ReactNode;
   pendingLabel: string;
   className?: string;
+  variant?: ButtonVariant;
 }) {
   const { pending } = useFormStatus();
   const hydrated = useSyncExternalStore(
@@ -31,7 +33,7 @@ export function SubmitButton({
       type="submit"
       disabled={disabled}
       aria-disabled={disabled}
-      className={buttonClass("primary", className)}
+      className={buttonClass(variant, className)}
     >
       {pending ? pendingLabel : children}
     </button>
