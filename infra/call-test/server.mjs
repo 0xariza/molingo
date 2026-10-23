@@ -64,7 +64,9 @@ function liveKitToken(identity, name) {
       },
     }),
   );
-  const signature = createHmac("sha256", API_SECRET).update(`${header}.${payload}`).digest("base64url");
+  const signature = createHmac("sha256", API_SECRET)
+    .update(`${header}.${payload}`)
+    .digest("base64url");
   return `${header}.${payload}.${signature}`;
 }
 
@@ -81,13 +83,16 @@ function tooManyFailures(ip) {
 }
 function recordFailure(ip) {
   const entry = failures.get(ip);
-  if (!entry || entry.until < Date.now()) failures.set(ip, { count: 1, until: Date.now() + 600_000 });
+  if (!entry || entry.until < Date.now())
+    failures.set(ip, { count: 1, until: Date.now() + 600_000 });
   else entry.count++;
 }
 
 /** Caddy passes the visitor's address (from the PROXY protocol) in X-Forwarded-For. */
 const clientIp = (req) =>
-  String(req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "").split(",")[0].trim();
+  String(req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "")
+    .split(",")[0]
+    .trim();
 
 async function readJson(req) {
   let body = "";
@@ -103,7 +108,11 @@ function send(res, status, body, type = "application/json") {
   res.end(type === "application/json" ? JSON.stringify(body) : body);
 }
 
-const clean = (value, max) => String(value ?? "").replace(/[\u0000-\u001f]/g, "").trim().slice(0, max);
+const clean = (value, max) =>
+  String(value ?? "")
+    .replace(/[\u0000-\u001f]/g, "")
+    .trim()
+    .slice(0, max);
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url ?? "/", "http://localhost");
@@ -118,7 +127,8 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === "POST" && url.pathname === "/call-test/api/token") {
       const ip = clientIp(req);
-      if (tooManyFailures(ip)) return send(res, 429, { error: "Too many wrong passwords. Wait 10 minutes." });
+      if (tooManyFailures(ip))
+        return send(res, 429, { error: "Too many wrong passwords. Wait 10 minutes." });
       const { name, password } = await readJson(req);
       if (!passwordMatches(password)) {
         recordFailure(ip);

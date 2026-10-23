@@ -28,6 +28,8 @@ const eslintConfig = defineConfig([
     "drizzle/**",
     "playwright-report/**",
     "test-results/**",
+    // Generated bundle of the M0 call-test page.
+    "infra/call-test/public/app.js",
   ]),
 ]);
 

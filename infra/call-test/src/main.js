@@ -29,7 +29,8 @@ async function selectedPath() {
     const stats = await pc.getStats();
     let pair;
     stats.forEach((r) => {
-      if (r.type === "transport" && r.selectedCandidatePairId) pair = stats.get(r.selectedCandidatePairId);
+      if (r.type === "transport" && r.selectedCandidatePairId)
+        pair = stats.get(r.selectedCandidatePairId);
     });
     if (!pair)
       stats.forEach((r) => {
@@ -87,7 +88,12 @@ function report(event, extra = {}) {
   });
   // sendBeacon survives the page closing; fetch is the fallback.
   if (!navigator.sendBeacon?.("api/report", new Blob([body], { type: "application/json" })))
-    fetch("api/report", { method: "POST", body, keepalive: true, headers: { "Content-Type": "application/json" } });
+    fetch("api/report", {
+      method: "POST",
+      body,
+      keepalive: true,
+      headers: { "Content-Type": "application/json" },
+    });
 }
 
 function showError(message) {
@@ -216,7 +222,8 @@ function render() {
       tile = document.createElement("div");
       tile.className = "tile";
       tile.dataset.id = p.identity;
-      tile.innerHTML = '<div class="initial"></div><video autoplay playsinline muted></video><div class="label"></div>';
+      tile.innerHTML =
+        '<div class="initial"></div><video autoplay playsinline muted></video><div class="label"></div>';
       tiles.append(tile);
     }
     const video = tile.querySelector("video");
