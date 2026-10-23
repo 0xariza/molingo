@@ -1,0 +1,45 @@
+# Production stack on the VPS (M0: network test — Caddy, LiveKit and the call-test page).
+# Images are built off-box and loaded with scripts in this folder; nothing is pulled or built here.
+# Secrets live in .env next to this file (see .env.example).
+services:
+  caddy:
+    image: molingo/caddy-l4:2.11.6
+    network_mode: host # 80, 443 (layer4) and 127.0.0.1:8443
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+    mem_limit: 256m
+
+  livekit:
+    image: livekit/livekit-server:v1.13.8
+    network_mode: host # UDP media and TURN need the host's ports directly
+    command: --config /etc/livekit.yaml --node-ip ${PUBLIC_IP}
+    environment:
+      LIVEKIT_KEYS: "${LIVEKIT_API_KEY}: ${LIVEKIT_API_SECRET}"
+    volumes:
+      - ./livekit.yaml:/etc/livekit.yaml:ro
+    restart: unless-stopped
+    mem_limit: 512m
+
+  call-test:
+    image: molingo/call-test:${CALL_TEST_TAG}
+    ports: ["127.0.0.1:3001:3001"]
+    environment:
+      PORT: "3001"
+      LIVEKIT_URL: wss://lk.${DOMAIN}
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      TEST_PASSWORD: ${TEST_PASSWORD}
+    volumes:
+      - call_test_reports:/data
+    restart: unless-stopped
+    mem_limit: 128m
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}
+  call_test_reports: {}

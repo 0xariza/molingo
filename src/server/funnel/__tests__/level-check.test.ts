@@ -257,6 +257,10 @@ describe("assignSlot", () => {
     const [a, b] = [await slotAt(inHours(3)), await slotAt(inHours(4))];
 
     expect(await assign({ slotId: a.id, leadId: lead.id })).toEqual({ ok: true });
+    // She first came online, but Mona booked this time.
+    expect((await slotsBetween(inHours(0), inHours(5)))[0].lead).toMatchObject({
+      source: "manual",
+    });
     expect(await listWaitingLeads()).toEqual([]);
     expect(await assign({ slotId: b.id, leadId: lead.id })).toEqual({ ok: false, error: "lead" });
   });

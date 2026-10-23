@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex" />
+    <title>Molingo call test</title>
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <main>
+      <section id="join-view">
+        <h1>Call test</h1>
+        <p class="lead">
+          Join a test call, stay for the whole test, then press Leave. Your network and connection
+          type are recorded so we can see which connections work.
+        </p>
+        <form id="join-form" novalidate>
+          <label>Your name <input name="name" autocomplete="name" required maxlength="40" /></label>
+          <label
+            >Test password
+            <input name="password" type="password" autocomplete="current-password" required
+          /></label>
+          <label
+            >Network
+            <select name="network" required>
+              <option value="">Choose…</option>
+              <option>MCI (Hamrah-e Avval)</option>
+              <option>Irancell</option>
+              <option>Rightel</option>
+              <option>Home fibre</option>
+              <option>Home ADSL / VDSL</option>
+              <option>Office Wi-Fi</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="check"><input name="vpn" type="checkbox" /> VPN is on</label>
+          <fieldset>
+            <legend>Connection</legend>
+            <label class="check"
+              ><input name="mode" type="radio" value="auto" checked /> Automatic (best path)</label
+            >
+            <label class="check"
+              ><input name="mode" type="radio" value="tls" /> Force TURN/TLS on port 443 only</label
+            >
+          </fieldset>
+          <label class="check"><input name="audioOnly" type="checkbox" /> Audio only (no camera)</label>
+          <p id="join-error" class="error" role="alert" hidden></p>
+          <button type="submit">Join the call</button>
+        </form>
+      </section>
+
+      <section id="call-view" hidden>
+        <p id="status" class="status" role="status">Connecting…</p>
+        <div id="tiles" class="tiles"></div>
+        <div class="controls">
+          <button id="mic" type="button" aria-pressed="true">Mic on</button>
+          <button id="cam" type="button" aria-pressed="true">Camera on</button>
+          <button id="leave" type="button" class="leave">Leave</button>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

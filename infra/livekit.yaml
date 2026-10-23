@@ -1,0 +1,21 @@
+# LiveKit (single node). The API key and secret come from LIVEKIT_KEYS in .env; the public IP
+# from --node-ip in compose.yaml.
+port: 7880 # signalling; reached only through Caddy (lk.<domain>); ufw blocks it from outside
+rtc:
+  tcp_port: 7881
+  port_range_start: 50000
+  port_range_end: 50200
+  # No STUN lookup against foreign servers: the public IP is given with --node-ip.
+  use_external_ip: false
+turn:
+  enabled: true
+  domain: turn.hoopo.ir
+  # Caddy decrypts TURN/TLS on 443 and forwards plain TCP here; clients are told port 443.
+  tls_port: 5349
+  external_tls: true
+  udp_port: 3478
+room:
+  max_participants: 6
+  empty_timeout: 600
+logging:
+  level: info

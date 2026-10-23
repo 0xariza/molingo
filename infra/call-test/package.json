@@ -1,0 +1,13 @@
+{
+  "name": "molingo-call-test",
+  "private": true,
+  "description": "M0 network test: a bare LiveKit call page and token service (not part of the app).",
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/main.js --bundle --minify --format=esm --target=es2020,safari15 --outfile=public/app.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.12",
+    "livekit-client": "2.22.4"
+  }
+}

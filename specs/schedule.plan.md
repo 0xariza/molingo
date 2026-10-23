@@ -21,7 +21,7 @@ moved ones say from when. The learner home shows the next session.
 Seed (`seedSchedule` in `e2e/fixtures.ts`): Mona (admin) with a teacher record; a group class
 "Morning A2" on Saturdays and Mondays 10:30–12:00 with learner Sara (who has a login), starting
 next week; level-check times next Monday 18:00 (open) and next Tuesday 18:00 (booked online by
-"Nika Rahimi"); a lead "Mahsa", added by Mona, with no time. The server's clock can't be faked in
+"Nika Rahimi"); a lead "Mahsa" who booked online and was cancelled, with no time. The server's clock can't be faked in
 the production build, so everything sits in **next week** (`?w=1`), which is always fully ahead.
 Tests run in English unless stated, on phones: pick a day from the seven day buttons to see its
 cards.
@@ -119,7 +119,8 @@ cards.
 
 1. Open the Monday "Open time" card - expect: "Who gets this time?" with "Mahsa" listed
 2. Type "mah" in the search - expect: only "Mahsa"; pick her, press "Book for Mahsa" - expect: the
-   card becomes "Mahsa" with "Level check · booked by you"
+   card becomes "Mahsa" with "Level check · booked by you" (Mona booked this time, even though
+   Mahsa first came online)
 
 #### 3.3. book-for-someone-new
 

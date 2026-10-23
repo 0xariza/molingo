@@ -1,0 +1,61 @@
+# Port 443 is split by SNI (layer4): TURN/TLS is decrypted here and handed to LiveKit's TURN
+# server; everything else goes to Caddy's own HTTPS server on 127.0.0.1:8443. Port 80 serves the
+# ACME HTTP-01 challenge (TLS-ALPN can't work behind the layer4 listener) and redirects to HTTPS.
+{
+	https_port 8443
+	default_bind 127.0.0.1
+	servers 127.0.0.1:8443 {
+		# The layer4 proxy below sends the visitor's real address with the PROXY protocol.
+		listener_wrappers {
+			proxy_protocol {
+				allow 127.0.0.1/32
+			}
+			tls
+		}
+	}
+	layer4 {
+		0.0.0.0:443 {
+			@turn tls sni turn.{$DOMAIN}
+			route @turn {
+				tls
+				proxy 127.0.0.1:5349
+			}
+			route {
+				proxy {
+					proxy_protocol v2
+					upstream 127.0.0.1:8443
+				}
+			}
+		}
+	}
+}
+
+(common) {
+	tls {
+		issuer acme {
+			disable_tlsalpn_challenge
+		}
+	}
+	header Strict-Transport-Security "max-age=31536000"
+}
+
+http://:80 {
+	bind 0.0.0.0
+	redir https://{host}{uri} 308
+}
+
+{$DOMAIN} {
+	import common
+	reverse_proxy 127.0.0.1:3001
+}
+
+lk.{$DOMAIN} {
+	import common
+	reverse_proxy 127.0.0.1:7880
+}
+
+# Only here so Caddy obtains and renews the certificate the layer4 TURN route uses.
+turn.{$DOMAIN} {
+	import common
+	respond 404
+}

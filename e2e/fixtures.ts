@@ -47,7 +47,7 @@ type Fixtures = {
   /**
    * The schedule plan's week, all in next week: "Morning A2" on Saturday and Monday 10:30–12:00
    * with Sara, an open level-check time Monday 18:00, Tuesday 18:00 booked online by Nika
-   * Rahimi, and Mahsa (added by Mona) waiting for a time.
+   * Rahimi, and Mahsa (booked online, then cancelled) waiting for a time.
    */
   seedSchedule: () => ReturnType<typeof createClass>;
 };
@@ -111,10 +111,8 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
         name: "Nika Rahimi",
         phone: "+989125551234",
       });
-      // Added by Mona earlier; her time was cancelled, so she's waiting again.
-      await db
-        .insert(leads)
-        .values({ name: "Mahsa", phone: "+989121112233", locale: "fa", source: "manual" });
+      // Booked online earlier; her time was cancelled, so she's waiting again.
+      await db.insert(leads).values({ name: "Mahsa", phone: "+989121112233", locale: "fa" });
       return cls;
     });
   },

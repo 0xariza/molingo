@@ -141,7 +141,8 @@ export async function assignSlot(
       if ("leadId" in input) {
         const [lead] = await tx
           .update(leads)
-          .set({ status: "scheduled" })
+          // Mona booked this time, whoever first put them on the list.
+          .set({ status: "scheduled", source: "manual" })
           .where(
             and(
               eq(leads.id, input.leadId),
