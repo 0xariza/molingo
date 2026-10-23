@@ -6,16 +6,26 @@ import { Room, RoomEvent, Track, VideoPresets } from "livekit-client";
 // in "Force TURN/TLS" mode, offer only the TURN/TLS server (port 443) and relayed candidates.
 const peerConnections = new Set();
 let forceTls = false;
+
+/** In "Force TURN/TLS" mode: only `turns:` servers, and only relayed candidates. */
+function restrict(config = {}) {
+  if (!forceTls) return config;
+  const iceServers = (config.iceServers ?? [])
+    .map((s) => ({ ...s, urls: [s.urls].flat().filter((u) => u.startsWith("turns:")) }))
+    .filter((s) => s.urls.length > 0);
+  return { ...config, iceServers, iceTransportPolicy: "relay" };
+}
+
 const NativePeerConnection = window.RTCPeerConnection;
+// LiveKit creates the connection before it knows the TURN servers and adds them later with
+// setConfiguration(), so both paths have to be restricted.
+const nativeSetConfiguration = NativePeerConnection.prototype.setConfiguration;
+NativePeerConnection.prototype.setConfiguration = function (config) {
+  return nativeSetConfiguration.call(this, restrict(config));
+};
 window.RTCPeerConnection = class extends NativePeerConnection {
-  constructor(config = {}, ...rest) {
-    if (forceTls) {
-      const iceServers = (config.iceServers ?? [])
-        .map((s) => ({ ...s, urls: [s.urls].flat().filter((u) => u.startsWith("turns:")) }))
-        .filter((s) => s.urls.length > 0);
-      config = { ...config, iceServers, iceTransportPolicy: "relay" };
-    }
-    super(config, ...rest);
+  constructor(config, ...rest) {
+    super(restrict(config), ...rest);
     peerConnections.add(this);
     this.addEventListener("connectionstatechange", () => {
       if (this.connectionState === "closed") peerConnections.delete(this);
