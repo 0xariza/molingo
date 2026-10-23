@@ -234,6 +234,7 @@ function render() {
       video.dataset.track = cam.trackSid;
     }
     video.hidden = !showVideo;
+    tile.querySelector(".initial").hidden = showVideo;
     tile.querySelector(".initial").textContent = (p.name || p.identity).slice(0, 1).toUpperCase();
     const mic = p.getTrackPublication(Track.Source.Microphone);
     const a = p.attributes ?? {};
