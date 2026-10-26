@@ -49,3 +49,4 @@ next-env.d.ts
 
 # Local deploy credentials (SSH key for the VPS); never commit.
 /.deploy/
+.vitest/
