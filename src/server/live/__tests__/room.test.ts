@@ -5,7 +5,14 @@ import { enrollments, sessionParticipants, sessions } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
 import { createClass, createLearner, createTeacher, createUser, resetDb } from "@/test/factories";
 import type { SessionUser } from "../../auth/sessions";
-import { firstName, recordRemoval, roomFor, roomWindow, windowError } from "../room";
+import {
+  firstName,
+  recordRemoval,
+  roomFor,
+  roomWindow,
+  shareLinkSession,
+  windowError,
+} from "../room";
 
 beforeEach(() => resetDb(db));
 
@@ -38,9 +45,9 @@ async function setup() {
 describe("windowError", () => {
   const s = { status: "scheduled" as const, startsAt: at("08:00"), endsAt: at("09:30") };
 
-  it("opens for learners 15 minutes early and closes at the end", () => {
-    expect(windowError("student", s, at("07:44"))).toBe("tooEarly");
-    expect(windowError("student", s, at("07:45"))).toBeNull();
+  it("opens for learners 5 minutes early and closes at the end", () => {
+    expect(windowError("student", s, at("07:54"))).toBe("tooEarly");
+    expect(windowError("student", s, at("07:55"))).toBeNull();
     expect(windowError("student", s, at("09:30"))).toBeNull();
     expect(windowError("student", s, at("09:31"))).toBe("ended");
   });
@@ -77,7 +84,7 @@ describe("roomFor", () => {
     expect(await roomFor(sara, first.id, at("07:30"))).toEqual({
       ok: false,
       error: "tooEarly",
-      opensAt: at("07:45"),
+      opensAt: at("07:55"),
     });
   });
 
@@ -138,5 +145,16 @@ describe("roomFor", () => {
       ok: false,
       error: "notFound",
     });
+  });
+});
+
+describe("shareLinkSession", () => {
+  it("goes to the current session, then the next, then nowhere", async () => {
+    const { cls } = await setup();
+    const [first, second] = cls.sessions;
+    expect(await shareLinkSession(cls.id, at("09:00"))).toBe(first.id);
+    expect(await shareLinkSession(cls.id, at("09:31"))).toBe(second.id);
+    expect(await shareLinkSession(cls.id, new Date("2027-01-01"))).toBeNull();
+    expect(await shareLinkSession("not-a-class")).toBeNull();
   });
 });

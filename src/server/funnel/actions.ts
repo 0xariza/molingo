@@ -15,12 +15,20 @@ import {
   bookingInputSchema,
   bookLevelCheck,
   cancelBooking,
+  newJoinCode,
   removeFreeSlot,
   slotInputSchema,
 } from "./level-check";
 import { joinWaitlist, waitlistInputSchema } from "./waitlist";
 
 const HOUR = 60 * 60;
+
+/** Unprefixed, so it opens in the language the visitor last chose on the site. */
+function levelCheckUrl(code: string) {
+  const base = process.env.APP_URL;
+  if (!base) throw new Error("APP_URL is not set");
+  return `${base}/l/${code}`;
+}
 
 /** Error keys map to messages under each form's `errors`. */
 export type FormState = {
@@ -31,6 +39,8 @@ export type FormState = {
   fieldErrors?: Record<string, string>;
   /** Submitted values, echoed back so React's post-action form reset doesn't wipe them. */
   values?: Record<string, string>;
+  /** A booked visitor's level-check room link (`/l/<code>`), shown once. */
+  link?: string;
 };
 
 /** Bots fill every field; people never see this one. */
@@ -63,7 +73,7 @@ export async function bookLevelCheckAction(_: FormState, form: FormData): Promis
     refresh();
     return { status: "error", error: result.error, values: { ...values, slotId: "" } };
   }
-  return { status: "success" };
+  return { status: "success", link: levelCheckUrl(result.code) };
 }
 
 export async function joinWaitlistAction(_: FormState, form: FormData): Promise<FormState> {
@@ -124,6 +134,16 @@ export async function assignSlotAction(_: FormState, form: FormData): Promise<Fo
   const result = await assignSlot(parsed.data);
   refresh();
   return result.ok ? { status: "success" } : { status: "error", error: result.error, values };
+}
+
+/** A new room link for a booked level check; the visitor's earlier link stops working. */
+export async function newLevelCheckLinkAction(
+  slotId: string,
+): Promise<{ ok: true; url: string } | { ok: false }> {
+  await requireAdmin();
+  const id = z.uuid().safeParse(slotId);
+  const code = id.success ? await newJoinCode(id.data) : null;
+  return code ? { ok: true, url: levelCheckUrl(code) } : { ok: false };
 }
 
 export async function cancelBookingAction(_: FormState, form: FormData): Promise<FormState> {

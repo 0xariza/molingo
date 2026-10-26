@@ -29,6 +29,8 @@ export const levelCheckSlots = pgTable("level_check_slots", {
   leadId: uuid()
     .unique()
     .references(() => leads.id, { onDelete: "set null" }),
+  /** SHA-256 of the visitor's `/l/<code>` room link; set with the booking, cleared on cancel. */
+  joinCodeHash: text().unique(),
   createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
 });
 

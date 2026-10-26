@@ -83,7 +83,7 @@ describe("bookLevelCheck", () => {
   it("saves a scheduled lead and takes the slot", async () => {
     const slot = await slotAt(inHours(3));
     const r = await bookLevelCheck(booking(slot.id));
-    expect(r).toEqual({ ok: true, startsAt: slot.startsAt });
+    expect(r).toEqual({ ok: true, startsAt: slot.startsAt, code: expect.any(String) });
 
     const [lead] = await db.select().from(leads);
     expect(lead).toMatchObject({

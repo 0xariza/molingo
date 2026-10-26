@@ -1,0 +1,2 @@
+ALTER TABLE "level_check_slots" ADD COLUMN "join_code_hash" text;--> statement-breakpoint
+ALTER TABLE "level_check_slots" ADD CONSTRAINT "level_check_slots_joinCodeHash_unique" UNIQUE("join_code_hash");

@@ -8,12 +8,20 @@ import type { Locale } from "@/i18n/routing";
 import { formatDate } from "@/lib/format";
 import type { LoginLink } from "@/server/students/login";
 
-/** A one-time login link for Mona to send: copy it, or open WhatsApp/Telegram with it. */
-export function LinkPanel({ link, phone }: { link: LoginLink; phone: string }) {
+/**
+ * A one-time link for Mona to send: copy it, or open WhatsApp/Telegram with it. A login link
+ * says when it expires; any other link brings its own note.
+ */
+export function LinkPanel({
+  link,
+  phone,
+}: {
+  link: LoginLink | { url: string; note: string };
+  phone: string;
+}) {
   const t = useTranslations("Admin.learners.login");
   const locale = useLocale() as Locale;
   const [copied, setCopied] = useState(false);
-  const until = formatDate(new Date(link.expiresAt), locale, { year: false });
 
   async function copy() {
     await navigator.clipboard.writeText(link.url);
@@ -58,7 +66,11 @@ export function LinkPanel({ link, phone }: { link: LoginLink; phone: string }) {
         </a>
       </div>
       <p className="text-sm">
-        {t(link.kind === "activation" ? "activationNote" : "resetNote", { date: until })}
+        {"note" in link
+          ? link.note
+          : t(link.kind === "activation" ? "activationNote" : "resetNote", {
+              date: formatDate(new Date(link.expiresAt), locale, { year: false }),
+            })}
       </p>
     </div>
   );

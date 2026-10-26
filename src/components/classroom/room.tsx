@@ -205,7 +205,7 @@ export function Room({
       <PeoplePanel
         sessionId={info.sessionId}
         participants={participants}
-        teacher={teacher}
+        teacher={teacher && info.moderation}
         narrow={narrow}
         locale={locale}
         onClose={() => showPanel(null)}

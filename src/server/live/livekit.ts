@@ -27,7 +27,11 @@ const SPARE_PLACES = 2;
  * A join token for one person (PLAN §1 join flow). Learners may publish camera and microphone;
  * Mona may also share her screen and moderate. Everyone may set their own attributes (raise hand).
  */
-export async function joinToken(userId: string, info: RoomInfo, now = new Date()) {
+export async function joinToken(
+  userId: string,
+  info: Pick<RoomInfo, "room" | "name" | "role" | "closesAt">,
+  now = new Date(),
+) {
   const { apiKey, apiSecret } = config();
   const token = new AccessToken(apiKey, apiSecret, {
     identity: userId,
@@ -56,10 +60,10 @@ export async function joinToken(userId: string, info: RoomInfo, now = new Date()
   return token.toJwt();
 }
 
-/** Creates the room if it doesn't exist yet (idempotent), sized for the class. */
-export async function ensureRoom(sessionId: string, capacity: number) {
+/** Creates the room if it doesn't exist yet (idempotent), sized for its learners. */
+export async function ensureRoom(room: string, capacity: number) {
   await roomService().createRoom({
-    name: roomName(sessionId),
+    name: room,
     maxParticipants: capacity + SPARE_PLACES,
     emptyTimeout: 600,
   });

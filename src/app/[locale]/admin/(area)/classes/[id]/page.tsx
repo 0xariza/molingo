@@ -8,6 +8,7 @@ import { BackLink } from "@/components/admin/learners/back-link";
 import { Roster } from "@/components/admin/classes/roster";
 import { scheduleText } from "@/components/admin/classes/schedule-text";
 import { SessionsPanel } from "@/components/admin/classes/sessions-panel";
+import { ShareLinkButton } from "@/components/admin/classes/share-link";
 import { buttonClass } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -144,6 +145,7 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
               </span>
             )
           )}
+          {running && <ShareLinkButton url={`${process.env.APP_URL}/j/${cls.id}`} />}
           {cls.state !== "archived" && (
             <Link href={`/admin/classes/${cls.id}/edit`} className={buttonClass("ghost")}>
               <PencilSimple aria-hidden size={18} />

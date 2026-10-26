@@ -9,8 +9,11 @@ export type ClassroomInfo = {
   /** "18:00–19:30 · Tehran time". */
   when: string;
   startsAt: Date;
-  /** Where "back" and leaving go: the dashboard, or Mona's class page. */
+  /** Where "back" and leaving go: the dashboard, Mona's class page, or the site (a visitor). */
   backHref: string;
+  backLabel: string;
+  /** Mona's mute/remove/turn controls. Off in a 1:1 level check. */
+  moderation: boolean;
 };
 
 /** What the person chose on the pre-join screen. */

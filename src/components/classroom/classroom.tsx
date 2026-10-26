@@ -5,7 +5,7 @@ import { DisconnectReason, VideoPresets } from "livekit-client";
 import { useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { Link } from "@/i18n/navigation";
-import { joinRoomAction, type LiveError } from "@/server/live/actions";
+import type { JoinResult, LiveError } from "@/server/live/actions";
 import { captureSize } from "./hooks";
 import { PreJoin } from "./pre-join";
 import { Room } from "./room";
@@ -18,7 +18,14 @@ type Stage =
   | { kind: "removed" };
 
 /** Pre-join → room → left. Learners send 360p; Mona 540p, for her screen and face. */
-export function Classroom({ info }: { info: ClassroomInfo }) {
+export function Classroom({
+  info,
+  join: joinAction,
+}: {
+  info: ClassroomInfo;
+  /** A Server Action bound to this room: a session, or a level check. */
+  join: () => Promise<JoinResult>;
+}) {
   const t = useTranslations("Classroom");
   const [stage, setStage] = useState<Stage>({ kind: "prejoin" });
   const [error, setError] = useState<LiveError | null>(null);
@@ -29,7 +36,7 @@ export function Classroom({ info }: { info: ClassroomInfo }) {
     start(async () => {
       setError(null);
       connected.current = false;
-      const result = await joinRoomAction(info.sessionId);
+      const result = await joinAction();
       if (!result.ok) {
         setError(result.error);
         setStage(result.error === "removed" ? { kind: "removed" } : { kind: "prejoin" });
@@ -112,7 +119,7 @@ export function Classroom({ info }: { info: ClassroomInfo }) {
               href={info.backHref}
               className="inline-flex min-h-12 items-center rounded-[14px] border border-room-control px-6 font-bold hover:bg-room-raised"
             >
-              {info.role === "teacher" ? t("backClass") : t("backHome")}
+              {info.backLabel}
             </Link>
           </div>
         </div>

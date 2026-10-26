@@ -23,7 +23,7 @@ export type LearnerSession = {
   startsAt: Date;
   endsAt: Date;
   phase: SessionPhase;
-  /** The room is open to learners now (15 min before until the end). */
+  /** The room is open to learners now (5 min before until the end). */
   canJoin: boolean;
   cancelReason: string | null;
   movedFrom: Date | null;

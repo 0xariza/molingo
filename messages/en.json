@@ -521,7 +521,9 @@
         "landingYes": "Shown as “forming” while seats are free",
         "landingNo": "Not shown",
         "past": "Past learners",
-        "pastRange": "{from} – {to}"
+        "pastRange": "{from} – {to}",
+        "share": "Copy share link",
+        "shareCopied": "Link copied"
       },
       "attendance": {
         "title": "Session {n} was held",
@@ -696,7 +698,11 @@
       "leadStatus": {
         "new": "Waiting for a time",
         "contacted": "Contacted"
-      }
+      },
+      "enterRoom": "Enter room",
+      "newLink": "New room link",
+      "newLinkNote": "Their earlier link no longer works. The room opens 10 minutes before the time.",
+      "newLinkFailed": "This booking has ended or was cancelled."
     }
   },
   "Student": {
@@ -950,7 +956,7 @@
       },
       "submit": "Confirm my session",
       "sending": "Booking…",
-      "success": "Booked: {date} at {time}. Mona will call you then.",
+      "success": "Booked: {date} at {time}.",
       "errors": {
         "slot": "Choose a day and time.",
         "name": "Please enter your name.",
@@ -958,7 +964,8 @@
         "levelGuess": "Please choose an option.",
         "rate_limited": "You've booked several times already. Please try again later.",
         "slot_taken": "Someone just took that time. Please pick another one."
-      }
+      },
+      "roomLink": "Save this link: it's your room with Mona, open from 10 minutes before."
     },
     "mona": {
       "eyebrow": "The one who draws your map",
@@ -1150,6 +1157,12 @@
     "backHome": "Back to my dashboard",
     "backClass": "Back to the class page",
     "join": "Join class",
-    "enter": "Enter the room"
+    "enter": "Enter the room",
+    "levelCheck": {
+      "title": "Free level check with Mona",
+      "titleWith": "Level check · {name}",
+      "backSite": "Back to the site",
+      "backSchedule": "Back to the schedule"
+    }
   }
 }

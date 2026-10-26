@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, asc, eq, gt } from "drizzle-orm";
 import { db } from "@/db";
 import {
   classes,
@@ -13,7 +13,7 @@ import type { SessionUser } from "../auth/sessions";
 import { isAdmin, isStudent } from "../auth/policy";
 
 /** How early each side may enter, and how long Mona may stay after the end. */
-export const LEARNER_EARLY_MINUTES = 15;
+export const LEARNER_EARLY_MINUTES = 5;
 export const TEACHER_EARLY_MINUTES = 60;
 export const TEACHER_LATE_MINUTES = 30;
 
@@ -46,7 +46,7 @@ export type RoomInfo = {
 
 export const roomName = (sessionId: string) => `s_${sessionId}`;
 
-/** When this side may be in the room: learners from 15 min before to the end, Mona wider. */
+/** When this side may be in the room: learners from 5 min before to the end, Mona wider. */
 export function roomWindow(role: RoomRole, s: { startsAt: Date; endsAt: Date }) {
   return role === "teacher"
     ? {
@@ -171,6 +171,25 @@ export async function roomFor(
       closesAt: roomWindow(role, s).closesAt,
     },
   };
+}
+
+/** Where a class's share link (`/j/<classId>`) goes: its current or next regular session. */
+export async function shareLinkSession(classId: string, now = new Date()) {
+  if (!/^[0-9a-f-]{36}$/i.test(classId)) return null;
+  const [s] = await db
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.classId, classId),
+        eq(sessions.kind, "class"),
+        eq(sessions.status, "scheduled"),
+        gt(sessions.endsAt, now),
+      ),
+    )
+    .orderBy(asc(sessions.startsAt))
+    .limit(1);
+  return s?.id ?? null;
 }
 
 /** Mona removed someone: their next token for this session is refused. */

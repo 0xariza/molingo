@@ -1,9 +1,10 @@
-import { and, asc, desc, eq, gt, gte, inArray, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { leads, levelCheckSlots, levelGuessEnum } from "@/db/schema";
 import { locales } from "@/i18n/routing";
 import { fromTehranTime } from "@/lib/format";
+import { generateToken, hashToken } from "../auth/crypto";
 import { findClash } from "../classes/clash";
 import { phoneField } from "../forms";
 import { BOOKING_DAYS, LEVEL_CHECK_MINUTES } from "./constants";
@@ -45,11 +46,13 @@ class SlotTaken extends Error {}
 /**
  * Saves the lead and takes the slot in one transaction. The conditional update means two
  * visitors racing for one slot can't both get it: the second sees no free row and nothing is saved.
+ * Returns the visitor's room link code (`/l/<code>`); only its hash is stored.
  */
 export async function bookLevelCheck(
   input: BookingInput,
-): Promise<{ ok: true; startsAt: Date } | { ok: false; error: "slot_taken" }> {
+): Promise<{ ok: true; startsAt: Date; code: string } | { ok: false; error: "slot_taken" }> {
   const { slotId, ...lead } = input;
+  const code = generateToken();
   try {
     return await db.transaction(async (tx) => {
       const [row] = await tx
@@ -58,7 +61,7 @@ export async function bookLevelCheck(
         .returning({ id: leads.id });
       const [slot] = await tx
         .update(levelCheckSlots)
-        .set({ leadId: row.id })
+        .set({ leadId: row.id, joinCodeHash: hashToken(code) })
         .where(
           and(
             eq(levelCheckSlots.id, slotId),
@@ -68,7 +71,7 @@ export async function bookLevelCheck(
         )
         .returning({ startsAt: levelCheckSlots.startsAt });
       if (!slot) throw new SlotTaken();
-      return { ok: true as const, startsAt: slot.startsAt };
+      return { ok: true as const, startsAt: slot.startsAt, code };
     });
   } catch (e) {
     if (e instanceof SlotTaken) return { ok: false, error: "slot_taken" };
@@ -198,13 +201,36 @@ export async function cancelBooking(slotId: string, now = new Date()): Promise<b
       .where(and(eq(levelCheckSlots.id, slotId), gt(levelCheckSlots.startsAt, now)))
       .for("update");
     if (!slot?.leadId) return false;
-    await tx.update(levelCheckSlots).set({ leadId: null }).where(eq(levelCheckSlots.id, slotId));
+    await tx
+      .update(levelCheckSlots)
+      .set({ leadId: null, joinCodeHash: null })
+      .where(eq(levelCheckSlots.id, slotId));
     await tx
       .update(leads)
       .set({ status: "new" })
       .where(and(eq(leads.id, slot.leadId), eq(leads.status, "scheduled")));
     return true;
   });
+}
+
+/**
+ * A new room link for a booked level check that hasn't ended. The earlier link stops working,
+ * since only the newest hash is kept.
+ */
+export async function newJoinCode(slotId: string, now = new Date()): Promise<string | null> {
+  const code = generateToken();
+  const updated = await db
+    .update(levelCheckSlots)
+    .set({ joinCodeHash: hashToken(code) })
+    .where(
+      and(
+        eq(levelCheckSlots.id, slotId),
+        isNotNull(levelCheckSlots.leadId),
+        gt(levelCheckSlots.startsAt, new Date(now.getTime() - LEVEL_CHECK_MINUTES * 60_000)),
+      ),
+    )
+    .returning({ id: levelCheckSlots.id });
+  return updated.length ? code : null;
 }
 
 export type WaitingLead = {

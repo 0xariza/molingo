@@ -1,8 +1,9 @@
 "use client";
 
-import { Clock, Phone, Plus, VideoCamera } from "@phosphor-icons/react";
+import { ArrowsClockwise, Clock, Phone, Plus, VideoCamera } from "@phosphor-icons/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState, type ReactNode } from "react";
+import { LinkPanel } from "@/components/admin/learners/link-panel";
 import { ErrorAlert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -32,6 +33,7 @@ import {
   addSlotAction,
   assignSlotAction,
   cancelBookingAction,
+  newLevelCheckLinkAction,
   removeSlotAction,
   type FormState,
 } from "@/server/funnel/actions";
@@ -80,10 +82,18 @@ function Details({ item, data, onClose, onSelect }: Props & { item: CalendarItem
   const when = useWhen(item);
   const facts: [string, ReactNode][] = [];
   let actions: ReactNode;
+  const [link, setLink] = useState<string | null>(null);
+  const [linkFailed, setLinkFailed] = useState(false);
 
   if (item.kind === "levelCheck" && item.slot.lead) {
     const lead = item.slot.lead;
     const ahead = item.startsAt > data.now;
+    const notOver = item.endsAt > data.now;
+    const newLink = async () => {
+      const r = await newLevelCheckLinkAction(item.slot.id);
+      setLinkFailed(!r.ok);
+      setLink(r.ok ? r.url : null);
+    };
     facts.push(
       [t("facts.phone"), <bdi key="p">{localDigits(formatPhone(lead.phone), locale)}</bdi>],
       [t("facts.level"), levels(lead.levelGuess)],
@@ -91,6 +101,18 @@ function Details({ item, data, onClose, onSelect }: Props & { item: CalendarItem
     );
     actions = (
       <>
+        {notOver && (
+          <>
+            <Link href={`/admin/level-check/${item.slot.id}`} className={buttonClass("primary")}>
+              <VideoCamera aria-hidden size={20} weight="fill" />
+              {t("enterRoom")}
+            </Link>
+            <button type="button" onClick={newLink} className={buttonClass("ghost")}>
+              <ArrowsClockwise aria-hidden size={18} />
+              {t("newLink")}
+            </button>
+          </>
+        )}
         <a href={`tel:${lead.phone}`} className={buttonClass("ocean")}>
           <Phone aria-hidden size={18} />
           {t("call")}
@@ -170,6 +192,10 @@ function Details({ item, data, onClose, onSelect }: Props & { item: CalendarItem
           </div>
         ))}
       </dl>
+      {linkFailed && <ErrorAlert>{t("newLinkFailed")}</ErrorAlert>}
+      {link && item.kind === "levelCheck" && item.slot.lead && (
+        <LinkPanel link={{ url: link, note: t("newLinkNote") }} phone={item.slot.lead.phone} />
+      )}
       <div className={footer}>{actions}</div>
     </Modal>
   );

@@ -11,7 +11,8 @@ import {
   roomParticipants,
   setAttributes,
 } from "./livekit";
-import { recordRemoval, roomFor, type RoomError } from "./room";
+import { teacherLevelCheck, visitorLevelCheck } from "./level-check";
+import { recordRemoval, roomFor, type RoomError, type RoomInfo } from "./room";
 
 /** Error keys map to messages under `Classroom.errors`. */
 export type LiveError = RoomError | "unavailable" | "failed";
@@ -22,6 +23,20 @@ export type ModerationResult = { ok: true } | { ok: false; error: LiveError };
 const sessionId = z.uuid();
 const identity = z.uuid();
 
+async function connect(
+  identity: string,
+  room: Pick<RoomInfo, "room" | "name" | "role" | "closesAt">,
+  capacity: number,
+): Promise<JoinResult> {
+  try {
+    await ensureRoom(room.room, capacity);
+    return { ok: true, url: liveKitUrl(), token: await joinToken(identity, room), identity };
+  } catch (error) {
+    console.error("LiveKit join failed", error);
+    return { ok: false, error: "unavailable" };
+  }
+}
+
 /** A LiveKit token for this session's room, if the join rule (PLAN §4) lets this user in now. */
 export async function joinRoomAction(id: string): Promise<JoinResult> {
   const user = await requireUser();
@@ -29,18 +44,22 @@ export async function joinRoomAction(id: string): Promise<JoinResult> {
   if (!parsed.success) return { ok: false, error: "notFound" };
   const access = await roomFor(user, parsed.data);
   if (!access.ok) return { ok: false, error: access.error };
-  try {
-    await ensureRoom(parsed.data, access.room.capacity);
-    return {
-      ok: true,
-      url: liveKitUrl(),
-      token: await joinToken(user.id, access.room),
-      identity: user.id,
-    };
-  } catch (error) {
-    console.error("LiveKit join failed", error);
-    return { ok: false, error: "unavailable" };
-  }
+  return connect(user.id, access.room, access.room.capacity);
+}
+
+/** The visitor's way into their level check, with no login: the code from their link. */
+export async function joinLevelCheckAction(code: string): Promise<JoinResult> {
+  const access = await visitorLevelCheck(String(code));
+  if (!access.ok) return { ok: false, error: access.error };
+  return connect(access.room.visitorIdentity, access.room, 1);
+}
+
+/** Mona's way into a booked level check. */
+export async function teacherJoinLevelCheckAction(slotId: string): Promise<JoinResult> {
+  const admin = await requireAdmin();
+  const access = await teacherLevelCheck(String(slotId));
+  if (!access.ok) return { ok: false, error: access.error };
+  return connect(admin.id, access.room, 1);
 }
 
 /** Mona's moderation runs only while she may be in that room herself. */

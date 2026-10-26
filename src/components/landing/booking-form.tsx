@@ -47,7 +47,23 @@ export function BookingForm({ now, slots }: Props) {
   };
 
   if (state.status === "success" && selected) {
-    return <FormSuccess>{t("success", when(selected))}</FormSuccess>;
+    return (
+      <div className="space-y-3">
+        <FormSuccess>{t("success", when(selected))}</FormSuccess>
+        {state.link && (
+          <p className="px-1">
+            {t("roomLink")}{" "}
+            <a
+              href={state.link}
+              dir="ltr"
+              className="font-mono text-sm break-all text-brand underline"
+            >
+              {state.link}
+            </a>
+          </p>
+        )}
+      </div>
+    );
   }
   if (!firstOpen) return <p className="py-6 text-lg font-semibold text-ocean">{t("noSlots")}</p>;
 
