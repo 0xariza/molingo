@@ -1,2 +1,5 @@
 node_modules/
 public/app.js
+public/app.css
+public/*.woff2
+public/*.woff

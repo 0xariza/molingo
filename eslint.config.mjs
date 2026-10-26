@@ -28,8 +28,10 @@ const eslintConfig = defineConfig([
     "drizzle/**",
     "playwright-report/**",
     "test-results/**",
-    // Generated bundle of the M0 call-test page.
-    "infra/call-test/public/app.js",
+    // The M0 call-test page is a throwaway network probe, not app code.
+    "infra/call-test/**",
+    // Vendored agent skills.
+    ".claude/skills/**",
   ]),
 ]);
 

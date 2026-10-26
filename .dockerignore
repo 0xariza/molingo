@@ -1,0 +1,17 @@
+# Only what the app build needs goes into the Docker context.
+node_modules
+.next
+.git
+.deploy
+.env*
+!.env.example
+.claude
+.playwright-cli
+.vitest
+infra
+e2e
+specs
+docs
+test-results
+playwright-report
+*.tsbuildinfo

@@ -17,7 +17,9 @@ services:
   livekit:
     image: livekit/livekit-server:v1.9
     # Dev mode: API key `devkey`, secret `secret`, signaling on ws://localhost:7880.
-    command: --dev --bind 0.0.0.0
+    # --node-ip: advertise the host, not the container's own address, so browsers on this Mac
+    # can reach the media ports (ICE over TCP 7881 or the mapped UDP range).
+    command: --dev --bind 0.0.0.0 --node-ip 127.0.0.1
     ports:
       - "7880:7880"
       - "7881:7881"

@@ -1,4 +1,4 @@
-# Production stack on the VPS (M0: network test — Caddy, LiveKit and the call-test page).
+# Production stack on the VPS: Caddy, LiveKit, Postgres, the app, and the M0 call-test page.
 # Images are built off-box and loaded with scripts in this folder; nothing is pulled or built here.
 # Secrets live in .env next to this file (see .env.example).
 services:
@@ -25,21 +25,61 @@ services:
     restart: unless-stopped
     mem_limit: 512m
 
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: molingo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: molingo
+    # Loopback only: the app reaches it here, and migrations run through an SSH tunnel.
+    ports: ["127.0.0.1:5432:5432"]
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U molingo"]
+      interval: 5s
+      retries: 10
+    restart: unless-stopped
+    mem_limit: 512m
+
+  app:
+    image: molingo/app:${APP_TAG}
+    # Host network, bound to 127.0.0.1 (HOSTNAME in the image): Caddy reaches it, and it reaches
+    # Postgres and LiveKit's admin API on loopback.
+    network_mode: host
+    environment:
+      DATABASE_URL: postgres://molingo:${POSTGRES_PASSWORD}@127.0.0.1:5432/molingo
+      APP_URL: https://${DOMAIN}
+      LIVEKIT_URL: wss://lk.${DOMAIN}
+      LIVEKIT_HTTP: http://127.0.0.1:7880
+      LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
+      LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    mem_limit: 768m
+
   call-test:
     image: molingo/call-test:${CALL_TEST_TAG}
-    ports: ["127.0.0.1:3001:3001"]
+    # Host network, bound to 127.0.0.1: Caddy reaches it, and it reaches LiveKit's admin API.
+    network_mode: host
     environment:
       PORT: "3001"
+      HOST: 127.0.0.1
       LIVEKIT_URL: wss://lk.${DOMAIN}
+      LIVEKIT_HTTP: http://127.0.0.1:7880
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       TEST_PASSWORD: ${TEST_PASSWORD}
+      TEACHER_PASSWORD: ${TEACHER_PASSWORD}
     volumes:
       - call_test_reports:/data
     restart: unless-stopped
     mem_limit: 128m
 
 volumes:
+  pgdata: {}
   caddy_data: {}
   caddy_config: {}
   call_test_reports: {}

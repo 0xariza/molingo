@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Phone, Plus } from "@phosphor-icons/react";
+import { Clock, Phone, Plus, VideoCamera } from "@phosphor-icons/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState, type ReactNode } from "react";
 import { ErrorAlert } from "@/components/ui/alert";
@@ -73,6 +73,7 @@ function useWhen(item: CalendarItem) {
 
 function Details({ item, data, onClose, onSelect }: Props & { item: CalendarItem }) {
   const t = useTranslations("Admin.schedule");
+  const tc = useTranslations("Classroom");
   const levels = useTranslations("Landing.booking.levels");
   const locale = useLocale() as Locale;
   const text = useItemText(item, data);
@@ -128,6 +129,12 @@ function Details({ item, data, onClose, onSelect }: Props & { item: CalendarItem
     const toConfirm = s.phase === "live" || s.phase === "ended";
     actions = (
       <>
+        {s.phase === "live" && (
+          <Link href={`/admin/classroom/${s.id}`} className={buttonClass("primary")}>
+            <VideoCamera aria-hidden size={20} weight="fill" />
+            {tc("enter")}
+          </Link>
+        )}
         <Link href={`/admin/classes/${s.classId}`} className={buttonClass("ocean")}>
           {toConfirm ? t("markHeld") : t("goClass")}
         </Link>

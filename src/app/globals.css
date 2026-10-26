@@ -67,6 +67,34 @@
   --color-sand: #f2c46b;
   --color-white: #ffffff;
 
+  /* Live classroom, in the Hoopo palette ahead of the M6b rebrand: a light pre-join… */
+  --color-page: #f6f7fb;
+  --color-navy: #1b2540;
+  --color-navy-muted: #5a6480;
+  --color-hairline: #d6dbe8;
+  --color-control: #7f89a6;
+  --color-cinnamon: #e27a3f;
+  --color-cinnamon-ink: #a64916;
+  --color-cinnamon-soft: #fff0e6;
+  --color-teal: #0e7c7f;
+  --color-teal-soft: #e9f6f6;
+  /* …and a dark room. */
+  --color-room: #10162a;
+  --color-room-card: #19203a;
+  --color-room-raised: #232c4d;
+  --color-room-line: #2c355a;
+  --color-room-control: #6d7899;
+  --color-room-ink: #eef1f7;
+  --color-room-muted: #a6aec4;
+  --color-room-cinnamon: #f08c50;
+  --color-room-cinnamon-ink: #f29a62;
+  --color-room-cinnamon-soft: #3a2216;
+  --color-room-teal: #3cc4c4;
+  --color-room-teal-soft: #12343a;
+  --color-room-danger: #ff8f80;
+  --color-room-leave: #b42318;
+  --color-room-live: #5ccf95;
+
   --font-sans: var(--font-body);
   --font-display: var(--font-heading);
   --font-wordmark: "Barlow Condensed", "Arial Narrow", sans-serif;

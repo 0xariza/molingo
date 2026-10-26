@@ -64,6 +64,13 @@
       "when": 1791987503198,
       "tag": "0008_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792779160062,
+      "tag": "0009_live",
+      "breakpoints": true
     }
   ]
 }

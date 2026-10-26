@@ -3,7 +3,7 @@ import en from "../messages/en.json" with { type: "json" };
 import fa from "../messages/fa.json" with { type: "json" };
 import { connectTestDb, type TestDb } from "@/test/database";
 import { formatDate, formatDayParts, fromTehranTime, tehranDateKey } from "@/lib/format";
-import { leads } from "@/db/schema";
+import { leads, sessionParticipants, sessions } from "@/db/schema";
 import { addDays, weekStartOf, type Weekday } from "@/lib/schedule";
 import {
   createAuthToken,
@@ -50,6 +50,13 @@ type Fixtures = {
    * Rahimi, and Mahsa (booked online, then cancelled) waiting for a time.
    */
   seedSchedule: () => ReturnType<typeof createClass>;
+  /**
+   * The classroom plan's session: "Morning A2" with Sara (its regular sessions next week) and a
+   * one-hour make-up for her starting `startsIn` minutes from now (negative: already on).
+   */
+  seedClassroom: (
+    startsIn: number,
+  ) => Promise<{ sessionId: string; classId: string; startsAt: Date }>;
 };
 
 export const test = base.extend<Fixtures, { workerDb: TestDb }>({
@@ -114,6 +121,31 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
       // Booked online earlier; her time was cancelled, so she's waiting again.
       await db.insert(leads).values({ name: "Mahsa", phone: "+989121112233", locale: "fa" });
       return cls;
+    });
+  },
+  seedClassroom: async ({ db, seedTeaching }, use) => {
+    await use(async (startsIn) => {
+      const { teacherId, saraId } = await seedTeaching();
+      const cls = await createClass(db, {
+        teacherId,
+        startsOn: dayOfWeek(0, 1),
+        slots: [{ weekday: 0, time: "10:30" }],
+        sessionCount: 2,
+        studentIds: [saraId],
+      });
+      const startsAt = new Date(Date.now() + startsIn * 60_000);
+      const [makeup] = await db
+        .insert(sessions)
+        .values({
+          teacherId,
+          classId: cls.id,
+          kind: "makeup",
+          startsAt,
+          endsAt: new Date(startsAt.getTime() + 60 * 60_000),
+        })
+        .returning();
+      await db.insert(sessionParticipants).values({ sessionId: makeup.id, studentId: saraId });
+      return { sessionId: makeup.id, classId: cls.id, startsAt };
     });
   },
   seedAccounts: async ({ db }, use) => {

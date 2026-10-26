@@ -1003,5 +1003,153 @@
       "help": "We're here for you",
       "rights": "© {brand}. All rights reserved."
     }
+  },
+  "Classroom": {
+    "title": "Classroom",
+    "withLevel": "{name} · {level}",
+    "when": "{from}–{to} · Tehran time",
+    "you": "You",
+    "youSuffix": "(you)",
+    "teacher": "Teacher",
+    "learner": "Learner",
+    "header": {
+      "live": "Live",
+      "people": "{count, plural, one {# person} other {# people}} here",
+      "elapsed": "Class time",
+      "quality": {
+        "excellent": "Great connection",
+        "good": "Good connection",
+        "poor": "Weak connection",
+        "lost": "Connection lost",
+        "unknown": "Checking connection"
+      }
+    },
+    "prejoin": {
+      "heading": "Ready to join the class?",
+      "sub": "Check your camera and sound before you go in.",
+      "preview": "Camera and microphone check",
+      "micHeard": "We can hear you",
+      "micQuiet": "Say something to test your mic",
+      "camOff": "Your camera is off",
+      "mic": "Microphone",
+      "camera": "Camera",
+      "speaker": "Speaker",
+      "testSound": "Play a test sound",
+      "join": "Join class",
+      "joinAudio": "Join with audio only (weak internet)",
+      "joining": "Joining…",
+      "vpnTip": "If a VPN is on, turn it off so sound and video arrive smoother.",
+      "blocked": "Your browser is blocking the camera or microphone. Allow them from the address bar, then try again.",
+      "retry": "Try again",
+      "back": "Back"
+    },
+    "controls": {
+      "bar": "Class controls",
+      "micOff": "Turn off microphone",
+      "micOn": "Turn on microphone",
+      "mic": "Mic",
+      "muted": "Muted",
+      "camOff": "Turn off camera",
+      "camOn": "Turn on camera",
+      "camera": "Camera",
+      "cameraOff": "Camera off",
+      "share": "Share screen",
+      "stopShare": "Stop sharing",
+      "shareLabel": "Share",
+      "sharing": "Sharing",
+      "handUp": "Raise hand",
+      "handDown": "Lower hand",
+      "hand": "Hand",
+      "handRaised": "Hand up",
+      "people": "People",
+      "peopleHands": "People, {count, plural, one {# hand} other {# hands}} up",
+      "chat": "Chat",
+      "chatUnread": "Chat, {count, plural, one {# new message} other {# new messages}}",
+      "leave": "Leave class",
+      "leaveLabel": "Leave",
+      "more": "More options",
+      "audioOnly": "Audio only (saves data)",
+      "showVideo": "Show video again",
+      "flip": "Switch camera"
+    },
+    "notice": {
+      "connecting": "Connecting…",
+      "reconnecting": "Connection dropped; reconnecting…",
+      "myTurn": "Your turn! Mona is waiting to hear you.",
+      "handUp": "Your hand is up. Mona will give you the turn soon.",
+      "noTeacher": "Mona hasn't arrived yet. Stay here.",
+      "audioOnly": "Audio only: video is paused to save data.",
+      "startAudio": "Tap to hear the class"
+    },
+    "stage": {
+      "label": "Class stage",
+      "aloneTeacher": "No one has joined yet. Learners appear here when they come in.",
+      "aloneLearner": "You're the only one in class.",
+      "screen": "{name}'s screen",
+      "speaking": "Speaking",
+      "turn": "Their turn",
+      "handUp": "Hand up",
+      "micOff": "Microphone off",
+      "self": "Your video"
+    },
+    "people": {
+      "title": "People",
+      "count": "({count})",
+      "hands": "Hands up · {count}",
+      "inClass": "In class · {count}",
+      "giveTurn": "Give turn",
+      "takeTurn": "End turn",
+      "mute": "Turn off microphone",
+      "camera": "Turn off camera",
+      "remove": "Remove from class",
+      "options": "Options for {name}",
+      "muteAll": "Mute everyone",
+      "hasTurn": "Their turn",
+      "handRaised": "Hand raised",
+      "micOn": "Microphone on",
+      "micOff": "Microphone off",
+      "removeTitle": "Remove {name} from class?",
+      "removeBody": "They can't come back into this session.",
+      "removeConfirm": "Remove",
+      "cancel": "Cancel"
+    },
+    "chat": {
+      "title": "Class chat",
+      "hint": "Messages stay only until the class ends.",
+      "placeholder": "Write a message…",
+      "label": "Message",
+      "send": "Send",
+      "empty": "No messages yet."
+    },
+    "close": "Close",
+    "leave": {
+      "title": "Leave the class?",
+      "body": "Class goes on, and you can come back in.",
+      "stay": "Stay in class",
+      "leave": "Leave"
+    },
+    "left": {
+      "title": "You left the class",
+      "body": "You can come back while the class is on.",
+      "rejoin": "Rejoin"
+    },
+    "removed": {
+      "title": "You were removed from this class",
+      "body": "Mona removed you from this session, so you can't come back into it."
+    },
+    "closedTitle": "The room isn't open",
+    "errors": {
+      "notFound": "This class doesn't exist or isn't yours.",
+      "closed": "This session isn't running: it was cancelled or has been marked held.",
+      "tooEarly": "The room opens at {time} (Tehran time).",
+      "ended": "This class has ended.",
+      "removed": "Mona removed you from this session.",
+      "unavailable": "The classroom server isn't reachable right now. Try again in a minute.",
+      "failed": "That didn't work. Try again."
+    },
+    "backHome": "Back to my dashboard",
+    "backClass": "Back to the class page",
+    "join": "Join class",
+    "enter": "Enter the room"
   }
 }

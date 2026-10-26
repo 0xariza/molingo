@@ -11,7 +11,10 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/:path*",
-        headers: securityHeaders({ isDev: process.env.NODE_ENV === "development" }),
+        headers: securityHeaders({
+          isDev: process.env.NODE_ENV === "development",
+          liveKitUrl: process.env.LIVEKIT_URL,
+        }),
       },
     ];
   },

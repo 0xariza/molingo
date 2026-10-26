@@ -1,13 +1,19 @@
 {
   "name": "molingo-call-test",
   "private": true,
-  "description": "M0 network test: a bare LiveKit call page and token service (not part of the app).",
+  "description": "M6 classroom prototype on LiveKit components (test page and token service, not part of the app).",
   "type": "module",
   "scripts": {
-    "build": "esbuild src/main.js --bundle --minify --format=esm --target=es2020,safari15 --outfile=public/app.js"
+    "build": "esbuild src/main.jsx --bundle --minify --format=esm --jsx=automatic --target=es2020,safari15 --outdir=public --entry-names=app --asset-names=[name]-[hash] --loader:.woff2=file --loader:.woff=file --conditions=import"
   },
   "devDependencies": {
+    "@fontsource/vazirmatn": "5.3.0",
+    "@livekit/components-react": "2.9.24",
+    "@livekit/components-styles": "1.2.0",
     "esbuild": "0.25.12",
-    "livekit-client": "2.22.4"
+    "livekit-client": "2.22.4",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tslib": "2.8.1"
   }
 }

@@ -8,3 +8,5 @@ public/
 next-env.d.ts
 .playwright-cli/
 infra/call-test/public/app.js
+.claude/skills/
+.vitest/

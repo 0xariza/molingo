@@ -1,6 +1,9 @@
+import { VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { useTranslations } from "next-intl";
 import type { CSSProperties } from "react";
 import { ACCENT } from "@/components/admin/schedule/colors";
+import { buttonClass } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatTime, tehranDateKey } from "@/lib/format";
 import { classTitle } from "@/lib/names";
@@ -23,6 +26,7 @@ export function NextSessionCard({
   locale: Locale;
 }) {
   const t = useTranslations("Student.schedule");
+  const tc = useTranslations("Classroom");
   const today = tehranDateKey(session.startsAt) === tehranDateKey(now);
   const name = classTitle(session, locale);
   return (
@@ -50,6 +54,12 @@ export function NextSessionCard({
         })}
       </p>
       <DeviceTime from={session.startsAt} to={session.endsAt} locale={locale} />
+      {session.canJoin && (
+        <Link href={`/app/classroom/${session.id}`} className={buttonClass("sand", "mt-3")}>
+          <VideoCamera aria-hidden size={20} weight="fill" />
+          {tc("join")}
+        </Link>
+      )}
     </section>
   );
 }

@@ -5,9 +5,14 @@
  * shells of Cache Components / PPR. Inline scripts (Next's RSC payload) therefore need
  * 'unsafe-inline'; everything else is limited to our own origin — no CDNs, no third parties.
  * HSTS is added by Caddy, which terminates TLS.
- * M6 adds the LiveKit signaling origin to connect-src and blob: to media-src.
+ * The live classroom adds the LiveKit server (`LIVEKIT_URL`, read at build time) to connect-src:
+ * its WebSocket for signaling and its HTTPS origin, which the client probes when a connection fails.
  */
-export function securityHeaders({ isDev }: { isDev: boolean }) {
+export function securityHeaders({ isDev, liveKitUrl }: { isDev: boolean; liveKitUrl?: string }) {
+  const liveKit = liveKitUrl ? new URL(liveKitUrl) : null;
+  const liveKitSources = liveKit
+    ? ` ${liveKit.protocol}//${liveKit.host} ${liveKit.protocol === "wss:" ? "https:" : "http:"}//${liveKit.host}`
+    : "";
   const csp = [
     "default-src 'self'",
     // React needs eval in development for debugging features.
@@ -15,7 +20,8 @@ export function securityHeaders({ isDev }: { isDev: boolean }) {
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' blob: data:",
     "font-src 'self'",
-    "connect-src 'self'",
+    `connect-src 'self'${liveKitSources}`,
+    "media-src 'self' blob:",
     "object-src 'none'",
     "base-uri 'self'",
     "form-action 'self'",

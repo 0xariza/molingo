@@ -1,5 +1,6 @@
 "use client";
 
+import { VideoCamera } from "@phosphor-icons/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { ErrorAlert } from "@/components/ui/alert";
@@ -42,6 +43,7 @@ export function SessionsPanel({
   sessionCount: number;
 }) {
   const t = useTranslations("Admin.classes");
+  const tc = useTranslations("Classroom");
   const locale = useLocale() as Locale;
   const n = (v: number) => formatNumber(v, locale);
   const [showAll, setShowAll] = useState(false);
@@ -121,6 +123,10 @@ export function SessionsPanel({
               {t("detail.liveSub", { time: when(live), count: peopleOf(live).length })}
             </p>
           </div>
+          <Link href={`/admin/classroom/${live.id}`} className={buttonClass("sand", "min-h-11")}>
+            <VideoCamera aria-hidden size={20} weight="fill" />
+            {tc("enter")}
+          </Link>
           <button
             type="button"
             onClick={() => setMarking(live)}

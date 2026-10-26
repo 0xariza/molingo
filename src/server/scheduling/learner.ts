@@ -5,6 +5,7 @@ import { fromTehranTime, tehranDateKey } from "@/lib/format";
 import { addDays } from "@/lib/schedule";
 import type { CefrLevel } from "../classes/classes";
 import { sessionPhase, type SessionPhase } from "../classes/sessions";
+import { windowError } from "../live/room";
 
 /** How far ahead a learner's schedule looks. */
 export const LEARNER_SCHEDULE_DAYS = 14;
@@ -22,6 +23,8 @@ export type LearnerSession = {
   startsAt: Date;
   endsAt: Date;
   phase: SessionPhase;
+  /** The room is open to learners now (15 min before until the end). */
+  canJoin: boolean;
   cancelReason: string | null;
   movedFrom: Date | null;
 };
@@ -76,5 +79,7 @@ export async function learnerSchedule(userId: string, now = new Date()): Promise
   return rows.map(({ status, ...r }) => ({
     ...r,
     phase: sessionPhase({ status, startsAt: r.startsAt, endsAt: r.endsAt }, now),
+    canJoin:
+      windowError("student", { status, startsAt: r.startsAt, endsAt: r.endsAt }, now) === null,
   }));
 }

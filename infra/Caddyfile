@@ -46,7 +46,13 @@ http://:80 {
 
 {$DOMAIN} {
 	import common
-	reverse_proxy 127.0.0.1:3001
+	# The M0 test page keeps its address; everything else is the app.
+	handle /call-test* {
+		reverse_proxy 127.0.0.1:3001
+	}
+	handle {
+		reverse_proxy 127.0.0.1:3000
+	}
 }
 
 lk.{$DOMAIN} {
