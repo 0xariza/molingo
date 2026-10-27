@@ -15,7 +15,9 @@ import {
   bookingInputSchema,
   bookLevelCheck,
   cancelBooking,
+  leadNotesSchema,
   newJoinCode,
+  saveLeadNotes,
   removeFreeSlot,
   slotInputSchema,
 } from "./level-check";
@@ -144,6 +146,13 @@ export async function newLevelCheckLinkAction(
   const id = z.uuid().safeParse(slotId);
   const code = id.success ? await newJoinCode(id.data) : null;
   return code ? { ok: true, url: levelCheckUrl(code) } : { ok: false };
+}
+
+/** Saves Mona's notes on the visitor during (or after) a level check. */
+export async function saveLeadNotesAction(leadId: string, notes: string): Promise<boolean> {
+  await requireAdmin();
+  const parsed = leadNotesSchema.safeParse({ leadId, notes });
+  return parsed.success && (await saveLeadNotes(parsed.data));
 }
 
 export async function cancelBookingAction(_: FormState, form: FormData): Promise<FormState> {

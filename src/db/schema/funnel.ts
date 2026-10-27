@@ -14,6 +14,8 @@ export const leads = pgTable(
     locale: localeEnum().notNull(),
     status: leadStatusEnum().notNull().default("new"),
     source: leadSourceEnum().notNull().default("online"),
+    /** Mona's private notes from the level check; they go to the learner's notes on conversion. */
+    notes: text(),
     ...timestamps,
   },
   (t) => [index().on(t.status, t.createdAt), index().on(t.phone)],

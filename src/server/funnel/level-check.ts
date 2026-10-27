@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, gte, inArray, isNotNull, isNull, lt, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import { leads, levelCheckSlots, levelGuessEnum } from "@/db/schema";
@@ -231,6 +231,21 @@ export async function newJoinCode(slotId: string, now = new Date()): Promise<str
     )
     .returning({ id: levelCheckSlots.id });
   return updated.length ? code : null;
+}
+
+/** Mona's private notes on a person she checked; not once they are a learner. */
+export const leadNotesSchema = z.object({
+  leadId: z.uuid(),
+  notes: z.string().trim().max(2000),
+});
+
+export async function saveLeadNotes({ leadId, notes }: z.output<typeof leadNotesSchema>) {
+  const updated = await db
+    .update(leads)
+    .set({ notes: notes || null })
+    .where(and(eq(leads.id, leadId), ne(leads.status, "converted")))
+    .returning({ id: leads.id });
+  return updated.length > 0;
 }
 
 export type WaitingLead = {

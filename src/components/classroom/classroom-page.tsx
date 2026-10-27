@@ -104,6 +104,7 @@ export async function LevelCheckPage(props: { code: string } | { slotId: string 
         backHref,
         backLabel,
         moderation: false,
+        visitor: visitor ? undefined : access.visitor,
       }}
     />
   );

@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { levelCheckSlots } from "@/db/schema";
+import { leads, levelCheckSlots } from "@/db/schema";
 import { resetDb } from "@/test/factories";
 import {
   bookingInputSchema,
   bookLevelCheck,
   cancelBooking,
   newJoinCode,
+  saveLeadNotes,
 } from "../../funnel/level-check";
 import { teacherLevelCheck, visitorLevelCheck } from "../level-check";
 
@@ -90,5 +91,28 @@ describe("teacherLevelCheck", () => {
     });
     expect((await teacherLevelCheck(slot.id, plus(50))).ok).toBe(true);
     expect(await teacherLevelCheck(slot.id, plus(51))).toEqual({ ok: false, error: "ended" });
+  });
+});
+
+describe("visitor details for Mona", () => {
+  it("carries the visitor's booking and Mona's saved notes", async () => {
+    const { slot } = await booked();
+    const [lead] = await db.select().from(leads);
+    expect(await saveLeadNotes({ leadId: lead.id, notes: "B1, wants IELTS" })).toBe(true);
+    expect(await teacherLevelCheck(slot.id, startsAt)).toMatchObject({
+      visitor: {
+        leadId: lead.id,
+        name: "Sara Ahmadi",
+        phone: "+989121234567",
+        source: "online",
+        notes: "B1, wants IELTS",
+      },
+    });
+  });
+
+  it("stops saving notes once the person is a learner", async () => {
+    await booked();
+    const [lead] = await db.update(leads).set({ status: "converted" }).returning();
+    expect(await saveLeadNotes({ leadId: lead.id, notes: "late" })).toBe(false);
   });
 });

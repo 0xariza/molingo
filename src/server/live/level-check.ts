@@ -5,6 +5,17 @@ import { hashToken } from "../auth/crypto";
 import { LEVEL_CHECK_MINUTES } from "../funnel/constants";
 import { firstName, roomWindow, type RoomError, type RoomRole } from "./room";
 
+/** What Mona sees about the visitor in her panel. Never sent to the visitor. */
+export type Visitor = {
+  leadId: string;
+  name: string;
+  phone: string;
+  levelGuess: (typeof leads.$inferSelect)["levelGuess"];
+  source: (typeof leads.$inferSelect)["source"];
+  locale: (typeof leads.$inferSelect)["locale"];
+  notes: string;
+};
+
 /** The visitor may come in this long before the time starts. */
 export const VISITOR_EARLY_MINUTES = 10;
 
@@ -24,7 +35,7 @@ export type LevelCheckRoom = {
 };
 
 export type LevelCheckAccess =
-  | { ok: true; room: LevelCheckRoom }
+  | { ok: true; room: LevelCheckRoom; visitor: Visitor }
   | { ok: false; error: RoomError; /** With `tooEarly`. */ opensAt?: Date };
 
 const endOf = (startsAt: Date) => new Date(startsAt.getTime() + LEVEL_CHECK_MINUTES * MINUTE);
@@ -45,6 +56,11 @@ async function access(role: RoomRole, where: SQL, now: Date): Promise<LevelCheck
       startsAt: levelCheckSlots.startsAt,
       leadId: leads.id,
       name: leads.name,
+      phone: leads.phone,
+      levelGuess: leads.levelGuess,
+      source: leads.source,
+      locale: leads.locale,
+      notes: leads.notes,
     })
     .from(levelCheckSlots)
     .innerJoin(leads, eq(leads.id, levelCheckSlots.leadId))
@@ -64,6 +80,15 @@ async function access(role: RoomRole, where: SQL, now: Date): Promise<LevelCheck
       startsAt: slot.startsAt,
       endsAt: endOf(slot.startsAt),
       closesAt,
+    },
+    visitor: {
+      leadId: slot.leadId,
+      name: slot.name,
+      phone: slot.phone,
+      levelGuess: slot.levelGuess,
+      source: slot.source,
+      locale: slot.locale,
+      notes: slot.notes ?? "",
     },
   };
 }

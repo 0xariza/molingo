@@ -9,14 +9,19 @@ import {
   MicOff,
   SendHorizontal,
   UserMinus,
+  UserPlus,
   VideoOff,
   VolumeX,
   X,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import { formatNumber, formatTime } from "@/lib/format";
+import { formatPhone } from "@/lib/phone";
+import { saveLeadNotesAction } from "@/server/funnel/actions";
+import type { Visitor } from "@/server/live/level-check";
 import {
   muteAction,
   muteAllAction,
@@ -489,5 +494,109 @@ function Person({
         </div>
       )}
     </li>
+  );
+}
+
+/**
+ * Mona's panel in a level check: who the visitor is, her private notes (saved as she types),
+ * and "Add as learner", which opens the new-learner form in a new tab so the call goes on.
+ */
+export function VisitorPanel({
+  visitor,
+  narrow,
+  onClose,
+}: {
+  visitor: Visitor;
+  narrow: boolean;
+  onClose: () => void;
+}) {
+  const t = useTranslations("Classroom.visitor");
+  const facts = useTranslations("Admin.schedule.facts");
+  const levels = useTranslations("Landing.booking.levels");
+  const common = useTranslations("Common");
+  const id = useId();
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
+  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const save = (notes: string) =>
+    saveLeadNotesAction(visitor.leadId, notes)
+      .then((ok) => setStatus(ok ? "saved" : "failed"))
+      .catch(() => setStatus("failed"));
+  const onType = (notes: string) => {
+    setStatus("saving");
+    clearTimeout(timer.current);
+    timer.current = setTimeout(() => save(notes), 800);
+  };
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const rows: [string, ReactNode][] = [
+    [
+      facts("phone"),
+      <bdi key="p" dir="ltr">
+        {formatPhone(visitor.phone)}
+      </bdi>,
+    ],
+    [facts("level"), levels(visitor.levelGuess)],
+    [facts("booking"), facts(visitor.source)],
+    [t("siteLanguage"), common(visitor.locale === "fa" ? "persian" : "english")],
+  ];
+
+  return (
+    <Panel
+      title={t("title")}
+      narrow={narrow}
+      onClose={onClose}
+      footer={
+        <div className="flex flex-col gap-2 border-t border-room-line px-4 pt-3 pb-4">
+          <Link
+            href={`/admin/students/new?lead=${visitor.leadId}`}
+            target="_blank"
+            className="flex min-h-12 items-center justify-center gap-2 rounded-[14px] bg-room-cinnamon font-bold text-room"
+          >
+            <UserPlus aria-hidden size={18} />
+            {t("addLearner")}
+          </Link>
+          <small className="text-center text-[13px] text-room-muted">{t("addHint")}</small>
+        </div>
+      }
+    >
+      <div className="flex flex-col gap-5 px-5 py-4">
+        <div className="flex items-center gap-3">
+          <span
+            aria-hidden="true"
+            className="grid size-12 shrink-0 place-items-center rounded-full text-xl font-bold text-white"
+            style={{ background: avatarColor(visitor.leadId) }}
+          >
+            {visitor.name.trim().charAt(0)}
+          </span>
+          <b className="text-[17px]">{visitor.name}</b>
+        </div>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2">
+          {rows.map(([k, v]) => (
+            <div key={k} className="contents">
+              <dt className="text-room-muted">{k}</dt>
+              <dd className="font-bold">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <div className="flex flex-col gap-2">
+          <label htmlFor={id} className="font-bold">
+            {t("notes")}
+          </label>
+          <textarea
+            id={id}
+            rows={7}
+            maxLength={2000}
+            defaultValue={visitor.notes}
+            placeholder={t("notesPlaceholder")}
+            onChange={(e) => onType(e.currentTarget.value)}
+            className="w-full resize-y rounded-[14px] border border-room-control bg-room px-3.5 py-3 text-room-ink"
+          />
+          <small aria-live="polite" className="text-[13px] text-room-muted">
+            {status === "idle" ? t("notesHint") : t(`notesStatus.${status}`)}
+          </small>
+        </div>
+      </div>
+    </Panel>
   );
 }

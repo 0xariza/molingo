@@ -17,6 +17,7 @@ import { ConnectionQuality, ConnectionState, Track, type LocalVideoTrack } from 
 import {
   AudioLines,
   Clock,
+  ClipboardList,
   Ellipsis,
   Hand,
   MessageCircle,
@@ -37,11 +38,11 @@ import type { Locale } from "@/i18n/routing";
 import { formatNumber } from "@/lib/format";
 import { bestTileWidth } from "@/lib/video-grid";
 import { useAudioOnly, useBoxSize, useNarrow, useNow, useWakeLock } from "./hooks";
-import { ChatPanel, ConfirmDialog, PeoplePanel } from "./panels";
+import { ChatPanel, ConfirmDialog, PeoplePanel, VisitorPanel } from "./panels";
 import { Tile, isTeacher } from "./tile";
 import type { ClassroomInfo } from "./types";
 
-type PanelName = "people" | "chat" | null;
+type PanelName = "people" | "chat" | "visitor" | null;
 
 /** The live room (design: Hoopo dark room). Rendered inside <LiveKitRoom>. */
 export function Room({
@@ -61,7 +62,8 @@ export function Room({
   const participants = useParticipants();
   const { localParticipant } = useLocalParticipant();
   const { attributes: mine } = useParticipantAttributes({ participant: localParticipant });
-  const [panel, setPanel] = useState<PanelName>(null);
+  // Mona's visitor panel starts open beside the call; on a phone it would cover the call.
+  const [panel, setPanel] = useState<PanelName>(info.visitor && !narrow ? "visitor" : null);
   const [leaving, setLeaving] = useState(false);
   const [more, setMore] = useState(false);
   const [audioOnly, setAudioOnly] = useState(startAudioOnly);
@@ -201,6 +203,8 @@ export function Room({
   const panelEl =
     panel === "chat" ? (
       <ChatPanel chat={chat} narrow={narrow} locale={locale} onClose={() => showPanel(null)} />
+    ) : panel === "visitor" && info.visitor ? (
+      <VisitorPanel visitor={info.visitor} narrow={narrow} onClose={() => showPanel(null)} />
     ) : panel === "people" ? (
       <PeoplePanel
         sessionId={info.sessionId}
@@ -222,7 +226,15 @@ export function Room({
       onClick={() => localParticipant.setAttributes({ hand: handUp ? "" : "1" })}
     />
   );
-  const peopleButton = (
+  const peopleButton = info.visitor ? (
+    <ControlButton
+      icon={ClipboardList}
+      label={t("visitor.button")}
+      action={t("visitor.button")}
+      pressed={panel === "visitor"}
+      onClick={() => toggle("visitor")}
+    />
+  ) : (
     <ControlButton
       icon={Users}
       label={t("controls.people")}

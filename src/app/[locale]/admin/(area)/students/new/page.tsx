@@ -61,7 +61,7 @@ async function NewLearner({
           phone: lead ? formatPhone(lead.phone) : "",
           email: "",
           messengerHandle: "",
-          notes: "",
+          notes: lead?.notes ?? "",
         }}
       />
     </>

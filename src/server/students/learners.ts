@@ -336,7 +336,7 @@ export async function listFollowUps(): Promise<FollowUp[]> {
 /** A booking that can still become a learner, for prefilling the form. */
 export async function getOpenLead(id: string) {
   const [lead] = await db
-    .select({ id: leads.id, name: leads.name, phone: leads.phone })
+    .select({ id: leads.id, name: leads.name, phone: leads.phone, notes: leads.notes })
     .from(leads)
     .where(and(eq(leads.id, id), ne(leads.status, "converted")));
   return lead ?? null;

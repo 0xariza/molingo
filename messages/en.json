@@ -1163,6 +1163,21 @@
       "titleWith": "Level check · {name}",
       "backSite": "Back to the site",
       "backSchedule": "Back to the schedule"
+    },
+    "visitor": {
+      "title": "Visitor",
+      "button": "Visitor",
+      "siteLanguage": "Site language",
+      "notes": "Private notes",
+      "notesPlaceholder": "Level, goal, free times…",
+      "notesHint": "Only you see these. They go to the learner's notes if you add them.",
+      "notesStatus": {
+        "saving": "Saving…",
+        "saved": "Saved",
+        "failed": "Not saved. Check your connection and keep typing."
+      },
+      "addLearner": "Add as learner",
+      "addHint": "Opens in a new tab; the call goes on."
     }
   }
 }
