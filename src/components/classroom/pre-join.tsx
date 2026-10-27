@@ -17,7 +17,7 @@ import {
   Volume2,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@/i18n/navigation";
 import type { LiveError } from "@/server/live/actions";
 import { captureSize, playTestSound, useMicLevel } from "./hooks";
@@ -64,7 +64,10 @@ export function PreJoin({
     }),
     [micOn, camOn, audioId, videoId, facing, attempt],
   );
-  const tracks = usePreviewTracks(options, () => setBlocked(true));
+  // A stable callback: usePreviewTracks reopens the camera whenever it changes, and the mic meter
+  // re-renders this page ten times a second, which made the preview flicker.
+  const onBlocked = useCallback(() => setBlocked(true), []);
+  const tracks = usePreviewTracks(options, onBlocked);
   const audioTrack = tracks?.find((tr) => tr.kind === Track.Kind.Audio) as
     LocalAudioTrack | undefined;
   const videoTrack = tracks?.find((tr) => tr.kind === Track.Kind.Video) as

@@ -747,7 +747,6 @@
       "tehranTime": "{when} · {from} تا {to} (وقت تهران)",
       "deviceTime": "ساعت دستگاه تو: {from} تا {to}",
       "today": "امروز",
-      "todayDay": "امروز · {day}",
       "minutes": "{count, number} دقیقه",
       "sessionOf": "جلسه‌ی {n, number} از {total, number}",
       "makeup": "جبرانی",
@@ -758,8 +757,14 @@
       "moved": "جابه‌جا شده",
       "movedFrom": "جابه‌جا شده از {when}",
       "held": "برگزار شد",
-      "empty": "در دو هفته‌ی آینده جلسه‌ای نداری.",
-      "withLevel": "{name} · {level}"
+      "withLevel": "{name} · {level}",
+      "thisWeek": "این هفته",
+      "prevWeek": "هفته‌ی قبل",
+      "nextWeek": "هفته‌ی بعد",
+      "range": "{from} تا {to}",
+      "weekNav": "هفته",
+      "days": "روزهای هفته",
+      "emptyDay": "جلسه‌ای نیست."
     }
   },
   "Error": {

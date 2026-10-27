@@ -73,6 +73,15 @@ describe("learnerSchedule", () => {
     expect(mine[0]).toMatchObject({ nameFa: "صبح A2", sessionCount: 6, kind: "class" });
   });
 
+  it("lists one chosen week for the calendar", async () => {
+    const { userId } = await setup();
+    const week = await learnerSchedule(userId, now, "2026-10-24", 7);
+    expect(week.map((s) => [s.startsAt, s.number])).toEqual([
+      [at("2026-10-24", "10:30"), 3],
+      [at("2026-10-26", "10:30"), 4],
+    ]);
+  });
+
   it("shows make-ups only to the learners invited, and nothing after the place ends", async () => {
     const { classId, teacherId, userId, mine, other } = await setup();
     await addMakeup(

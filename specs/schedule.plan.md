@@ -156,8 +156,9 @@ cards.
 
 1. Log in as Sara - expect: the home page shows "Next session" with "Morning A2 · A2" and "Tehran
    time", and a "Full schedule" link
-2. Open "My schedule" - expect: sessions over the next two weeks, grouped by day, each with
-   "Session n of 12" (next Saturday is session 1, next Monday session 2)
+2. Open "My schedule" - expect: a week calendar titled "This week"; press "Next week" - expect: the
+   days of next week, each with its sessions and "Session n of 12" (Saturday is session 1, Monday
+   session 2)
 3. With the browser time zone set to Europe/London - expect: "Your device time:" under the next
    session; with Asia/Tehran - expect: no device-time line
 
@@ -168,5 +169,5 @@ cards.
 **Steps:**
 
 1. With Monday's session moved to Wednesday 16:00 (set in the database; moving in the UI is 2.1)
-2. As Sara, open "My schedule" - expect: Wednesday shows "Morning A2" 16:00 with "Moved" and "Moved
-   from Mon …" - expect: Monday has no session
+2. As Sara, open next week of "My schedule" - expect: Wednesday shows "Morning A2" 16:00 with
+   "Moved" and "Moved from Mon …" - expect: Monday says "No sessions."

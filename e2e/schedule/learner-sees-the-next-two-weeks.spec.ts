@@ -33,7 +33,10 @@ test.describe("Learner schedule", () => {
 
     // 2. Open "My schedule"
     await page.getByRole("link", { name: t.nav.schedule }).click();
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(t.schedule.title);
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(t.schedule.thisWeek);
+    // The sessions start next week: step the calendar forward.
+    await page.getByRole("link", { name: t.schedule.nextWeek }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(t.schedule.nextWeek);
     await expect(page.getByRole("region", { name: dateLabel(dayOfWeek(0, 1)) })).toContainText(
       "Session 1 of 12",
     );
@@ -42,6 +45,7 @@ test.describe("Learner schedule", () => {
     );
 
     // 3. On a device in London the device time shows; on one in Tehran it doesn't
+    await page.getByRole("link", { name: t.schedule.thisWeek }).click();
     await expect(page.getByText(/^Your device time: /).first()).toBeVisible();
     const tehran = await browser.newContext({
       ...test.info().project.use,

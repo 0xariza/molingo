@@ -747,7 +747,6 @@
       "tehranTime": "{when} · {from}–{to} (Tehran time)",
       "deviceTime": "Your device time: {from}–{to}",
       "today": "Today",
-      "todayDay": "Today · {day}",
       "minutes": "{count, number} min",
       "sessionOf": "Session {n, number} of {total, number}",
       "makeup": "Make-up",
@@ -758,8 +757,14 @@
       "moved": "Moved",
       "movedFrom": "Moved from {when}",
       "held": "Held",
-      "empty": "No sessions in the next two weeks.",
-      "withLevel": "{name} · {level}"
+      "withLevel": "{name} · {level}",
+      "thisWeek": "This week",
+      "prevWeek": "Previous week",
+      "nextWeek": "Next week",
+      "range": "{from} – {to}",
+      "weekNav": "Week",
+      "days": "Days of the week",
+      "emptyDay": "No sessions."
     }
   },
   "Error": {

@@ -64,53 +64,23 @@ export function NextSessionCard({
   );
 }
 
-/** Two weeks of sessions, by day; cancelled and moved ones say so. */
-export function SessionList({
-  sessions,
-  now,
-  locale,
-}: {
-  sessions: LearnerSession[];
-  now: Date;
-  locale: Locale;
-}) {
-  const t = useTranslations("Student.schedule");
-  const today = tehranDateKey(now);
-  const days = [...new Set(sessions.map((s) => tehranDateKey(s.startsAt)))];
-
-  if (sessions.length === 0)
-    return <p className="rounded-card bg-white p-6 text-center">{t("empty")}</p>;
-
-  return (
-    <div className="space-y-2.5">
-      {days.map((day) => {
-        const onDay = sessions.filter((s) => tehranDateKey(s.startsAt) === day);
-        const label = formatDate(onDay[0].startsAt, locale, { year: false });
-        return (
-          <section key={day} aria-label={label} className="space-y-2.5">
-            <h2 className="mx-1 mt-1.5 font-sans text-sm font-extrabold normal-case tracking-normal text-body">
-              {day === today ? t("todayDay", { day: label }) : label}
-            </h2>
-            {onDay.map((s) => (
-              <SessionCard key={s.id} session={s} isToday={day === today} locale={locale} />
-            ))}
-          </section>
-        );
-      })}
-    </div>
-  );
-}
-
-function SessionCard({
+/**
+ * One session in the learner's calendar; cancelled and moved ones say so, and an open room has a
+ * join button. `compact` is the narrow desktop column.
+ */
+export function SessionCard({
   session: s,
   isToday,
   locale,
+  compact = false,
 }: {
   session: LearnerSession;
   isToday: boolean;
   locale: Locale;
+  compact?: boolean;
 }) {
   const t = useTranslations("Student.schedule");
+  const tc = useTranslations("Classroom");
   const cancelled = s.phase === "cancelled";
   const name = classTitle(s, locale);
   const color = cancelled ? ACCENT.cancelled : s.kind === "makeup" ? ACCENT.makeup : ACCENT[s.type];
@@ -140,10 +110,58 @@ function SessionCard({
               ? { text: t("today"), cls: "bg-mist text-brand" }
               : null;
 
+  const join = s.canJoin && (
+    <Link
+      href={`/app/classroom/${s.id}`}
+      className={
+        compact
+          ? "mt-1.5 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-[10px] bg-cinnamon text-sm font-bold text-navy hover:bg-[#d56d33]"
+          : buttonClass("primary")
+      }
+    >
+      <VideoCamera aria-hidden size={compact ? 16 : 18} weight="fill" />
+      {tc("join")}
+    </Link>
+  );
+  const title = s.kind === "makeup" ? t("makeupTitle", { name }) : name;
+
+  if (compact)
+    return (
+      <article
+        title={`${title} · ${formatTime(s.startsAt, locale)}`}
+        style={{ "--accent": color } as CSSProperties}
+        className={`relative flex flex-col gap-px overflow-hidden rounded-xl border bg-white py-1.5 ps-2.5 pe-2 before:absolute before:inset-y-0 before:start-0 before:w-1 before:bg-(--accent) ${
+          s.phase === "live" ? "border-ocean ring-1 ring-ocean" : "border-hairline"
+        }`}
+      >
+        <span
+          className={`flex flex-wrap items-center justify-between gap-x-1 gap-y-0.5 ${cancelled ? "opacity-55" : ""}`}
+        >
+          <b className="text-[11.5px] whitespace-nowrap text-brand tabular-nums">
+            {formatTime(s.startsAt, locale)}
+          </b>
+          {pill && (
+            <span
+              className={`rounded-pill px-1.5 text-[10px] leading-relaxed font-extrabold whitespace-nowrap ${pill.cls}`}
+            >
+              {pill.text}
+            </span>
+          )}
+        </span>
+        <b
+          className={`truncate text-[13px] font-extrabold ${cancelled ? "line-through opacity-55" : ""}`}
+        >
+          {title}
+        </b>
+        <span className="line-clamp-2 text-[11px] text-body">{meta}</span>
+        {join}
+      </article>
+    );
+
   return (
     <article
       style={{ "--accent": color } as CSSProperties}
-      className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-hairline bg-white px-4 py-3 before:absolute before:inset-y-0 before:start-0 before:w-1.5 before:bg-(--accent)"
+      className="relative flex flex-wrap items-center gap-3 overflow-hidden rounded-2xl border border-hairline bg-white px-4 py-3 before:absolute before:inset-y-0 before:start-0 before:w-1.5 before:bg-(--accent)"
     >
       <span
         className={`flex min-w-13 flex-col items-center leading-tight ${cancelled ? "opacity-55" : ""}`}
@@ -156,9 +174,7 @@ function SessionCard({
         <small className="text-[11px] text-body">{t("minutes", { count: minutes })}</small>
       </span>
       <span className="min-w-0 flex-1 leading-snug">
-        <b className={`block truncate ${cancelled ? "line-through opacity-55" : ""}`}>
-          {s.kind === "makeup" ? t("makeupTitle", { name }) : name}
-        </b>
+        <b className={`block truncate ${cancelled ? "line-through opacity-55" : ""}`}>{title}</b>
         <span className="text-xs text-body">{meta}</span>
       </span>
       {pill && (
@@ -168,6 +184,7 @@ function SessionCard({
           {pill.text}
         </span>
       )}
+      {join}
     </article>
   );
 }

@@ -30,13 +30,18 @@ export type LearnerSession = {
 };
 
 /**
- * A learner's sessions from the start of today (Tehran) for two weeks, cancelled ones included:
- * their classes' regular sessions while they hold a place, and make-ups they're invited to.
+ * A learner's sessions for `days` days from `start` ("YYYY-MM-DD", Tehran; today by default),
+ * cancelled ones included: their classes' regular sessions while they hold a place, and make-ups
+ * they're invited to.
  */
-export async function learnerSchedule(userId: string, now = new Date()): Promise<LearnerSession[]> {
-  const today = tehranDateKey(now);
-  const from = fromTehranTime(today, "00:00");
-  const to = fromTehranTime(addDays(today, LEARNER_SCHEDULE_DAYS), "00:00");
+export async function learnerSchedule(
+  userId: string,
+  now = new Date(),
+  start = tehranDateKey(now),
+  days = LEARNER_SCHEDULE_DAYS,
+): Promise<LearnerSession[]> {
+  const from = fromTehranTime(start, "00:00");
+  const to = fromTehranTime(addDays(start, days), "00:00");
   const rows = await db
     .select({
       id: sessions.id,
