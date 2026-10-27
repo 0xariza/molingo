@@ -1,51 +1,59 @@
-/* eslint-disable react/jsx-no-literals -- the wordmark is the brand name, not translatable UI text */
 type LogoProps = {
   /** `light` = for light backgrounds, `dark` = for dark backgrounds. */
   variant?: "light" | "dark";
-  /** Sets the size (font-size); the mark scales with it. */
+  /** Sets the size (font-size); the wordmark is 1.4em tall. */
   className?: string;
 };
 
+/** One crest feather, turned about the crest's base. */
+function Feather({ angle }: { angle: number }) {
+  return (
+    <g transform={`rotate(${angle} 247.5 74)`}>
+      <rect x="238.5" y="14" width="18" height="60" rx="9" className="fill-cinnamon" />
+      <rect x="238.5" y="32" width="18" height="6.3" fill="#ffffff" />
+      <path d="M238.5 32V23a9 9 0 0 1 18 0v9Z" fill="currentColor" />
+    </g>
+  );
+}
+
 /**
- * A whale tail rising from curling waves, next to the MOLINGO wordmark. Always Latin and LTR.
- * Brand blue on light backgrounds; Whale light and white on dark ones.
+ * The Hoopo wordmark (Hoopo design system): lowercase "hoopo" whose middle o's are the bird's
+ * eyes, under a three-feather cinnamon crest. Always Latin and LTR. Navy strokes on light
+ * backgrounds, white on dark ones; the crest stays cinnamon.
  */
 export function Logo({ variant = "light", className = "text-[1.75rem]" }: LogoProps) {
-  const mark = variant === "light" ? "text-brand" : "text-whale";
-  const word = variant === "light" ? "text-brand" : "text-white";
   return (
     <span
       dir="ltr"
       role="img"
-      aria-label="Molingo"
-      className={`inline-flex items-center gap-[0.35em] ${className}`}
+      aria-label="Hoopo"
+      className={`inline-flex items-center ${className}`}
     >
-      <svg viewBox="90 50 280 250" aria-hidden="true" className={`h-[1.6em] w-auto ${mark}`}>
-        <g fill="currentColor">
-          <path d="M196 218C198 196 200 174 204 152C176 150 134 136 98 110C128 108 166 114 204 140C222 118 248 98 276 70C274 108 252 140 222 154C220 176 222 198 226 218Z" />
-          <circle cx="104" cy="176" r="7" />
-        </g>
-        <g fill="none" stroke="currentColor" strokeLinecap="round">
-          <circle cx="304" cy="64" r="8" strokeWidth="7" />
-          <circle cx="302" cy="106" r="13" strokeWidth="7" />
-          <path
-            strokeWidth="14"
-            d="M112 222C100 192 118 170 144 170C168 170 178 192 164 204C154 212 140 204 146 194"
-          />
-          <path
-            strokeWidth="14"
-            d="M130 228C160 222 186 214 206 214C236 214 262 200 282 186C298 175 316 172 332 176"
-          />
-          <path strokeWidth="12" d="M122 250C170 268 250 264 318 220" />
-          <path strokeWidth="10" d="M170 274C220 286 276 276 318 250" />
-        </g>
-      </svg>
-      <span
+      <svg
+        viewBox="0 0 610 220"
         aria-hidden="true"
-        className={`font-wordmark font-semibold uppercase leading-none tracking-[0.18em] ${word}`}
+        className={`h-[1.4em] w-auto ${variant === "light" ? "text-ocean" : "text-white"}`}
       >
-        Molingo
-      </span>
+        <Feather angle={-30} />
+        <Feather angle={0} />
+        <Feather angle={30} />
+        <g
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="22"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M40 40V160M40 120a40 40 0 0 1 80 0V160" />
+          <circle cx="195" cy="120" r="40" />
+          <circle cx="300" cy="120" r="40" />
+          <path d="M382 80V200" />
+          <circle cx="422" cy="120" r="40" />
+          <circle cx="535" cy="120" r="40" />
+        </g>
+        <circle cx="205" cy="124" r="14" fill="currentColor" />
+        <circle cx="310" cy="124" r="14" fill="currentColor" />
+      </svg>
     </span>
   );
 }

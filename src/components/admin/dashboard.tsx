@@ -54,7 +54,7 @@ export async function NextClassCard({ next, now }: { next: NextClass | null; now
         </span>
         <h2 id="next-class" className="text-[2.125rem] leading-snug">
           {classTitle(next, locale)}{" "}
-          <bdi dir="ltr" className="font-wordmark font-bold text-brand">
+          <bdi dir="ltr" className="font-bold text-brand">
             {next.level}
           </bdi>
         </h2>
@@ -182,7 +182,7 @@ export async function TodayTimeline({
                 href={i.href}
                 className={`flex items-center gap-3.5 rounded-2xl p-2.5 hover:bg-surface ${i.highlight ? "bg-[#ebf1f7]" : ""}`}
               >
-                <span dir="ltr" className="min-w-13 font-wordmark text-xl font-bold text-brand">
+                <span dir="ltr" className="min-w-13 text-xl font-bold text-brand">
                   {formatTime(i.at, locale)}
                 </span>
                 <span className="min-w-0 flex-1 leading-normal">

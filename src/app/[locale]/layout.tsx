@@ -14,14 +14,14 @@ export function generateStaticParams() {
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
   return {
-    title: { default: t("title"), template: `%s · Molingo` },
+    title: { default: t("title"), template: `%s · Hoopo` },
     description: t("description"),
     alternates: { languages: { fa: "/fa", en: "/en" } },
   };
 }
 
 export const viewport: Viewport = {
-  themeColor: "#071E36",
+  themeColor: "#1B2540",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
@@ -39,21 +39,12 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
           href={
             locale === "fa"
               ? "/fonts/vazirmatn-arabic-wght-normal.woff2"
-              : "/fonts/manrope-latin-wght-normal.woff2"
+              : "/fonts/lexend-latin-wght-normal.woff2"
           }
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"
         />
-        {locale === "fa" && (
-          <link
-            rel="preload"
-            href="/fonts/lalezar-arabic-400-normal.woff2"
-            as="font"
-            type="font/woff2"
-            crossOrigin="anonymous"
-          />
-        )}
       </head>
       <body className="flex min-h-dvh flex-col">
         <NextIntlClientProvider>

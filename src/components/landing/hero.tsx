@@ -52,7 +52,7 @@ function RoadmapPreview() {
             <p className="text-sm text-body">{t("card.owner")}</p>
             <p className="text-lg font-extrabold">{t("card.goal")}</p>
           </div>
-          <span dir="ltr" className="font-wordmark text-3xl font-bold text-brand">
+          <span dir="ltr" className="text-3xl font-bold text-brand">
             {t("card.levels")}
           </span>
         </div>

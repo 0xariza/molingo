@@ -27,6 +27,8 @@ const COMMON = new Set([
   "zxcvbnm1",
   "molingo1",
   "molingo123",
+  "hoopo123",
+  "hoopo1234",
 ]);
 
 export type PasswordProblem = "too_short" | "too_common";

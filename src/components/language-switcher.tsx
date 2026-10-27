@@ -39,7 +39,7 @@ function Toggle({
       role="group"
       aria-label={t("language")}
       dir="ltr"
-      className={`flex rounded-pill border p-0.5 font-wordmark text-sm font-bold tracking-wider ${dark ? "border-whale/40" : "border-mist bg-white"}`}
+      className={`flex rounded-pill border p-0.5 text-sm font-bold tracking-wider ${dark ? "border-whale/40" : "border-mist bg-white"}`}
     >
       {OPTIONS.map(({ locale, short, label }) => {
         const active = locale === current;

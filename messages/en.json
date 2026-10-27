@@ -1,10 +1,10 @@
 {
   "Metadata": {
-    "title": "Molingo: English with a roadmap made for you",
+    "title": "Hoopo: English with a roadmap made for you",
     "description": "Live English classes with Mona, private or in a group, with a personal roadmap for your goal and an AI assistant. Book your free session."
   },
   "Common": {
-    "brand": "Molingo",
+    "brand": "Hoopo",
     "skipToContent": "Skip to content",
     "login": "Log in",
     "primaryNav": "Main navigation",
@@ -53,7 +53,7 @@
     "submitting": "Please wait…",
     "forgot": "Ask Mona to send you a new link.",
     "activateTitle": "Welcome, {name}",
-    "activateLead": "Choose a password for your Molingo account. You'll log in with your mobile number and this password.",
+    "activateLead": "Choose a password for your Hoopo account. You'll log in with your mobile number and this password.",
     "submitActivate": "Save and continue",
     "resetTitle": "Set a new password",
     "resetLead": "Hi {name}, choose a new password for your account.",
@@ -77,7 +77,7 @@
     "noAccount": "No account yet?",
     "bookFree": "Book your free session",
     "panel": {
-      "eyebrow": "Your Molingo account",
+      "eyebrow": "Your Hoopo account",
       "title1": "Your roadmap",
       "title2": "is waiting.",
       "body": "Everything you need for your next step, in one place.",
@@ -828,7 +828,7 @@
       }
     },
     "ai": {
-      "eyebrow": "Molingo AI assistant · Coming soon",
+      "eyebrow": "Hoopo AI assistant · Coming soon",
       "title1": "Class ends.",
       "title2": "Your learning doesn't.",
       "lead": "Mona is your teacher and always will be. The AI assistant knows your roadmap and stays with you before, during and after every class, so no day on your path goes to waste.",
@@ -1006,7 +1006,7 @@
       "ctaTitle2": "Let's map the way.",
       "ctaLead": "20 minutes with Mona and the first stops of your roadmap. Free.",
       "about": "English with a roadmap made for you. A real teacher, your own path, and an AI assistant.",
-      "explore": "Molingo",
+      "explore": "Hoopo",
       "help": "We're here for you",
       "rights": "© {brand}. All rights reserved."
     }

@@ -97,7 +97,7 @@ function Stage({
       <p
         className={`flex items-center gap-2 text-sm font-bold ${highlight ? "text-deep" : "text-whale"}`}
       >
-        <span className="font-wordmark text-lg tracking-widest">{step}</span>
+        <span className="text-lg tracking-widest">{step}</span>
         {tag}
       </p>
       <h3 className={`text-3xl sm:text-4xl ${highlight ? "text-ocean" : "text-white"}`}>{title}</h3>

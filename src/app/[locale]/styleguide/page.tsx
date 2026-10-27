@@ -10,14 +10,15 @@ import { formatDate, formatTime, formatToman } from "@/lib/format";
 
 // Dev-only page for checking tokens, type and formatting in both directions.
 const swatches = [
-  ["ocean", "#071E36", "bg-ocean"],
-  ["deep", "#0F4C81", "bg-deep"],
-  ["brand", "#13609B", "bg-brand"],
-  ["whale", "#8EC5E8", "bg-whale"],
-  ["mist", "#E3EFF8", "bg-mist"],
-  ["surface", "#F3F7FB", "bg-surface"],
-  ["body", "#3A5670", "bg-body"],
-  ["sand", "#F2C46B", "bg-sand"],
+  ["ocean", "#1B2540", "bg-ocean"],
+  ["deep", "#121A30", "bg-deep"],
+  ["brand", "#0E7C7F", "bg-brand"],
+  ["whale", "#3CC4C4", "bg-whale"],
+  ["mist", "#E9F6F6", "bg-mist"],
+  ["surface", "#F6F7FB", "bg-surface"],
+  ["body", "#5A6480", "bg-body"],
+  ["sand", "#F2A541", "bg-sand"],
+  ["cinnamon", "#E27A3F", "bg-cinnamon"],
 ] as const;
 
 const sample = new Date("2026-10-13T14:30:00Z");

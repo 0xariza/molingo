@@ -8,7 +8,7 @@ import type { LearnerStats as Stats } from "@/server/students/stats";
 
 /** Status identity colours (validated for colour-blind separation; labels always shown too). */
 const statusColor = {
-  active: "#13609b",
+  active: "#0e7c7f",
   lead: "#4a9fd6",
   paused: "#d18a1f",
   left: "#8a5cc2",

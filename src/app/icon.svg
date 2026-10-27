@@ -1,4 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#071E36"/>
-  <text x="32" y="44" text-anchor="middle" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="36" fill="#8EC5E8">mo</text>
+  <rect width="64" height="64" rx="14" fill="#E27A3F"/>
+  <g fill="#FFF0E6">
+    <rect x="29" y="6" width="6" height="20" rx="3" transform="rotate(-30 32 26)"/>
+    <rect x="29" y="6" width="6" height="20" rx="3"/>
+    <rect x="29" y="6" width="6" height="20" rx="3" transform="rotate(30 32 26)"/>
+  </g>
+  <g fill="#1B2540">
+    <path d="M29 12V9a3 3 0 0 1 6 0v3Z" transform="rotate(-30 32 26)"/>
+    <path d="M29 12V9a3 3 0 0 1 6 0v3Z"/>
+    <path d="M29 12V9a3 3 0 0 1 6 0v3Z" transform="rotate(30 32 26)"/>
+  </g>
+  <circle cx="22" cy="40" r="9" fill="#FFFFFF"/>
+  <circle cx="42" cy="40" r="9" fill="#FFFFFF"/>
+  <circle cx="24" cy="41" r="4" fill="#1B2540"/>
+  <circle cx="44" cy="41" r="4" fill="#1B2540"/>
 </svg>
