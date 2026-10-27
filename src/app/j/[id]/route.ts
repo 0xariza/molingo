@@ -12,5 +12,6 @@ export async function GET(request: NextRequest, { params }: RouteContext<"/j/[id
   const locale = hasLocale(routing.locales, saved) ? saved : routing.defaultLocale;
   const session = await shareLinkSession((await params).id);
   const path = session ? `/${locale}/app/classroom/${session}` : `/${locale}/app`;
-  return NextResponse.redirect(new URL(path, request.url));
+  // Behind Caddy, request.url is the container's own address (localhost:3000), not the site.
+  return NextResponse.redirect(new URL(path, process.env.APP_URL ?? request.url));
 }
