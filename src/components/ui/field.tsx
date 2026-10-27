@@ -65,7 +65,8 @@ export function Field({
   return (
     <FieldShell id={id ?? `f-${name}`} label={label} hint={hint} error={error}>
       {(aria) => (
-        <div className="relative">
+        // Same direction as the input, so the button lands on the side its padding keeps free.
+        <div className="relative" dir={input.dir}>
           <input
             name={name}
             className={`${inputClass} ${trailing ? "pe-14" : ""} ${className}`}

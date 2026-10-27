@@ -18,13 +18,11 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { SelectMenu, type MenuOption } from "@/components/ui/select-menu";
 import { Link } from "@/i18n/navigation";
 import type { LiveError } from "@/server/live/actions";
 import { captureSize, playTestSound, useMicLevel } from "./hooks";
 import type { ClassroomInfo, JoinChoices } from "./types";
-
-const field =
-  "h-12 w-full min-w-0 rounded-lg border border-control bg-white px-3 text-navy focus-visible:outline-teal";
 
 /**
  * The device check before the room (PLAN §6): camera preview, microphone level, device pickers
@@ -215,63 +213,51 @@ export function PreJoin({
           )}
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <label className="flex min-w-0 flex-col gap-1.5 text-sm font-bold text-navy-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <Mic aria-hidden size={16} />
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span aria-hidden="true" className={pickerLabel}>
+                <Mic size={16} />
                 {t("prejoin.mic")}
               </span>
-              <select
-                className={field}
+              <SelectMenu
+                label={t("prejoin.mic")}
+                labelHidden
                 value={audioId}
-                onChange={(e) => setAudioId(e.target.value)}
-              >
-                {mics.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId === "default" ? "" : d.deviceId}>
-                    {d.label || t("prejoin.mic")}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="flex min-w-0 flex-col gap-1.5 text-sm font-bold text-navy-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <Video aria-hidden size={16} />
+                onChange={setAudioId}
+                options={deviceOptions(mics, t("prejoin.mic"))}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span aria-hidden="true" className={pickerLabel}>
+                <Video size={16} />
                 {t("prejoin.camera")}
               </span>
-              <select
-                className={field}
-                value={videoId}
-                onChange={(e) => setVideoId(e.target.value)}
-              >
-                {cameras.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId === "default" ? "" : d.deviceId}>
-                    {d.label || t("prejoin.camera")}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="flex min-w-0 flex-col gap-1.5 text-sm font-bold text-navy-muted">
-              <span className="inline-flex items-center gap-1.5">
-                <Volume2 aria-hidden size={16} />
+              <SelectMenu
+                label={t("prejoin.camera")}
+                labelHidden
+                // Cameras have no "default" entry: show the one the preview is using.
+                value={videoId || videoTrack?.mediaStreamTrack.getSettings().deviceId || ""}
+                onChange={setVideoId}
+                options={deviceOptions(cameras, t("prejoin.camera"))}
+              />
+            </div>
+            <div className="flex min-w-0 flex-col gap-1.5">
+              <span aria-hidden="true" className={pickerLabel}>
+                <Volume2 size={16} />
                 {t("prejoin.speaker")}
               </span>
               {speakers.length > 1 && (
-                <select
-                  aria-label={t("prejoin.speaker")}
-                  className={field}
+                <SelectMenu
+                  label={t("prejoin.speaker")}
+                  labelHidden
                   value={outputId}
-                  onChange={(e) => setOutputId(e.target.value)}
-                >
-                  {speakers.map((d) => (
-                    <option key={d.deviceId} value={d.deviceId === "default" ? "" : d.deviceId}>
-                      {d.label || t("prejoin.speaker")}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setOutputId}
+                  options={deviceOptions(speakers, t("prejoin.speaker"))}
+                />
               )}
               <button
                 type="button"
                 onClick={() => playTestSound(outputId || undefined)}
-                className="flex h-12 items-center justify-center gap-2 rounded-lg border border-control bg-white px-3 font-bold text-teal hover:bg-teal-soft"
+                className="flex h-12 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-line bg-white px-3 font-bold text-teal hover:bg-teal-soft"
               >
                 <Play aria-hidden size={18} />
                 {t("prejoin.testSound")}
@@ -342,4 +328,14 @@ export function PreJoin({
       </main>
     </div>
   );
+}
+
+const pickerLabel = "inline-flex items-center gap-1.5 text-sm font-bold text-navy-muted";
+
+/** Device names are English and left-to-right; "default" stands for the system's own choice. */
+function deviceOptions(devices: MediaDeviceInfo[], fallback: string): MenuOption[] {
+  return devices.map((d) => ({
+    value: d.deviceId === "default" ? "" : d.deviceId,
+    label: <bdi>{d.label || fallback}</bdi>,
+  }));
 }

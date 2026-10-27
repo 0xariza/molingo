@@ -10,6 +10,7 @@ export type ClassroomInfo = {
   /** "18:00–19:30 · Tehran time". */
   when: string;
   startsAt: Date;
+  endsAt: Date;
   /** Where "back" and leaving go: the dashboard, Mona's class page, or the site (a visitor). */
   backHref: string;
   backLabel: string;

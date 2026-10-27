@@ -4,12 +4,24 @@ import {
   VideoTrack,
   isTrackReference,
   useIsMuted,
+  useConnectionQualityIndicator,
   useIsSpeaking,
   useParticipantAttributes,
   type TrackReferenceOrPlaceholder,
 } from "@livekit/components-react";
-import { Track } from "livekit-client";
-import { AudioLines, EllipsisVertical, Hand, Mic, MicOff, type LucideIcon } from "lucide-react";
+import { ConnectionQuality, Track } from "livekit-client";
+import {
+  AudioLines,
+  EllipsisVertical,
+  Hand,
+  Mic,
+  MicOff,
+  SignalHigh,
+  SignalLow,
+  SignalMedium,
+  SignalZero,
+  type LucideIcon,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
@@ -48,6 +60,9 @@ export function Tile({
   const { attributes } = useParticipantAttributes({ participant: p });
   const hand = attributes?.hand === "1";
   const turn = attributes?.turn === "1";
+  // Everyone else's connection, so a silent learner can be told apart from a frozen one.
+  const { quality } = useConnectionQualityIndicator({ participant: p });
+  const lost = !self && quality === ConnectionQuality.Lost;
   const isShare = trackRef.source === Track.Source.ScreenShare;
   const showVideo = isTrackReference(trackRef) && !camMuted;
   const name = isShare
@@ -125,7 +140,14 @@ export function Tile({
             !small && <Mic aria-hidden size={16} className="shrink-0" />
           ))}
         <span className="truncate">{name}</span>
+        {!self && !isShare && <QualityIcon quality={quality} small={small} />}
       </figcaption>
+
+      {lost && (
+        <span className="absolute inset-0 grid place-items-center bg-room/70 p-2 text-center text-sm font-bold text-room-ink">
+          {t("stage.reconnecting")}
+        </span>
+      )}
 
       {actions && <TileMenu name={name} actions={actions} small={small} />}
     </figure>
@@ -202,5 +224,29 @@ function TileMenu({
           document.body,
         )}
     </>
+  );
+}
+
+/** A small signal icon: teal when good, cinnamon when poor, red when lost. */
+function QualityIcon({ quality, small }: { quality: ConnectionQuality; small: boolean }) {
+  const t = useTranslations("Classroom.header.quality");
+  const [Icon, label, tone] =
+    quality === ConnectionQuality.Excellent
+      ? [SignalHigh, t("excellent"), "text-room-teal"]
+      : quality === ConnectionQuality.Good
+        ? [SignalMedium, t("good"), "text-room-teal"]
+        : quality === ConnectionQuality.Poor
+          ? [SignalLow, t("poor"), "text-room-cinnamon"]
+          : quality === ConnectionQuality.Lost
+            ? [SignalZero, t("lost"), "text-room-danger"]
+            : [SignalMedium, t("unknown"), "text-room-muted"];
+  return (
+    <Icon
+      role="img"
+      aria-label={label}
+      size={small ? 12 : 16}
+      strokeWidth={2.25}
+      className={`shrink-0 ${tone}`}
+    />
   );
 }

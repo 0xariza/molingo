@@ -1079,7 +1079,9 @@
       "audioOnly": "Audio only: video is paused to save data.",
       "startAudio": "Tap to hear the class",
       "weak": "Your connection is weak. Switch to audio only so you keep hearing the class.",
-      "notNow": "Not now"
+      "notNow": "Not now",
+      "mutedTalking": "You're muted. Turn on your mic so everyone can hear you.",
+      "fiveLeft": "5 minutes left in this session."
     },
     "stage": {
       "label": "Class stage",
@@ -1099,7 +1101,10 @@
       "fullscreen": "Full screen",
       "exitFullscreen": "Exit full screen",
       "drag": "Your video. Drag it to another corner.",
-      "restore": "Show my video"
+      "restore": "Show my video",
+      "presenting": "You're showing your screen to everyone.",
+      "reconnecting": "Reconnecting…",
+      "dropped": "{name}'s connection dropped; coming back…"
     },
     "people": {
       "title": "People",

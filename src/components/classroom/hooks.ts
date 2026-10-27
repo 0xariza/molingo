@@ -1,21 +1,65 @@
 "use client";
 
 import { RoomEvent, Track, type LocalAudioTrack, type Room } from "livekit-client";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const NARROW = "(max-width: 767px)";
 
-/** Phone-sized screens get the portrait layout (PLAN §6). */
-export function useNarrow() {
+/** Whether a media query matches, kept up to date. */
+export function useMediaQuery(query: string) {
   return useSyncExternalStore(
     (on) => {
-      const m = matchMedia(NARROW);
+      const m = matchMedia(query);
       m.addEventListener("change", on);
       return () => m.removeEventListener("change", on);
     },
-    () => matchMedia(NARROW).matches,
+    () => matchMedia(query).matches,
     () => false,
   );
+}
+
+/** Phone-sized screens get the portrait layout (PLAN §6). */
+export const useNarrow = () => useMediaQuery(NARROW);
+
+/**
+ * Whether you've been talking with your microphone muted, for about a second. Listens to a copy
+ * of the muted track (a clone can be enabled on its own); nothing is sent. `dismiss` hides it and
+ * stays quiet for about 30 seconds of further talk.
+ */
+export function useTalkingWhileMuted(track: LocalAudioTrack | undefined, muted: boolean) {
+  const [talking, setTalking] = useState(false);
+  const quiet = useRef(0);
+  useEffect(() => {
+    if (!track || !muted) return;
+    const copy = track.mediaStreamTrack.clone();
+    copy.enabled = true;
+    const ctx = new AudioContext();
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    ctx.createMediaStreamSource(new MediaStream([copy])).connect(analyser);
+    const data = new Uint8Array(analyser.frequencyBinCount);
+    let loud = 0;
+    const id = setInterval(() => {
+      analyser.getByteTimeDomainData(data);
+      let peak = 0;
+      for (const v of data) peak = Math.max(peak, Math.abs(v - 128) / 128);
+      // Speech-loud samples count up, quiet ones count down: a cough or a door doesn't trip it.
+      loud = peak > 0.08 ? loud + 1 : Math.max(0, loud - 1);
+      if (quiet.current > 0) quiet.current--;
+      else if (loud >= 8) setTalking(true);
+    }, 100);
+    return () => {
+      clearInterval(id);
+      copy.stop();
+      ctx.close().catch(() => {});
+      setTalking(false);
+    };
+  }, [track, muted]);
+  const dismiss = () => {
+    quiet.current = 300;
+    setTalking(false);
+  };
+  return [talking, dismiss] as const;
 }
 
 /** An element's size, kept up to date. Pass the returned setter as the element's `ref`. */

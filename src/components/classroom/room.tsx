@@ -13,7 +13,16 @@ import {
   useTracks,
   type TrackReferenceOrPlaceholder,
 } from "@livekit/components-react";
-import { ConnectionQuality, ConnectionState, Track, type LocalVideoTrack } from "livekit-client";
+import {
+  ConnectionQuality,
+  ConnectionState,
+  DisconnectReason,
+  RoomEvent,
+  Track,
+  type LocalAudioTrack,
+  type LocalVideoTrack,
+  type RemoteParticipant,
+} from "livekit-client";
 import {
   AudioLines,
   Clock,
@@ -33,6 +42,7 @@ import {
   Signal,
   SmilePlus,
   SwitchCamera,
+  Unplug,
   Users,
   Video,
   VideoOff,
@@ -43,13 +53,31 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import { formatNumber } from "@/lib/format";
 import { bestTileWidth } from "@/lib/video-grid";
-import { useAudioOnly, useBoxSize, useNarrow, useNow, useWakeLock } from "./hooks";
+import {
+  useAudioOnly,
+  useBoxSize,
+  useMediaQuery,
+  useNarrow,
+  useNow,
+  useTalkingWhileMuted,
+  useWakeLock,
+} from "./hooks";
 import { ChatPanel, ConfirmDialog, PeoplePanel, VisitorPanel } from "./panels";
 import { ReactionStream, ReactionTray, useReactions } from "./reactions";
 import { FloatingSelf } from "./self-view";
 import { ShareView } from "./share-view";
-import { Tile, isTeacher, type TileAction } from "./tile";
+import { Tile, isTeacher, nameOf, type TileAction } from "./tile";
 import type { ClassroomInfo } from "./types";
+
+/** Why someone vanished that means their network, not a choice (unknown counts too). */
+const NETWORK_REASONS = new Set<DisconnectReason>([
+  DisconnectReason.SIGNAL_CLOSE,
+  DisconnectReason.CONNECTION_TIMEOUT,
+  DisconnectReason.MEDIA_FAILURE,
+  DisconnectReason.STATE_MISMATCH,
+  DisconnectReason.SERVER_SHUTDOWN,
+  DisconnectReason.MIGRATION,
+]);
 
 type PanelName = "people" | "chat" | "visitor" | null;
 
@@ -67,9 +95,10 @@ export function Room({
   const locale = useLocale() as Locale;
   const room = useRoomContext();
   const narrow = useNarrow();
+  const landscapePhone = useMediaQuery("(orientation: landscape) and (max-height: 500px)");
   const state = useConnectionState();
   const participants = useParticipants();
-  const { localParticipant } = useLocalParticipant();
+  const { localParticipant, isMicrophoneEnabled, microphoneTrack } = useLocalParticipant();
   const { attributes: mine } = useParticipantAttributes({ participant: localParticipant });
   // Mona's visitor panel starts open beside the call; on a phone it would cover the call.
   const [panel, setPanel] = useState<PanelName>(info.visitor && !narrow ? "visitor" : null);
@@ -97,7 +126,12 @@ export function Room({
     { onlySubscribed: false },
   );
   const self = tracks.find((tr) => tr.participant.isLocal && tr.source === Track.Source.Camera);
-  const share = tracks.find((tr) => isTrackReference(tr) && tr.source === Track.Source.ScreenShare);
+  const anyShare = tracks.find(
+    (tr) => isTrackReference(tr) && tr.source === Track.Source.ScreenShare,
+  );
+  // Your own shared screen isn't shown back to you (a hall of mirrors): a "presenting" bar instead.
+  const presenting = !!anyShare?.participant.isLocal;
+  const share = presenting ? undefined : anyShare;
   // Mona first, then raised hands, then everyone else in joining order.
   const rank = (tr: TrackReferenceOrPlaceholder) =>
     isTeacher(tr.participant) ? 0 : tr.participant.attributes.hand === "1" ? 1 : 2;
@@ -133,6 +167,40 @@ export function Room({
       setWeakLong(false);
     };
   }, [weak]);
+  const [talkingMuted, dismissMuted] = useTalkingWhileMuted(
+    microphoneTrack?.track as LocalAudioTrack | undefined,
+    !isMicrophoneEnabled,
+  );
+
+  // The teacher gets a quiet heads-up five minutes before the end.
+  const now = useNow();
+  const left = info.endsAt.getTime() - now.getTime();
+  const [endNoted, setEndNoted] = useState(false);
+  const fiveLeft = teacher && !endNoted && left > 0 && left <= 5 * 60_000;
+
+  // People whose connection dropped (not those who left) stay listed until they're back, at most
+  // two minutes, so a silent tile isn't mistaken for a silent learner.
+  const [dropped, setDropped] = useState<{ identity: string; name: string }[]>([]);
+  useEffect(() => {
+    const without = (identity: string) => (list: typeof dropped) =>
+      list.filter((d) => d.identity !== identity);
+    const gone = (p: RemoteParticipant, reason?: DisconnectReason) => {
+      if (reason !== undefined && !NETWORK_REASONS.has(reason)) return;
+      setDropped((list) => [
+        ...without(p.identity)(list),
+        { identity: p.identity, name: nameOf(p) },
+      ]);
+      setTimeout(() => setDropped(without(p.identity)), 120_000);
+    };
+    const back = (p: RemoteParticipant) => setDropped(without(p.identity));
+    room.on(RoomEvent.ParticipantDisconnected, gone);
+    room.on(RoomEvent.ParticipantConnected, back);
+    return () => {
+      room.off(RoomEvent.ParticipantDisconnected, gone);
+      room.off(RoomEvent.ParticipantConnected, back);
+    };
+  }, [room]);
+
   const goAudioOnly = () => {
     setAudioOnly(true);
     localParticipant.setCameraEnabled(false);
@@ -143,28 +211,40 @@ export function Room({
       ? { text: t("notice.connecting"), tone: "info" }
       : state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting
         ? { text: t("notice.reconnecting"), tone: "info" }
-        : myTurn
-          ? { text: t("notice.myTurn"), tone: "turn" }
-          : handUp
-            ? { text: t("notice.handUp"), tone: "hand" }
-            : weakLong && !audioOnly && !offered
-              ? {
-                  text: t("notice.weak"),
-                  tone: "info",
-                  action: {
-                    label: t("controls.audioOnly"),
-                    onClick: () => {
-                      goAudioOnly();
-                      setOffered(true);
+        : talkingMuted
+          ? {
+              text: t("notice.mutedTalking"),
+              tone: "turn",
+              action: {
+                label: t("controls.micOn"),
+                onClick: () => localParticipant.setMicrophoneEnabled(true),
+              },
+              onDismiss: dismissMuted,
+            }
+          : myTurn
+            ? { text: t("notice.myTurn"), tone: "turn" }
+            : handUp
+              ? { text: t("notice.handUp"), tone: "hand" }
+              : weakLong && !audioOnly && !offered
+                ? {
+                    text: t("notice.weak"),
+                    tone: "info",
+                    action: {
+                      label: t("controls.audioOnly"),
+                      onClick: () => {
+                        goAudioOnly();
+                        setOffered(true);
+                      },
                     },
-                  },
-                  onDismiss: () => setOffered(true),
-                }
-              : !teacherHere
-                ? { text: t("notice.noTeacher"), tone: "info" }
-                : audioOnly
-                  ? { text: t("notice.audioOnly"), tone: "info" }
-                  : null;
+                    onDismiss: () => setOffered(true),
+                  }
+                : fiveLeft
+                  ? { text: t("notice.fiveLeft"), tone: "info", onDismiss: () => setEndNoted(true) }
+                  : !teacherHere
+                    ? { text: t("notice.noTeacher"), tone: "info" }
+                    : audioOnly
+                      ? { text: t("notice.audioOnly"), tone: "info" }
+                      : null;
 
   // Pinned beats a shared screen, which beats the grid. Pins and where your own video sits are
   // yours alone: nobody else's view changes.
@@ -228,6 +308,22 @@ export function Room({
         className={narrow ? "start-3 bottom-14" : "start-6 bottom-28"}
       />
       {notice && <Notice {...notice} />}
+      {dropped.length > 0 && (
+        <ul
+          aria-live="polite"
+          className="absolute start-3 top-16 z-10 flex max-w-[calc(100%-1.5rem)] flex-col items-start gap-1.5"
+        >
+          {dropped.map((d) => (
+            <li
+              key={d.identity}
+              className="inline-flex items-center gap-2 rounded-pill bg-room-raised px-3 py-1.5 text-sm text-room-ink shadow-[0_8px_24px_rgba(0,0,0,.35)]"
+            >
+              <Unplug aria-hidden size={16} className="shrink-0 text-room-cinnamon" />
+              {t("stage.dropped", { name: d.name })}
+            </li>
+          ))}
+        </ul>
+      )}
     </>
   );
 
@@ -391,6 +487,16 @@ export function Room({
     />
   );
 
+  // A phone turned sideways gives a shared screen the whole display.
+  if (landscapePhone && share)
+    return (
+      <div className="fixed inset-0 bg-room">
+        <ShareView trackRef={share} />
+        <ReactionStream shown={reactions.shown} className="start-3 bottom-3" />
+        {notice && <Notice {...notice} />}
+      </div>
+    );
+
   return (
     <div className="flex h-dvh flex-col bg-room text-room-ink">
       <TopBar
@@ -399,6 +505,23 @@ export function Room({
         narrow={narrow}
         more={narrow ? moreMenu : null}
       />
+
+      {presenting && (
+        <div
+          role="status"
+          className={`flex flex-wrap items-center gap-3 rounded-[14px] bg-room-teal-soft py-2 ps-4 pe-2 text-room-teal ${narrow ? "mx-3 mb-2" : "mx-6 mt-4"}`}
+        >
+          <MonitorUp aria-hidden size={20} className="shrink-0" />
+          <span className="min-w-0 flex-1 font-medium">{t("stage.presenting")}</span>
+          <button
+            type="button"
+            onClick={() => localParticipant.setScreenShareEnabled(false)}
+            className="min-h-10 rounded-pill bg-room-teal px-4 font-bold text-room"
+          >
+            {t("controls.stopShare")}
+          </button>
+        </div>
+      )}
 
       <main
         id="main"

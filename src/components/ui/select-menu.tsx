@@ -117,7 +117,13 @@ export function SelectMenu({
         onKeyDown={onKeyDown}
         className={trigger}
       >
-        <span id={`${id}-value`} className={selected ? "" : "font-medium text-body/60"}>
+        <span
+          id={`${id}-value`}
+          // Long values (device names) end in an ellipsis instead of pushing the caret out; "auto"
+          // puts it at the end of an English name on a Persian page, not the start.
+          dir="auto"
+          className={`min-w-0 truncate ${selected ? "" : "font-medium text-body/60"}`}
+        >
           {selected?.label ?? placeholder}
         </span>
         <CaretDown aria-hidden size={18} className="shrink-0 text-body" />
