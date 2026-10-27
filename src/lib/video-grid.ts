@@ -25,3 +25,13 @@ export function videoFit(tile: Size, video: Size | null): "cover" | "contain" {
   if (!video || !tile.width || !tile.height) return "cover";
   return tile.width >= tile.height === video.width >= video.height ? "cover" : "contain";
 }
+
+/** A shared screen zooms between its normal size and four times that. */
+export const clampZoom = (zoom: number) => Math.min(4, Math.max(1, zoom));
+
+/** How far a zoomed picture may move: only the part that sticks out, so no empty edge shows. */
+export function clampPan(pan: { x: number; y: number }, zoom: number, { width, height }: Size) {
+  const x = (width * (zoom - 1)) / 2;
+  const y = (height * (zoom - 1)) / 2;
+  return { x: Math.min(x, Math.max(-x, pan.x)), y: Math.min(y, Math.max(-y, pan.y)) };
+}

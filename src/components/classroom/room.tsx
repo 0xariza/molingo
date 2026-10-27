@@ -20,12 +20,18 @@ import {
   ClipboardList,
   Ellipsis,
   Hand,
+  LayoutGrid,
   MessageCircle,
   Mic,
   MicOff,
+  Minimize2,
   MonitorUp,
   PhoneOff,
+  PictureInPicture2,
+  Pin,
+  PinOff,
   Signal,
+  SmilePlus,
   SwitchCamera,
   Users,
   Video,
@@ -33,13 +39,16 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useLocale, useTranslations } from "next-intl";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import { formatNumber } from "@/lib/format";
 import { bestTileWidth } from "@/lib/video-grid";
 import { useAudioOnly, useBoxSize, useNarrow, useNow, useWakeLock } from "./hooks";
 import { ChatPanel, ConfirmDialog, PeoplePanel, VisitorPanel } from "./panels";
-import { Tile, isTeacher } from "./tile";
+import { ReactionStream, ReactionTray, useReactions } from "./reactions";
+import { FloatingSelf } from "./self-view";
+import { ShareView } from "./share-view";
+import { Tile, isTeacher, type TileAction } from "./tile";
 import type { ClassroomInfo } from "./types";
 
 type PanelName = "people" | "chat" | "visitor" | null;
@@ -67,6 +76,11 @@ export function Room({
   const [leaving, setLeaving] = useState(false);
   const [more, setMore] = useState(false);
   const [audioOnly, setAudioOnly] = useState(startAudioOnly);
+  const [pinned, setPinned] = useState<string | null>(null);
+  // "auto": in the people column beside a big tile on desktop (as in Meet), floating otherwise.
+  const [selfPick, setSelfMode] = useState<"auto" | "float" | "grid" | "min">("auto");
+  const [reacting, setReacting] = useState(false);
+  const reactions = useReactions(t("you"));
   const chat = useChat();
   // Chat messages from others after this moment count as unread while the chat is closed.
   const [seenAt, setSeenAt] = useState(() => Date.now());
@@ -106,7 +120,25 @@ export function Room({
   };
   const toggle = (name: PanelName) => showPanel(panel === name ? null : name);
 
-  const notice: { text: string; tone: "info" | "turn" | "hand" } | null =
+  // A connection that stays weak for 20 seconds gets an offer to drop video (once per class).
+  const { quality } = useConnectionQualityIndicator({ participant: localParticipant });
+  const weak = quality === ConnectionQuality.Poor || quality === ConnectionQuality.Lost;
+  const [weakLong, setWeakLong] = useState(false);
+  const [offered, setOffered] = useState(false);
+  useEffect(() => {
+    if (!weak) return;
+    const id = setTimeout(() => setWeakLong(true), 20_000);
+    return () => {
+      clearTimeout(id);
+      setWeakLong(false);
+    };
+  }, [weak]);
+  const goAudioOnly = () => {
+    setAudioOnly(true);
+    localParticipant.setCameraEnabled(false);
+  };
+
+  const notice: NoticeProps | null =
     state === ConnectionState.Connecting
       ? { text: t("notice.connecting"), tone: "info" }
       : state === ConnectionState.Reconnecting || state === ConnectionState.SignalReconnecting
@@ -115,88 +147,152 @@ export function Room({
           ? { text: t("notice.myTurn"), tone: "turn" }
           : handUp
             ? { text: t("notice.handUp"), tone: "hand" }
-            : !teacherHere
-              ? { text: t("notice.noTeacher"), tone: "info" }
-              : audioOnly
-                ? { text: t("notice.audioOnly"), tone: "info" }
-                : null;
+            : weakLong && !audioOnly && !offered
+              ? {
+                  text: t("notice.weak"),
+                  tone: "info",
+                  action: {
+                    label: t("controls.audioOnly"),
+                    onClick: () => {
+                      goAudioOnly();
+                      setOffered(true);
+                    },
+                  },
+                  onDismiss: () => setOffered(true),
+                }
+              : !teacherHere
+                ? { text: t("notice.noTeacher"), tone: "info" }
+                : audioOnly
+                  ? { text: t("notice.audioOnly"), tone: "info" }
+                  : null;
 
-  // Phones: one main tile (screen share, then Mona, then whoever comes first) above a strip.
-  const main = share ?? others[0];
-  const strip = narrow ? [self, ...others.filter((tr) => tr !== main)] : others;
+  // Pinned beats a shared screen, which beats the grid. Pins and where your own video sits are
+  // yours alone: nobody else's view changes.
+  const keyOf = (tr: TrackReferenceOrPlaceholder) => `${tr.participant.identity}-${tr.source}`;
+  const pinnedTrack = pinned ? tracks.find((tr) => keyOf(tr) === pinned) : undefined;
+  const spotlight = pinnedTrack ?? share ?? (narrow ? others[0] : undefined);
+  const selfMode = selfPick !== "auto" ? selfPick : spotlight && !narrow ? "grid" : "float";
+  const pinAction = (tr: TrackReferenceOrPlaceholder): TileAction =>
+    pinned === keyOf(tr)
+      ? { label: t("tile.unpin"), icon: PinOff, onClick: () => setPinned(null) }
+      : { label: t("tile.pin"), icon: Pin, onClick: () => setPinned(keyOf(tr)) };
+  const selfActions: TileAction[] = self
+    ? [
+        selfMode === "grid"
+          ? { label: t("tile.float"), icon: PictureInPicture2, onClick: () => setSelfMode("float") }
+          : { label: t("tile.inGrid"), icon: LayoutGrid, onClick: () => setSelfMode("grid") },
+        ...(selfMode === "grid"
+          ? []
+          : [{ label: t("tile.minimise"), icon: Minimize2, onClick: () => setSelfMode("min") }]),
+        pinAction(self),
+      ]
+    : [];
+  const tile = (tr: TrackReferenceOrPlaceholder, size: "large" | "small" = "large") =>
+    tr.source === Track.Source.ScreenShare && size === "large" ? (
+      <ShareView trackRef={tr} />
+    ) : (
+      <Tile
+        trackRef={tr}
+        size={size}
+        self={tr.participant.isLocal}
+        // A screen comes back by unpinning whoever replaced it, so it needs no menu.
+        actions={
+          tr.source === Track.Source.ScreenShare
+            ? undefined
+            : tr.participant.isLocal
+              ? selfActions
+              : [pinAction(tr)]
+        }
+      />
+    );
+
+  const rest = [selfMode === "grid" ? self : undefined, ...others, share].filter(
+    (tr): tr is TrackReferenceOrPlaceholder => !!tr && tr !== spotlight,
+  );
+  const alone = others.length === 0 && !spotlight;
+  const floating = self && spotlight !== self && selfMode !== "grid" && (narrow || !alone) && (
+    <FloatingSelf
+      narrow={narrow}
+      minimised={selfMode === "min"}
+      onRestore={() => setSelfMode("float")}
+    >
+      <Tile trackRef={self} size="pip" self actions={selfActions} />
+    </FloatingSelf>
+  );
+  const overlays = (
+    <>
+      {floating}
+      <ReactionStream
+        shown={reactions.shown}
+        // The start side: your own video floats at the end.
+        className={narrow ? "start-3 bottom-14" : "start-6 bottom-28"}
+      />
+      {notice && <Notice {...notice} />}
+    </>
+  );
 
   const stage = narrow ? (
     <div className="flex min-h-0 flex-1 flex-col gap-2.5">
       <div className="relative min-h-0 flex-1">
-        {main ? (
-          <Tile trackRef={main} />
+        {spotlight ? (
+          tile(spotlight)
         ) : (
           <Alone text={teacher ? t("stage.aloneTeacher") : t("stage.aloneLearner")} />
         )}
-        {notice && <Notice {...notice} />}
+        {overlays}
       </div>
-      <ul aria-label={t("stage.label")} className="flex gap-2 overflow-x-auto">
-        {strip.map(
-          (tr) =>
-            tr && (
-              <li key={`${tr.participant.identity}-${tr.source}`} className="h-26 w-21 shrink-0">
-                <Tile trackRef={tr} size="small" self={tr.participant.isLocal} />
-              </li>
-            ),
-        )}
-      </ul>
-    </div>
-  ) : (
-    <div
-      aria-label={t("stage.label")}
-      className="relative flex min-h-0 min-w-0 flex-[999_1_640px] flex-col gap-3"
-    >
-      {share ? (
-        <>
-          <div className="min-h-0 flex-1">
-            <Tile trackRef={share} />
-          </div>
-          <ul className="flex h-30 shrink-0 gap-3 overflow-x-auto">
-            {[self, ...others].map(
-              (tr) =>
-                tr && (
-                  <li key={tr.participant.identity} className="aspect-video h-full shrink-0">
-                    <Tile trackRef={tr} size="small" self={tr.participant.isLocal} />
-                  </li>
-                ),
-            )}
-          </ul>
-        </>
-      ) : others.length === 0 ? (
-        <Alone text={teacher ? t("stage.aloneTeacher") : t("stage.aloneLearner")}>
-          {self && (
-            <div className="aspect-video w-full max-w-md">
-              <Tile trackRef={self} self />
-            </div>
-          )}
-        </Alone>
-      ) : (
-        <ul
-          ref={grid}
-          className="flex min-h-0 flex-1 flex-wrap content-center justify-center gap-3"
-        >
-          {others.map((tr) => (
-            <li
-              key={tr.participant.identity}
-              className="aspect-video"
-              style={{ width: bestTileWidth(gridSize, others.length, 12) }}
-            >
-              <Tile trackRef={tr} />
+      {rest.length > 0 && (
+        <ul aria-label={t("stage.label")} className="flex gap-2 overflow-x-auto">
+          {rest.map((tr) => (
+            <li key={keyOf(tr)} className="h-26 w-21 shrink-0">
+              {tile(tr, "small")}
             </li>
           ))}
         </ul>
       )}
-      {self && others.length > 0 && !share && (
-        <div className="absolute end-4 bottom-4 aspect-video w-50 rounded-[14px] shadow-[0_8px_24px_rgba(0,0,0,.45)] ring-2 ring-room">
-          <Tile trackRef={self} size="pip" self />
-        </div>
+    </div>
+  ) : (
+    <div
+      aria-label={t("stage.label")}
+      // With a big tile, the people stand in a column beside it (on the right, like the panel), so
+      // a shared screen keeps the full height.
+      className={`flex min-h-0 min-w-0 flex-[999_1_640px] gap-3 ${spotlight ? "rtl:flex-row-reverse" : "flex-col"}`}
+    >
+      <div className="relative min-h-0 min-w-0 flex-1">
+        {spotlight ? (
+          tile(spotlight)
+        ) : alone ? (
+          <Alone text={teacher ? t("stage.aloneTeacher") : t("stage.aloneLearner")}>
+            {self && (
+              <div className="aspect-video w-full max-w-md">
+                <Tile trackRef={self} self />
+              </div>
+            )}
+          </Alone>
+        ) : (
+          <ul ref={grid} className="flex size-full flex-wrap content-center justify-center gap-3">
+            {rest.map((tr) => (
+              <li
+                key={keyOf(tr)}
+                className="aspect-video"
+                style={{ width: bestTileWidth(gridSize, rest.length, 12) }}
+              >
+                {tile(tr)}
+              </li>
+            ))}
+          </ul>
+        )}
+        {overlays}
+      </div>
+      {spotlight && rest.length > 0 && (
+        <ul className="flex w-60 shrink-0 flex-col gap-3 overflow-y-auto">
+          {rest.map((tr) => (
+            <li key={keyOf(tr)} className="aspect-video w-full shrink-0 overflow-hidden">
+              {tile(tr, "small")}
+            </li>
+          ))}
+        </ul>
       )}
-      {notice && <Notice {...notice} />}
     </div>
   );
 
@@ -254,6 +350,15 @@ export function Room({
       onClick={() => toggle("chat")}
     />
   );
+  const reactButton = (
+    <ControlButton
+      icon={SmilePlus}
+      label={t("controls.reactLabel")}
+      action={t("controls.react")}
+      pressed={reacting}
+      onClick={() => setReacting(!reacting)}
+    />
+  );
   const leaveButton = (
     <ControlButton
       icon={PhoneOff}
@@ -270,8 +375,8 @@ export function Room({
       onToggle={() => setMore(!more)}
       audioOnly={audioOnly}
       onAudioOnly={() => {
-        setAudioOnly(!audioOnly);
-        if (!audioOnly) localParticipant.setCameraEnabled(false);
+        if (audioOnly) setAudioOnly(false);
+        else goAudioOnly();
         setMore(false);
       }}
       onFlip={async () => {
@@ -297,20 +402,29 @@ export function Room({
 
       <main
         id="main"
-        className={`flex min-h-0 flex-1 gap-4 ${narrow ? "flex-col px-3" : "px-6 pt-4 pb-2"}`}
+        // The chat and people panel sits on the right in both languages, as in Meet.
+        className={`flex min-h-0 flex-1 gap-4 ${narrow ? "flex-col px-3" : "px-6 pt-4 pb-2 rtl:flex-row-reverse"}`}
       >
         {stage}
         {panelEl}
       </main>
 
+      {reacting && (
+        <div className={narrow ? "px-3 pt-2" : "px-6 pt-2"}>
+          <ReactionTray onReact={reactions.react} />
+        </div>
+      )}
+
       <footer
         aria-label={t("controls.bar")}
         className={`flex items-start gap-x-6 gap-y-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] ${
-          narrow ? "justify-between px-3 pt-2" : "flex-wrap justify-between px-6 pt-3"
+          narrow
+            ? "justify-between px-3 pt-2"
+            : "flex-wrap justify-between px-6 pt-3 rtl:flex-row-reverse"
         }`}
       >
         {!narrow && (
-          <p className="flex min-w-40 flex-1 items-center gap-2 self-center text-sm text-room-muted">
+          <p className="flex min-w-40 flex-1 items-center gap-2 self-center rtl:justify-end text-sm text-room-muted">
             {info.title}
           </p>
         )}
@@ -318,6 +432,7 @@ export function Room({
           <MediaButton source={Track.Source.Microphone} />
           <MediaButton source={Track.Source.Camera} disabled={audioOnly} />
           {teacher && !narrow && <MediaButton source={Track.Source.ScreenShare} />}
+          {reactButton}
           {!teacher && handButton}
           {narrow && (teacher ? peopleButton : chatButton)}
           {narrow && teacher && chatButton}
@@ -325,7 +440,7 @@ export function Room({
           {leaveButton}
         </div>
         {!narrow && (
-          <div className="flex min-w-40 flex-1 items-start justify-end gap-2.5">
+          <div className="flex min-w-40 flex-1 items-start justify-end gap-2.5 rtl:justify-start">
             {peopleButton}
             {chatButton}
           </div>
@@ -453,12 +568,20 @@ function TopBar({
   );
 }
 
-function Notice({ text, tone }: { text: string; tone: "info" | "turn" | "hand" }) {
+type NoticeProps = {
+  text: string;
+  tone: "info" | "turn" | "hand";
+  action?: { label: string; onClick: () => void };
+  onDismiss?: () => void;
+};
+
+function Notice({ text, tone, action, onDismiss }: NoticeProps) {
+  const t = useTranslations("Classroom.notice");
   const Icon = tone === "turn" ? AudioLines : tone === "hand" ? Hand : null;
   return (
-    <p
+    <div
       role="status"
-      className={`absolute inset-x-3 top-3 z-10 mx-auto flex max-w-xl items-center gap-2 rounded-[14px] px-3.5 py-2.5 text-sm font-medium shadow-[0_8px_24px_rgba(0,0,0,.35)] ${
+      className={`absolute inset-x-3 top-3 z-10 mx-auto flex max-w-xl flex-wrap items-center gap-2 rounded-[14px] px-3.5 py-2.5 text-sm font-medium shadow-[0_8px_24px_rgba(0,0,0,.35)] ${
         tone === "turn"
           ? "bg-room-teal-soft text-room-teal"
           : tone === "hand"
@@ -467,8 +590,26 @@ function Notice({ text, tone }: { text: string; tone: "info" | "turn" | "hand" }
       }`}
     >
       {Icon && <Icon aria-hidden size={18} className="shrink-0" />}
-      {text}
-    </p>
+      <span className="min-w-0 flex-1">{text}</span>
+      {action && (
+        <button
+          type="button"
+          onClick={action.onClick}
+          className="min-h-9 shrink-0 rounded-pill bg-room-teal px-3 font-bold text-room"
+        >
+          {action.label}
+        </button>
+      )}
+      {onDismiss && (
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="min-h-9 shrink-0 rounded-pill px-2 text-room-muted hover:text-room-ink"
+        >
+          {t("notNow")}
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -522,7 +663,7 @@ function ControlButton({
       aria-label={action}
       aria-pressed={pressed}
       title={action}
-      className="group relative flex min-w-16 flex-col items-center gap-1.5 rounded-[18px] disabled:opacity-50"
+      className="group relative flex min-w-14 flex-col items-center gap-1.5 rounded-[18px] disabled:opacity-50"
     >
       <span
         className={`flex h-14 items-center justify-center gap-2 rounded-[18px] transition-colors ${wide ? "px-5" : "w-14"} ${square}`}
@@ -562,7 +703,9 @@ function MediaButton({
   const t = useTranslations("Classroom.controls");
   const { enabled, pending, toggle } = useTrackToggle({
     source,
-    captureOptions: source === Track.Source.ScreenShare ? { audio: true } : undefined,
+    // "detail": on a weak link the browser drops frames, not sharpness, so slide text stays readable.
+    captureOptions:
+      source === Track.Source.ScreenShare ? { audio: true, contentHint: "detail" } : undefined,
   });
   if (source === Track.Source.ScreenShare)
     return (

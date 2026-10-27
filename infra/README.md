@@ -9,7 +9,7 @@ shipped over SSH; the VPS never builds or pulls anything.
 | `compose.yaml`  | The services, run from `/opt/molingo` on the VPS                                          |
 | `Caddyfile`     | Port 443 split by SNI: HTTPS for `hoopo.ir` / `lk.hoopo.ir`, TURN/TLS for `turn.hoopo.ir` |
 | `../Dockerfile` | The app (Next.js standalone), built for linux/amd64                                       |
-| `livekit.yaml`  | LiveKit with embedded TURN (UDP 3478, TLS via Caddy on 443), media on UDP 50000–50200     |
+| `livekit.yaml`  | LiveKit with embedded TURN (UDP 443, TLS via Caddy on 443), media on UDP 50000–50200      |
 | `caddy/`        | Builds Caddy with `caddy-l4`                                                              |
 | `call-test/`    | M0 test page and token service (no app, no database); reports go to `/data/reports.jsonl` |
 | `ship.sh`       | Copies images and config, adds missing secrets to `.env`, migrates the database, restarts |

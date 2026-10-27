@@ -1061,7 +1061,9 @@
       "more": "More options",
       "audioOnly": "Audio only (saves data)",
       "showVideo": "Show video again",
-      "flip": "Switch camera"
+      "flip": "Switch camera",
+      "react": "Send a reaction",
+      "reactLabel": "React"
     },
     "notice": {
       "connecting": "Connecting…",
@@ -1070,7 +1072,9 @@
       "handUp": "Your hand is up. Your teacher will give you the turn soon.",
       "noTeacher": "Your teacher hasn't arrived yet. Stay here.",
       "audioOnly": "Audio only: video is paused to save data.",
-      "startAudio": "Tap to hear the class"
+      "startAudio": "Tap to hear the class",
+      "weak": "Your connection is weak. Switch to audio only so you keep hearing the class.",
+      "notNow": "Not now"
     },
     "stage": {
       "label": "Class stage",
@@ -1081,7 +1085,16 @@
       "turn": "Their turn",
       "handUp": "Hand up",
       "micOff": "Microphone off",
-      "self": "Your video"
+      "self": "Your video",
+      "zoom": "Zoom",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "zoomReset": "Back to normal size",
+      "zoomLevel": "{level, number, percent}",
+      "fullscreen": "Full screen",
+      "exitFullscreen": "Exit full screen",
+      "drag": "Your video. Drag it to another corner.",
+      "restore": "Show my video"
     },
     "people": {
       "title": "People",
@@ -1162,6 +1175,23 @@
       },
       "addLearner": "Add as learner",
       "addHint": "Opens in a new tab; the call goes on."
+    },
+    "tile": {
+      "options": "Options for {name}",
+      "pin": "Pin to screen",
+      "unpin": "Unpin",
+      "inGrid": "Show next to everyone",
+      "float": "Show as floating",
+      "minimise": "Minimise"
+    },
+    "reactions": {
+      "label": "Reactions",
+      "like": "Thumbs up",
+      "clap": "Clap",
+      "heart": "Heart",
+      "laugh": "Laugh",
+      "wow": "Surprised",
+      "think": "I have a question"
     }
   },
   "Owner": {

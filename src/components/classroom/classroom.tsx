@@ -1,7 +1,12 @@
 "use client";
 
 import { LiveKitRoom, RoomAudioRenderer, StartAudio } from "@livekit/components-react";
-import { DisconnectReason, VideoPresets } from "livekit-client";
+import {
+  AudioPresets,
+  DefaultReconnectPolicy,
+  DisconnectReason,
+  VideoPresets,
+} from "livekit-client";
 import { useTranslations } from "next-intl";
 import { useRef, useState, useTransition } from "react";
 import { Link } from "@/i18n/navigation";
@@ -10,6 +15,17 @@ import { captureSize } from "./hooks";
 import { PreJoin } from "./pre-join";
 import { Room } from "./room";
 import type { ClassroomInfo, JoinChoices } from "./types";
+
+// LiveKit's own retries, stretched from about 45 seconds to about 2 minutes: a train tunnel or a
+// network switch on a phone shouldn't put anyone out of class.
+const RECONNECT = new DefaultReconnectPolicy([
+  0,
+  300,
+  1200,
+  2700,
+  4800,
+  ...Array<number>(16).fill(7000),
+]);
 
 type Stage =
   | { kind: "prejoin" }
@@ -65,9 +81,12 @@ export function Classroom({
         options={{
           adaptiveStream: true,
           dynacast: true,
+          reconnectPolicy: RECONNECT,
           audioOutput: choices.audioOutputId ? { deviceId: choices.audioOutputId } : undefined,
           publishDefaults: {
             simulcast: true,
+            // Speech, not music: half the audio upload, still clear for pronunciation.
+            audioPreset: AudioPresets.speech,
             videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
           },
         }}

@@ -185,6 +185,22 @@
     transform: translateY(24px);
   }
 }
+/* A classroom reaction: floats up, stays a moment, fades. */
+@keyframes float-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  15%,
+  75% {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+}
 @media (prefers-reduced-motion: no-preference) {
   /* Sections rise in as they scroll into view, where scroll-driven animations are supported. */
   @supports (animation-timeline: view()) {

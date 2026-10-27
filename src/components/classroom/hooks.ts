@@ -129,12 +129,12 @@ export async function playTestSound(sinkId?: string) {
 }
 
 /**
- * Capture size in the screen's orientation: asking an upright phone for wide video makes the
- * browser crop the sensor, which looks zoomed in.
+ * Capture size in the screen's orientation. An upright phone gets 3:4, its sensor's own shape:
+ * anything narrower (9:16) makes the browser crop the sides, which looks zoomed in.
  */
 export const captureSize = (width: number, height: number) =>
   typeof matchMedia !== "undefined" && matchMedia("(orientation: portrait)").matches
-    ? { width: height, height: width }
+    ? { width: height, height: Math.round((height * 4) / 3) }
     : { width, height };
 
 /** A steady avatar colour per person, readable with white initials. */

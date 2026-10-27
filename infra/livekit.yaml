@@ -13,7 +13,9 @@ turn:
   # Caddy decrypts TURN/TLS on 443 and forwards plain TCP here; clients are told port 443.
   tls_port: 5349
   external_tls: true
-  udp_port: 3478
+  # 443, as LiveKit recommends when no HTTP/3 server holds UDP 443 (Caddy listens on TCP only):
+  # networks that block 3478 and the media range often still pass UDP 443. Needs ufw 443/udp.
+  udp_port: 443
 room:
   max_participants: 6
   empty_timeout: 600
