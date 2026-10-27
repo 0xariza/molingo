@@ -1,6 +1,6 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { classes, enrollments, sessions, students } from "@/db/schema";
+import { classes, enrollments, sessions, students, teacherLearners } from "@/db/schema";
 import { cefrLevels, type CefrLevel, type ClassCard } from "./classes";
 
 export type ClassStats = {
@@ -14,17 +14,20 @@ export type ClassStats = {
 
 const isRunning = (c: ClassCard) => c.state === "open" || c.state === "full";
 
-export async function classStats(cards: ClassCard[]): Promise<ClassStats> {
+export async function classStats(teacherId: string, cards: ClassCard[]): Promise<ClassStats> {
   const running = cards.filter(isRunning);
   const withoutClass = await db
     .select({ id: students.id, fullNameFa: students.fullNameFa, fullNameEn: students.fullNameEn })
-    .from(students)
+    .from(teacherLearners)
+    .innerJoin(students, eq(students.id, teacherLearners.studentId))
     .where(
       and(
-        eq(students.status, "active"),
+        eq(teacherLearners.teacherId, teacherId),
+        eq(teacherLearners.status, "active"),
         sql`not exists (
           select 1 from ${enrollments} e join ${classes} c on c.id = e.class_id
-          where e.student_id = "students"."id" and e.status = 'active' and c.archived_at is null
+          where e.student_id = ${teacherLearners.studentId} and e.status = 'active'
+            and c.teacher_id = ${teacherId} and c.archived_at is null
             and exists (select 1 from ${sessions} s where s.class_id = c.id and s.status = 'scheduled'))`,
       ),
     );
@@ -46,8 +49,8 @@ export async function classStats(cards: ClassCard[]): Promise<ClassStats> {
   };
 }
 
-/** A learner's classes, current ones first, for their profile. */
-export async function learnerClasses(studentId: string) {
+/** A learner's classes with this teacher, current ones first, for their profile. */
+export async function learnerClasses(teacherId: string, studentId: string) {
   return db
     .select({
       classId: classes.id,
@@ -61,6 +64,6 @@ export async function learnerClasses(studentId: string) {
     })
     .from(enrollments)
     .innerJoin(classes, eq(classes.id, enrollments.classId))
-    .where(eq(enrollments.studentId, studentId))
+    .where(and(eq(enrollments.studentId, studentId), eq(classes.teacherId, teacherId)))
     .orderBy(sql`${enrollments.status} = 'active' desc`, desc(enrollments.startedAt));
 }

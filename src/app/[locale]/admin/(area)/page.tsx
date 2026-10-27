@@ -7,8 +7,8 @@ import { StatCard } from "@/components/area/stat-card";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatNumber, formatTime, tehranDateKey } from "@/lib/format";
-import { requireAdmin } from "@/server/auth/current";
-import { listClasses, teacherIdFor } from "@/server/classes/classes";
+import { requireTeacher } from "@/server/auth/current";
+import { listClasses } from "@/server/classes/classes";
 import { awaitingConfirmation, nextClassSession, sessionsToday } from "@/server/classes/sessions";
 import { listFollowUps } from "@/server/students/learners";
 import { listUpcomingSlots } from "@/server/funnel/level-check";
@@ -30,21 +30,21 @@ export default function AdminHome() {
 
 /** Reads the session and today's data, so it streams in per request. */
 async function Dashboard() {
-  const admin = await requireAdmin();
+  const admin = await requireTeacher();
   const [t, levels, locale] = await Promise.all([
     getTranslations("Admin.home"),
     getTranslations("Landing.booking.levels"),
     getLocale() as Promise<Locale>,
   ]);
   const now = new Date();
-  const teacherId = await teacherIdFor(admin.id);
+  const teacherId = admin.teacherId;
   const [slots, classesToday, pending, next, leads, cards] = await Promise.all([
-    listUpcomingSlots(now),
+    listUpcomingSlots(teacherId, now),
     sessionsToday(teacherId, now),
     awaitingConfirmation(teacherId, now),
     nextClassSession(teacherId, now),
-    listFollowUps(),
-    listClasses(),
+    listFollowUps(teacherId),
+    listClasses(teacherId),
   ]);
   const emptySeats = cards
     .filter((c) => c.type === "group" && (c.state === "open" || c.state === "full"))
@@ -92,7 +92,7 @@ async function Dashboard() {
         <TodayTimeline sessions={classesToday} freeSessions={today} />
         <section
           aria-labelledby="booked-title"
-          className="space-y-4 rounded-[1.75rem] border border-line/40 bg-white p-6"
+          className="space-y-4 rounded-card border border-hairline bg-white p-6"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2

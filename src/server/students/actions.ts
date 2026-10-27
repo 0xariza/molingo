@@ -3,7 +3,7 @@
 import { refresh } from "next/cache";
 import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
-import { requireAdmin } from "../auth/current";
+import { requireTeacher } from "../auth/current";
 import { fieldErrors, formLocale, text } from "../forms";
 import {
   createLearner,
@@ -19,7 +19,7 @@ import { createLogin, newLoginLink, type LoginLink, type LoginLinkResult } from 
 /** Error keys map to messages under `Admin.learners.errors`. */
 export type LearnerFormState = {
   status: "idle" | "error" | "success";
-  error?: "phone_taken" | "lead_unavailable" | "not_found";
+  error?: "phone_taken" | "lead_unavailable" | "not_found" | "shared";
   /** With `phone_taken`: the learner who already has the number. */
   existingId?: string | null;
   fieldErrors?: Record<string, string>;
@@ -38,27 +38,27 @@ export async function createLearnerAction(
   _: LearnerFormState,
   form: FormData,
 ): Promise<LearnerFormState> {
-  const admin = await requireAdmin();
+  const teacher = await requireTeacher();
   const values = valuesOf(form, [...detailFields, "status", "leadId", "createLogin"]);
   const parsed = newLearnerSchema.safeParse({ ...values, leadId: values.leadId || undefined });
   if (!parsed.success) {
     return { status: "error", fieldErrors: fieldErrors(parsed.error.issues), values };
   }
 
-  const result = await createLearner(parsed.data);
+  const result = await createLearner(teacher.teacherId, parsed.data);
   if (!result.ok) {
     const existingId = result.error === "phone_taken" ? result.existingId : undefined;
     return { status: "error", error: result.error, existingId, values };
   }
   if (values.createLogin === "on") {
-    const login = await createLogin(result.id, admin.id);
+    const login = await createLogin(teacher.teacherId, result.id, teacher.id);
     if (login.ok) {
       const { url, kind, expiresAt } = login;
       const { fullNameFa: name, phone } = parsed.data;
       const link = { url, kind, expiresAt };
       return { status: "success", saved: { id: result.id, name, phone, link } };
     }
-    // Saved, but the login couldn't be made (e.g. the number is Mona's): the profile shows why.
+    // Saved, but the login couldn't be made (e.g. a shared learner): the profile shows why.
   }
   return redirect({ href: `/admin/students/${result.id}`, locale: formLocale(form) });
 }
@@ -67,7 +67,7 @@ export async function updateLearnerAction(
   _: LearnerFormState,
   form: FormData,
 ): Promise<LearnerFormState> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const values = valuesOf(form, detailFields);
   const id = z.uuid().safeParse(text(form, "id"));
   if (!id.success) return { status: "error", error: "not_found", values };
@@ -76,7 +76,7 @@ export async function updateLearnerAction(
     return { status: "error", fieldErrors: fieldErrors(parsed.error.issues), values };
   }
 
-  const result = await updateLearner(id.data, parsed.data);
+  const result = await updateLearner(teacherId, id.data, parsed.data);
   if (!result.ok) {
     const existingId = result.error === "phone_taken" ? result.existingId : undefined;
     return { status: "error", error: result.error, existingId, values };
@@ -87,18 +87,18 @@ export async function updateLearnerAction(
 const statusInput = z.object({ id: z.uuid(), status: z.enum(learnerStatuses) });
 
 export async function setLearnerStatusAction(form: FormData): Promise<void> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const parsed = statusInput.safeParse({ id: text(form, "id"), status: text(form, "status") });
   if (!parsed.success) return;
-  await setLearnerStatus(parsed.data.id, parsed.data.status);
+  await setLearnerStatus(teacherId, parsed.data.id, parsed.data.status);
   refresh();
 }
 
 export async function markLeadLostAction(form: FormData): Promise<void> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const leadId = z.uuid().safeParse(text(form, "leadId"));
   if (!leadId.success) return;
-  await markLeadLost(leadId.data);
+  await markLeadLost(teacherId, leadId.data);
   refresh();
 }
 
@@ -110,12 +110,12 @@ export type LoginFormState =
 
 async function loginLinkAction(
   form: FormData,
-  issue: (studentId: string, adminId: string) => Promise<LoginLinkResult>,
+  issue: (teacherId: string, studentId: string, createdBy: string) => Promise<LoginLinkResult>,
 ): Promise<LoginFormState> {
-  const admin = await requireAdmin();
+  const teacher = await requireTeacher();
   const id = z.uuid().safeParse(text(form, "id"));
   if (!id.success) return { status: "error", error: "not_found" };
-  const result = await issue(id.data, admin.id);
+  const result = await issue(teacher.teacherId, id.data, teacher.id);
   refresh();
   if (!result.ok) return { status: "error", error: result.error };
   const { url, kind, expiresAt } = result;

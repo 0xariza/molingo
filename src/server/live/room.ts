@@ -7,10 +7,11 @@ import {
   sessionRemovals,
   sessions,
   students,
+  teachers,
 } from "@/db/schema";
 import type { CefrLevel } from "../classes/classes";
 import type { SessionUser } from "../auth/sessions";
-import { isAdmin, isStudent } from "../auth/policy";
+import { isStudent, isTeacher } from "../auth/policy";
 
 /** How early each side may enter, and how long Mona may stay after the end. */
 export const LEARNER_EARLY_MINUTES = 5;
@@ -76,8 +77,8 @@ export function windowError(
 export const firstName = (full: string) => full.trim().split(/\s+/)[0] ?? full;
 
 /**
- * Whether this user may be in this session's room now (PLAN §4 room-join rule). Mona (admin)
- * may enter any session; a learner needs an active place in the class (regular sessions) or an
+ * Whether this user may be in this session's room now (PLAN §4 room-join rule). The teacher may
+ * enter their own sessions; a learner needs an active place in the class (regular sessions) or an
  * invitation (make-ups), and must not have been removed from it.
  */
 export async function roomFor(
@@ -88,7 +89,7 @@ export async function roomFor(
   | { ok: true; room: RoomInfo }
   | { ok: false; error: RoomError; /** With `tooEarly`. */ opensAt?: Date }
 > {
-  const role: RoomRole | null = isAdmin(user.role)
+  const role: RoomRole | null = isTeacher(user.role)
     ? "teacher"
     : isStudent(user.role)
       ? "student"
@@ -106,11 +107,14 @@ export async function roomFor(
       nameEn: classes.nameEn,
       level: classes.level,
       capacity: classes.capacity,
+      teacherUserId: teachers.userId,
     })
     .from(sessions)
     .innerJoin(classes, eq(classes.id, sessions.classId))
+    .innerJoin(teachers, eq(teachers.id, sessions.teacherId))
     .where(eq(sessions.id, sessionId));
-  if (!s) return { ok: false, error: "notFound" };
+  if (!s || (role === "teacher" && s.teacherUserId !== user.id))
+    return { ok: false, error: "notFound" };
 
   let name = user.displayName;
   if (role === "student") {

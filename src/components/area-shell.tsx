@@ -6,18 +6,18 @@ import { logoutAction } from "@/server/auth/actions";
 import { AreaNav, type AreaNavItem } from "./area-nav";
 import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
-import { WaveEdge } from "./wave-edge";
 
 type Props = {
-  home: "/admin" | "/app";
+  home: "/admin" | "/app" | "/owner";
   items: AreaNavItem[];
   user: { name: string; role: string };
   children: ReactNode;
 };
 
 /**
- * Frame of the logged-in areas (Mona's and the students'): a navy sidebar on desktop, a slim navy
- * header ending in the brand wave, and a tab bar at the bottom on phones.
+ * Frame of the logged-in areas (the owner's, a teacher's and the students'), as on the Owner design
+ * board: a navy sidebar and a plain light page on desktop; a slim navy header and a tab bar at
+ * the bottom on phones.
  */
 export function AreaShell({ home, items, user, children }: Props) {
   const t = useTranslations("Common");
@@ -28,10 +28,13 @@ export function AreaShell({ home, items, user, children }: Props) {
           <Logo variant="dark" className="text-2xl" />
         </Link>
         <AreaNav items={items} label={t("areaNav")} variant="side" />
-        <div className="mt-auto flex items-center gap-3 rounded-2xl bg-white/5 p-3">
+        <div className="mt-auto self-start">
+          <LanguageSwitcher tone="dark" />
+        </div>
+        <div className="flex items-center gap-3 rounded-card bg-white/5 p-3">
           <span
             aria-hidden="true"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-sand font-extrabold text-ocean"
+            className="grid size-10 shrink-0 place-items-center rounded-full bg-cinnamon font-bold text-ocean"
           >
             {user.name.slice(0, 1)}
           </span>
@@ -44,26 +47,20 @@ export function AreaShell({ home, items, user, children }: Props) {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="bg-ocean">
-          <div className="flex items-center justify-between gap-3 px-4 pt-3 sm:px-8 lg:justify-end lg:pt-5">
-            <Link
-              href={home}
-              className="inline-flex min-h-touch items-center rounded-pill lg:hidden"
-            >
+        <header className="bg-ocean lg:hidden">
+          <div className="flex items-center justify-between gap-3 px-4 py-3 sm:px-8">
+            <Link href={home} className="inline-flex min-h-touch items-center rounded-pill">
               <Logo variant="dark" className="text-xl" />
             </Link>
             <div className="flex items-center gap-1.5">
               <LanguageSwitcher tone="dark" />
-              <span className="lg:hidden">
-                <LogoutIconButton label={t("logout")} />
-              </span>
+              <LogoutIconButton label={t("logout")} />
             </div>
           </div>
-          <WaveEdge className="h-10 sm:h-14" />
         </header>
         <main
           id="main"
-          className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-28 sm:px-8 lg:pb-12"
+          className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-28 sm:px-8 lg:px-10 lg:pt-8 lg:pb-12"
         >
           {children}
         </main>
@@ -96,7 +93,7 @@ export function AreaSkeleton() {
     <div aria-hidden="true" className="flex flex-1">
       <div className="hidden w-68 shrink-0 bg-ocean lg:block" />
       <div className="flex-1">
-        <div className="h-20 bg-ocean" />
+        <div className="h-16 bg-ocean lg:hidden" />
         <div className="mx-auto max-w-6xl animate-pulse space-y-4 px-4 py-8 sm:px-8">
           <div className="h-10 w-1/2 rounded-full bg-mist" />
           <div className="h-32 w-full rounded-card bg-mist" />

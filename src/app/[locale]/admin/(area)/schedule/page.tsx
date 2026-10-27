@@ -7,8 +7,8 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, fromTehranTime, tehranDateKey } from "@/lib/format";
 import { addDays, weekStartOf } from "@/lib/schedule";
-import { requireAdmin } from "@/server/auth/current";
-import { teacherIdFor } from "@/server/classes/classes";
+import { requireTeacher } from "@/server/auth/current";
+
 import { listWaitingLeads } from "@/server/funnel/level-check";
 import { weekSchedule } from "@/server/scheduling/week";
 
@@ -39,17 +39,17 @@ async function Schedule({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   // The session check comes first: it marks the request dynamic before the clock is read.
-  const admin = await requireAdmin();
+  const admin = await requireTeacher();
   const offset = weekOffset((await searchParams).w);
   const now = new Date();
   const today = tehranDateKey(now);
   const start = weekStartOf(today, offset);
-  const teacherId = await teacherIdFor(admin.id);
+  const teacherId = admin.teacherId;
   const [t, locale, week, leads] = await Promise.all([
     getTranslations("Admin.schedule"),
     getLocale() as Promise<Locale>,
     weekSchedule(teacherId, start, now),
-    listWaitingLeads(),
+    listWaitingLeads(teacherId),
   ]);
   const day = (key: string, year: boolean) =>
     formatDate(fromTehranTime(key, "12:00"), locale, { weekday: false, year });

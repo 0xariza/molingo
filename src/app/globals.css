@@ -77,7 +77,8 @@
   --font-sans: var(--font-body);
   --font-display: var(--font-heading);
 
-  --radius-card: 22px;
+  /* Hoopo radius-md: cards, buttons, bubbles. */
+  --radius-card: 14px;
   --radius-pill: 999px;
 
   --spacing-touch: 44px;
@@ -167,6 +168,17 @@
 }
 
 /* ---------- Landing motion ---------- */
+/* Home page: the loop's flowing arcs and Hoopo bobbing (off with reduced motion via motion-safe). */
+@keyframes flow {
+  to {
+    stroke-dashoffset: -32;
+  }
+}
+@keyframes bob {
+  50% {
+    transform: translateY(-6px);
+  }
+}
 @keyframes rise-in {
   from {
     opacity: 0;

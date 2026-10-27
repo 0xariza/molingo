@@ -7,7 +7,7 @@ import { classTitle, learnerNames } from "@/lib/names";
 import type { DaySession, nextClassSession } from "@/server/classes/sessions";
 import type { UpcomingSlot } from "@/server/funnel/level-check";
 
-const card = "rounded-[1.75rem] border border-line/40 bg-white";
+const card = "rounded-card border border-hairline bg-white";
 const avatarTones = ["bg-whale", "bg-[#c7b8f5]", "bg-[#f5b8a0]"];
 
 type NextClass = NonNullable<Awaited<ReturnType<typeof nextClassSession>>>;

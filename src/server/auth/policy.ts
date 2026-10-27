@@ -2,13 +2,16 @@ import type { SessionUser } from "./sessions";
 
 export type Role = SessionUser["role"];
 
-/** Mona is `admin`. `teacher` is reserved for future extra teachers (no admin rights). */
-export const isAdmin = (role: Role) => role === "admin";
+/** A teacher runs their own panel (/admin); the owner only manages teachers (/owner). */
+export const isTeacher = (role: Role) => role === "teacher";
+export const isOwner = (role: Role) => role === "owner";
 export const isStudent = (role: Role) => role === "student";
 
+const HOME = { owner: "/owner", teacher: "/admin", student: "/app" } as const;
+
 /** Where a user lands after login (without locale prefix). */
-export function homePathFor(role: Role): "/admin" | "/app" {
-  return role === "student" ? "/app" : "/admin";
+export function homePathFor(role: Role): (typeof HOME)[Role] {
+  return HOME[role];
 }
 
 /**

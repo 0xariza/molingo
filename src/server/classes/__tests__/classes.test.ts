@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { classSlots, enrollments, sessions, students } from "@/db/schema";
+import { classSlots, enrollments, sessions, students, teacherLearners } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
-import { createUser, resetDb } from "@/test/factories";
+import { createTeacher, createUser, resetDb } from "@/test/factories";
 import {
   archiveClass,
   createClass,
@@ -14,12 +14,17 @@ import {
   moveLearner,
   newClassSchema,
   nextCourseDefaults,
-  teacherIdFor,
   updateClass,
 } from "../classes";
 import { classStats, learnerClasses } from "../stats";
 
-beforeEach(() => resetDb(db));
+/** Mona's teacher id: every class and learner here is hers unless a test says otherwise. */
+let tid: string;
+beforeEach(async () => {
+  await resetDb(db);
+  const mona = await createUser(db, { phone: "+989120000001", role: "teacher" });
+  tid = (await createTeacher(db, mona.id)).id;
+});
 
 // Thu 22 Mehr 1405 is 2026-10-14; the class starts on Sat 2 Aban (2026-10-24).
 const now = fromTehranTime("2026-10-14", "12:00");
@@ -46,8 +51,7 @@ const form = (overrides: Record<string, unknown> = {}) =>
   });
 
 async function teacher() {
-  const mona = await createUser(db, { phone: "+989120000001", role: "admin" });
-  return teacherIdFor(mona.id);
+  return tid;
 }
 
 let n = 0;
@@ -57,9 +61,9 @@ async function learner(status: "lead" | "active" | "paused" | "left" = "active")
     .values({
       fullNameFa: `زبان‌آموز ${++n}`,
       phone: `+98912100${String(n).padStart(4, "0")}`,
-      status,
     })
     .returning({ id: students.id });
+  await db.insert(teacherLearners).values({ teacherId: tid, studentId: row.id, status });
   return row.id;
 }
 
@@ -177,26 +181,29 @@ describe("createClass", () => {
   it("seats the chosen learners and makes leads active", async () => {
     const lead = await learner("lead");
     const id = await created({ studentIds: JSON.stringify([lead]) });
-    const [row] = await db.select().from(students).where(eq(students.id, lead));
+    const [row] = await db
+      .select()
+      .from(teacherLearners)
+      .where(eq(teacherLearners.studentId, lead));
     expect(row.status).toBe("active");
     expect(row.startedAt).not.toBeNull();
-    expect((await learnerClasses(lead)).map((c) => c.classId)).toEqual([id]);
+    expect((await learnerClasses(tid, lead)).map((c) => c.classId)).toEqual([id]);
   });
 
   it("creates nothing when a chosen learner has left", async () => {
     const gone = await learner("left");
     const r = await createClass(form({ studentIds: JSON.stringify([gone]) }), await teacher(), now);
     expect(r).toEqual({ ok: false, error: "learner_unavailable" });
-    expect(await listClasses()).toEqual([]);
+    expect(await listClasses(tid)).toEqual([]);
   });
 });
 
 describe("seats", () => {
   it("never seats more than the capacity, even when two requests race for the last seat", async () => {
     const id = await created({ capacity: "2" });
-    await enroll(id, await learner());
+    await enroll(tid, id, await learner());
     const [a, b] = [await learner(), await learner()];
-    const results = await Promise.all([enroll(id, a), enroll(id, b)]);
+    const results = await Promise.all([enroll(tid, id, a), enroll(tid, id, b)]);
     expect(results.map((r) => r.ok).sort()).toEqual([false, true]);
     expect(results).toContainEqual({ ok: false, error: "full" });
     const active = await db
@@ -209,20 +216,23 @@ describe("seats", () => {
   it("refuses the same learner twice and anyone who left", async () => {
     const id = await created();
     const s = await learner();
-    await enroll(id, s);
-    expect(await enroll(id, s)).toEqual({ ok: false, error: "already" });
-    expect(await enroll(id, await learner("left"))).toEqual({ ok: false, error: "unavailable" });
+    await enroll(tid, id, s);
+    expect(await enroll(tid, id, s)).toEqual({ ok: false, error: "already" });
+    expect(await enroll(tid, id, await learner("left"))).toEqual({
+      ok: false,
+      error: "unavailable",
+    });
   });
 
   it("ending a place frees the seat and keeps the history", async () => {
     const id = await created({ capacity: "2" });
     const [a, b, c] = [await learner(), await learner(), await learner()];
-    await enroll(id, a);
-    await enroll(id, b);
-    expect(await enroll(id, c)).toEqual({ ok: false, error: "full" });
-    expect(await endEnrollment(id, a)).toBe(true);
-    expect(await enroll(id, c)).toEqual({ ok: true });
-    expect((await learnerClasses(a))[0].status).toBe("ended");
+    await enroll(tid, id, a);
+    await enroll(tid, id, b);
+    expect(await enroll(tid, id, c)).toEqual({ ok: false, error: "full" });
+    expect(await endEnrollment(tid, id, a)).toBe(true);
+    expect(await enroll(tid, id, c)).toEqual({ ok: true });
+    expect((await learnerClasses(tid, a))[0].status).toBe("ended");
   });
 
   it("moves a learner only when the other class has a seat", async () => {
@@ -239,12 +249,12 @@ describe("seats", () => {
       t,
     );
     const [a, b] = [await learner(), await learner()];
-    await enroll(from, a);
-    await enroll(from, b);
-    expect(await moveLearner(from, to, a)).toEqual({ ok: true });
-    expect(await moveLearner(from, to, b)).toEqual({ ok: false, error: "full" });
+    await enroll(tid, from, a);
+    await enroll(tid, from, b);
+    expect(await moveLearner(tid, from, to, a)).toEqual({ ok: true });
+    expect(await moveLearner(tid, from, to, b)).toEqual({ ok: false, error: "full" });
     // A refused move leaves the learner where they were.
-    expect((await learnerClasses(b)).map((c) => [c.nameEn, c.status])).toEqual([
+    expect((await learnerClasses(tid, b)).map((c) => [c.nameEn, c.status])).toEqual([
       ["Morning A2", "active"],
     ]);
   });
@@ -253,8 +263,8 @@ describe("seats", () => {
 describe("editing and archiving", () => {
   it("won't drop the capacity below the learners already in", async () => {
     const id = await created();
-    await enroll(id, await learner());
-    await enroll(id, await learner());
+    await enroll(tid, id, await learner());
+    await enroll(tid, id, await learner());
     const edit = {
       nameFa: "صبح A2",
       nameEn: null,
@@ -263,21 +273,21 @@ describe("editing and archiving", () => {
       description: null,
       isPublic: false,
     };
-    expect(await updateClass(id, { ...edit, capacity: 1 })).toEqual({
+    expect(await updateClass(tid, id, { ...edit, capacity: 1 })).toEqual({
       ok: false,
       error: "capacity",
     });
-    expect(await updateClass(id, { ...edit, capacity: 4 })).toEqual({ ok: true });
+    expect(await updateClass(tid, id, { ...edit, capacity: 4 })).toEqual({ ok: true });
   });
 
   it("archives only an empty class", async () => {
     const id = await created();
     const s = await learner();
-    await enroll(id, s);
-    expect(await archiveClass(id)).toBe(false);
-    await endEnrollment(id, s);
-    expect(await archiveClass(id)).toBe(true);
-    expect((await listClasses())[0].state).toBe("archived");
+    await enroll(tid, id, s);
+    expect(await archiveClass(tid, id)).toBe(false);
+    await endEnrollment(tid, id, s);
+    expect(await archiveClass(tid, id)).toBe(true);
+    expect((await listClasses(tid))[0].state).toBe("archived");
   });
 });
 
@@ -286,18 +296,18 @@ describe("listing and stats", () => {
     const t = await teacher();
     const id = await created({ capacity: "2" }, t);
     const [a, b] = [await learner(), await learner()];
-    await enroll(id, a);
-    await enroll(id, b);
+    await enroll(tid, id, a);
+    await enroll(tid, id, b);
     const idle = await learner();
     await learner("lead");
 
-    const cards = await listClasses();
+    const cards = await listClasses(tid);
     expect(cards[0]).toMatchObject({ taken: 2, capacity: 2, state: "full" });
     expect(cards[0].slots).toEqual([
       { weekday: 0, minutes: 480 },
       { weekday: 2, minutes: 480 },
     ]);
-    const stats = await classStats(cards);
+    const stats = await classStats(tid, cards);
     expect(stats).toMatchObject({
       running: { total: 1, group: 1, private: 0 },
       seats: { taken: 2, total: 2 },
@@ -330,10 +340,10 @@ describe("listFormingGroups", () => {
       },
       t,
     );
-    await enroll(open, await learner());
-    await enroll(full, await learner());
-    await enroll(full, await learner());
-    expect(await listFormingGroups()).toEqual([
+    await enroll(tid, open, await learner());
+    await enroll(tid, full, await learner());
+    await enroll(tid, full, await learner());
+    expect(await listFormingGroups(tid)).toEqual([
       expect.objectContaining({ id: open, free: 1, startsOn: "2026-10-24", level: "A2" }),
     ]);
   });
@@ -343,11 +353,11 @@ describe("nextCourseDefaults", () => {
   it("is only offered once every session is over, one level up, after the last session", async () => {
     const id = await created();
     const s = await learner();
-    await enroll(id, s);
-    expect(await nextCourseDefaults(id, "2026-10-14")).toBeNull();
+    await enroll(tid, id, s);
+    expect(await nextCourseDefaults(tid, id, "2026-10-14")).toBeNull();
 
     await db.update(sessions).set({ status: "held" }).where(eq(sessions.classId, id));
-    const next = await nextCourseDefaults(id, "2026-10-14");
+    const next = await nextCourseDefaults(tid, id, "2026-10-14");
     expect(next).toMatchObject({
       level: "B1",
       startsOn: "2026-11-07", // the Saturday after the last session (Mon 2026-11-02)
@@ -365,9 +375,9 @@ describe("nextCourseDefaults", () => {
     const t = await teacher();
     const id = await created({}, t);
     const s = await learner();
-    await enroll(id, s);
+    await enroll(tid, id, s);
     await db.update(sessions).set({ status: "held" }).where(eq(sessions.classId, id));
-    const next = await nextCourseDefaults(id, "2026-10-14");
+    const next = await nextCourseDefaults(tid, id, "2026-10-14");
     const r = await createClass(
       form({
         nameFa: "صبح B1",
@@ -381,9 +391,41 @@ describe("nextCourseDefaults", () => {
       now,
     );
     expect(r.ok).toBe(true);
-    expect((await learnerClasses(s)).map((c) => [c.nameEn, c.status])).toEqual([
+    expect((await learnerClasses(tid, s)).map((c) => [c.nameEn, c.status])).toEqual([
       ["Morning B1", "active"],
       ["Morning A2", "ended"],
     ]);
+  });
+});
+
+describe("another teacher", () => {
+  async function ali() {
+    const user = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    return (await createTeacher(db, user.id)).id;
+  }
+
+  it("never sees, edits, archives or fills Mona's classes", async () => {
+    const sara = await learner();
+    const id = await created();
+    const other = await ali();
+    expect(await listClasses(other)).toEqual([]);
+    expect(await listFormingGroups(other)).toEqual([]);
+    expect(await nextCourseDefaults(other, id, "2027-01-01")).toBeNull();
+    expect(await updateClass(other, id, { ...form(), capacity: 2 })).toEqual({
+      ok: false,
+      error: "not_found",
+    });
+    expect(await archiveClass(other, id)).toBe(false);
+    expect(await enroll(other, id, sara)).toEqual({ ok: false, error: "finished" });
+    expect(await learnerClasses(other, sara)).toEqual([]);
+  });
+
+  it("can't seat Mona's learner in their own class, or end her places", async () => {
+    const sara = await learner();
+    const mine = await created({ studentIds: JSON.stringify([sara]) });
+    const other = await ali();
+    const theirs = await created({}, other);
+    expect(await enroll(other, theirs, sara)).toEqual({ ok: false, error: "unavailable" });
+    expect(await endEnrollment(other, mine, sara)).toBe(false);
   });
 });

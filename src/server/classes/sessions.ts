@@ -11,6 +11,7 @@ import {
   sessionParticipants,
   sessions,
   students,
+  teacherLearners,
 } from "@/db/schema";
 import { fromTehranTime, tehranDateKey } from "@/lib/format";
 import { formatClock, parseClock, type Weekday } from "@/lib/schedule";
@@ -77,8 +78,15 @@ export type ClassDetail = {
   pastLearners: (Person & { since: Date; until: Date })[];
 };
 
-export async function getClassDetail(id: string, now = new Date()): Promise<ClassDetail | null> {
-  const [cls] = await db.select().from(classes).where(eq(classes.id, id));
+export async function getClassDetail(
+  teacherId: string,
+  id: string,
+  now = new Date(),
+): Promise<ClassDetail | null> {
+  const [cls] = await db
+    .select()
+    .from(classes)
+    .where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)));
   if (!cls) return null;
   const [slotRows, sessionRows, places] = await Promise.all([
     db.select().from(classSlots).where(eq(classSlots.classId, id)).orderBy(asc(classSlots.weekday)),
@@ -88,13 +96,20 @@ export async function getClassDetail(id: string, now = new Date()): Promise<Clas
         id: students.id,
         fullNameFa: students.fullNameFa,
         fullNameEn: students.fullNameEn,
-        status: students.status,
+        status: teacherLearners.status,
         placeStatus: enrollments.status,
         startedAt: enrollments.startedAt,
         endedAt: enrollments.endedAt,
       })
       .from(enrollments)
       .innerJoin(students, eq(students.id, enrollments.studentId))
+      .innerJoin(
+        teacherLearners,
+        and(
+          eq(teacherLearners.studentId, enrollments.studentId),
+          eq(teacherLearners.teacherId, teacherId),
+        ),
+      )
       .where(eq(enrollments.classId, id))
       .orderBy(asc(enrollments.startedAt)),
   ]);
@@ -193,6 +208,10 @@ export async function getClassDetail(id: string, now = new Date()): Promise<Clas
   };
 }
 
+/** One of this teacher's sessions. */
+const own = (teacherId: string, sessionId: string) =>
+  and(eq(sessions.id, sessionId), eq(sessions.teacherId, teacherId));
+
 export const cancelSchema = z.object({
   sessionId: z.uuid(),
   reason: z
@@ -202,13 +221,14 @@ export const cancelSchema = z.object({
     .transform((v) => v || null),
 });
 
-/** Mona cancels a session that hasn't started. Cancelled sessions are never charged. */
+/** The teacher cancels a session that hasn't started. Cancelled sessions are never charged. */
 export async function cancelSession(
+  teacherId: string,
   sessionId: string,
   reason: string | null,
   now = new Date(),
 ): Promise<boolean> {
-  const [s] = await db.select().from(sessions).where(eq(sessions.id, sessionId));
+  const [s] = await db.select().from(sessions).where(own(teacherId, sessionId));
   if (!s || sessionPhase(s, now) !== "upcoming") return false;
   const rows = await db
     .update(sessions)
@@ -240,8 +260,12 @@ export type MoveResult =
  * first scheduled time is kept in `movedFrom` (cleared when it goes back there), so learners and
  * Mona can see it was moved. Hour limits are soft warnings shown before saving, not checked here.
  */
-export async function moveSession(input: MoveInput, now = new Date()): Promise<MoveResult> {
-  const [s] = await db.select().from(sessions).where(eq(sessions.id, input.sessionId));
+export async function moveSession(
+  teacherId: string,
+  input: MoveInput,
+  now = new Date(),
+): Promise<MoveResult> {
+  const [s] = await db.select().from(sessions).where(own(teacherId, input.sessionId));
   if (!s || sessionPhase(s, now) !== "upcoming") return { ok: false, error: "not_movable" };
   const startsAt = fromTehranTime(input.date, formatClock(input.time));
   const endsAt = new Date(startsAt.getTime() + (s.endsAt.getTime() - s.startsAt.getTime()));
@@ -300,11 +324,12 @@ export const attendanceSchema = z.object({
  * charged; excused ones are not. Only once the session has started, and only once.
  */
 export async function markHeld(
+  teacherId: string,
   sessionId: string,
   marks: Record<string, AttendanceStatus>,
   now = new Date(),
 ): Promise<{ ok: true } | { ok: false; error: "not_ready" | "attendance" }> {
-  const [s] = await db.select().from(sessions).where(eq(sessions.id, sessionId));
+  const [s] = await db.select().from(sessions).where(own(teacherId, sessionId));
   if (!s) return { ok: false, error: "not_ready" };
   const phase = sessionPhase(s, now);
   if (phase !== "live" && phase !== "ended") return { ok: false, error: "not_ready" };
@@ -347,12 +372,16 @@ export type MakeupResult =
   | { ok: false; error: "not_found" | "past" | "learners" | "replaces" }
   | { ok: false; error: "clash"; clash: ClashWith | null };
 
-/** A one-off extra session Mona schedules herself, e.g. to replace one she cancelled. */
-export async function addMakeup(input: MakeupInput, now = new Date()): Promise<MakeupResult> {
+/** A one-off extra session the teacher schedules, e.g. to replace one they cancelled. */
+export async function addMakeup(
+  teacherId: string,
+  input: MakeupInput,
+  now = new Date(),
+): Promise<MakeupResult> {
   const [cls] = await db
     .select({ teacherId: classes.teacherId })
     .from(classes)
-    .where(eq(classes.id, input.classId));
+    .where(and(eq(classes.id, input.classId), eq(classes.teacherId, teacherId)));
   if (!cls) return { ok: false, error: "not_found" };
   const startsAt = fromTehranTime(input.date, formatClock(input.time));
   const endsAt = new Date(startsAt.getTime() + input.minutes * 60_000);
@@ -433,7 +462,12 @@ export async function upcomingTeacherSessions(teacherId: string, now = new Date(
     db
       .select({ startsAt: levelCheckSlots.startsAt })
       .from(levelCheckSlots)
-      .where(gte(levelCheckSlots.startsAt, new Date(now.getTime() - LEVEL_CHECK_MINUTES * 60_000))),
+      .where(
+        and(
+          eq(levelCheckSlots.teacherId, teacherId),
+          gte(levelCheckSlots.startsAt, new Date(now.getTime() - LEVEL_CHECK_MINUTES * 60_000)),
+        ),
+      ),
   ]);
   return [
     ...classRows.map((r) => ({ kind: "class" as const, ...r })),

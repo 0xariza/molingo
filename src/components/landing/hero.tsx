@@ -1,96 +1,54 @@
-import { ArrowRight, Check, Sparkle } from "@phosphor-icons/react/dist/ssr";
+import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { useTranslations } from "next-intl";
-import { buttonClass } from "@/components/ui/button";
-import { Eyebrow } from "./section-heading";
-import { WaveEdge } from "@/components/wave-edge";
+import { Mascot } from "@/components/mascot";
+import { RoadmapExplorer } from "./roadmap-explorer";
 
-const STEPS = ["s1", "s2", "s3", "s4"] as const;
-
-export function Hero() {
+/** The hero: the promise on one side, the goal → roadmap demo (with Hoopo) on the other. */
+export function Hero({ teacher }: { teacher: string }) {
   const t = useTranslations("Landing.hero");
   const c = useTranslations("Common");
   return (
-    <section className="bg-ocean text-mist">
-      <div className="mx-auto grid max-w-6xl items-center gap-12 px-4 pt-10 pb-6 lg:grid-cols-[1.25fr_1fr] lg:pt-16">
-        <div className="space-y-7">
-          <Eyebrow className="text-whale">{t("eyebrow")}</Eyebrow>
-          <h1 className="text-6xl text-white sm:text-7xl xl:text-8xl">
+    <section id="top">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-12 px-4 pt-16 pb-18">
+        <div className="flex min-w-0 flex-[999_1_500px] flex-col gap-6">
+          <p className="self-start rounded-pill bg-teal-soft px-3.5 py-1 text-sm font-bold text-teal">
+            {t("eyebrow")}
+          </p>
+          <h1 className="text-[clamp(2.75rem,6.4vw,5.25rem)] leading-[1.28]">
             {t("title1")}
             <br />
-            <span className="text-whale">{t("title2")}</span>
+            <span className="text-cinnamon-ink">{t("title2")}</span>
           </h1>
-          <p className="max-w-xl text-lg text-mist/90 sm:text-xl">{t("lead")}</p>
-          <div className="space-y-3">
-            <div className="flex flex-wrap gap-3">
-              <a href="#book" className={buttonClass("sand", "min-h-14 px-7 text-lg")}>
-                {c("freeSession")}
-                <ArrowRight aria-hidden size={20} weight="bold" className="icon-directional" />
-              </a>
-              <a href="#roadmap" className={buttonClass("ghostLight", "min-h-14 px-7 text-lg")}>
-                {t("secondary")}
-              </a>
-            </div>
-            <p className="text-sm text-whale">{t("ctaNote")}</p>
+          <p className="max-w-xl text-xl leading-loose">{t("lead", { teacher })}</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <a
+              href="#book"
+              className="inline-flex min-h-14 items-center gap-2.5 rounded-card bg-cinnamon px-7 text-lg font-extrabold text-ocean hover:bg-[#d56d33]"
+            >
+              {c("freeSession")}
+              <ArrowRight aria-hidden size={20} weight="bold" className="icon-directional" />
+            </a>
+            <a
+              href="#guides"
+              className="inline-flex min-h-14 items-center rounded-card border-2 border-teal px-6 font-extrabold text-teal hover:bg-teal-soft"
+            >
+              {t("secondary")}
+            </a>
           </div>
+          <p className="text-sm">{t("ctaNote", { teacher })}</p>
         </div>
-        <RoadmapPreview />
-      </div>
-      <WaveEdge />
-    </section>
-  );
-}
 
-/** A sample student's roadmap, with a nudge from the assistant. Illustrative. */
-function RoadmapPreview() {
-  const t = useTranslations("Landing.hero");
-  const g = useTranslations("Landing.roadmap.goals.work");
-  return (
-    <div className="relative pb-12 ps-0 sm:ps-6">
-      <div className="space-y-5 rounded-card bg-white p-6 text-ocean shadow-[0_24px_60px_-28px_rgb(0_0_0/0.6)] sm:p-7">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm text-body">{t("card.owner")}</p>
-            <p className="text-lg font-extrabold">{t("card.goal")}</p>
+        <div className="relative min-w-0 flex-[1_1_440px] pt-24">
+          <div className="absolute start-auto end-5 top-0 z-10">
+            <span
+              aria-hidden="true"
+              className="absolute start-3.5 top-1.5 h-16 w-26 rounded-pill bg-sand/35 blur-xl"
+            />
+            <Mascot state="open" className="relative size-33" />
           </div>
-          <span dir="ltr" className="text-3xl font-bold text-brand">
-            {t("card.levels")}
-          </span>
+          <RoadmapExplorer teacher={teacher} />
         </div>
-        <div
-          role="img"
-          aria-label={t("card.progress")}
-          className="h-2 overflow-hidden rounded-pill bg-mist"
-        >
-          <div className="h-full w-[58%] rounded-pill bg-brand" />
-        </div>
-        <ol className="space-y-3 text-[0.95rem]">
-          {STEPS.map((step, i) => (
-            <li key={step} className="flex items-center gap-3">
-              {i < 2 ? (
-                <span className="grid size-7 shrink-0 place-items-center rounded-full bg-brand text-white">
-                  <Check aria-hidden size={14} weight="bold" />
-                </span>
-              ) : i === 2 ? (
-                <span className="size-7 shrink-0 rounded-full border-[3px] border-sand bg-ocean" />
-              ) : (
-                <span className="size-7 shrink-0 rounded-full border-2 border-dashed border-whale" />
-              )}
-              <span className={i === 2 ? "font-extrabold" : "text-body"}>{g(step)}</span>
-              {i === 2 && (
-                <span className="ms-auto shrink-0 rounded-pill bg-sand px-2.5 text-xs font-bold">
-                  {t("card.now")}
-                </span>
-              )}
-            </li>
-          ))}
-        </ol>
       </div>
-      <p className="absolute bottom-0 start-0 flex max-w-72 items-start gap-3 rounded-3xl bg-deep p-4 text-sm leading-relaxed text-white shadow-[0_18px_40px_-16px_rgb(0_0_0/0.6)] sm:-start-2">
-        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ocean">
-          <Sparkle aria-hidden size={18} weight="fill" className="text-sand" />
-        </span>
-        {t("assistant")}
-      </p>
-    </div>
+    </section>
   );
 }

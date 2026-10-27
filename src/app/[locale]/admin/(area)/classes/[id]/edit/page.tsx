@@ -7,7 +7,7 @@ import { BackLink } from "@/components/admin/learners/back-link";
 import { EditClassForm } from "@/components/admin/classes/edit-class-form";
 import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { classTitle } from "@/lib/names";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import { getClassDetail } from "@/server/classes/sessions";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,10 +30,10 @@ export default async function EditClassPage({
 }
 
 async function EditClass({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const { id } = await params;
   const valid = z.uuid().safeParse(id);
-  const cls = valid.success ? await getClassDetail(valid.data) : null;
+  const cls = valid.success ? await getClassDetail(teacherId, valid.data) : null;
   if (!cls || cls.state === "archived") notFound();
   return (
     <>

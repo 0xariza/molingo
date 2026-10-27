@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { classes, levelCheckSlots, sessions } from "@/db/schema";
 import { LEVEL_CHECK_MINUTES } from "../funnel/constants";
 
-/** What a new time collides with: one of Mona's sessions, or a level-check time she opened. */
+/** What a new time collides with: one of the teacher's sessions, or a level-check time they opened. */
 export type ClashWith =
   | { kind: "class"; nameFa: string; nameEn: string | null; startsAt: Date }
   | { kind: "levelCheck"; startsAt: Date };
@@ -45,11 +45,14 @@ export async function findClash(
       .select({ startsAt: levelCheckSlots.startsAt })
       .from(levelCheckSlots)
       .where(
-        or(
-          ...times.map((t) =>
-            and(
-              lt(levelCheckSlots.startsAt, t.endsAt),
-              gt(levelCheckSlots.startsAt, new Date(t.startsAt.getTime() - length)),
+        and(
+          eq(levelCheckSlots.teacherId, teacherId),
+          or(
+            ...times.map((t) =>
+              and(
+                lt(levelCheckSlots.startsAt, t.endsAt),
+                gt(levelCheckSlots.startsAt, new Date(t.startsAt.getTime() - length)),
+              ),
             ),
           ),
         ),

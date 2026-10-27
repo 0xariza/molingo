@@ -22,7 +22,11 @@ const asUser = (u: { id: string; role: SessionUser["role"]; displayName: string 
 
 /** A Saturday 08:00–09:30 class with one learner (Sara Ahmadi) who has a login. */
 async function setup() {
-  const mona = await createUser(db, { phone: "+989120000001", role: "admin", displayName: "Mona" });
+  const mona = await createUser(db, {
+    phone: "+989120000001",
+    role: "teacher",
+    displayName: "Mona",
+  });
   const teacher = await createTeacher(db, mona.id);
   const saraUser = await createUser(db, { phone: "+989120000002" });
   const sara = await createLearner(db, { userId: saraUser.id, fullNameFa: "سارا احمدی" });

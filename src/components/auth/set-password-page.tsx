@@ -20,7 +20,7 @@ export async function SetPasswordBody({
   if (!target) {
     return (
       <>
-        <h1 className="text-3xl">{t("linkInvalidTitle")}</h1>
+        <h1 className="text-[28px] leading-9">{t("linkInvalidTitle")}</h1>
         <p className="mt-3">{t("linkInvalidBody")}</p>
         <Link
           href="/login"
@@ -35,7 +35,7 @@ export async function SetPasswordBody({
   const name = target.displayName;
   return (
     <>
-      <h1 className="text-4xl">
+      <h1 className="text-[28px] leading-9">
         {kind === "activation" ? t("activateTitle", { name }) : t("resetTitle")}
       </h1>
       <p className="mt-2 mb-6">

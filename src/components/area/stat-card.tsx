@@ -22,7 +22,7 @@ export function StatCard({
   detail?: string;
 }) {
   return (
-    <div className="flex items-center gap-4 rounded-3xl border border-line/40 bg-white p-5">
+    <div className="flex items-center gap-4 rounded-card border border-hairline bg-white p-5">
       <span className={`grid size-13 shrink-0 place-items-center rounded-2xl ${tones[tone]}`}>
         <IconComponent aria-hidden size={24} />
       </span>

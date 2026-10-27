@@ -1,4 +1,3 @@
-import { Key } from "@phosphor-icons/react/dist/ssr";
 import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { useTranslations } from "next-intl";
@@ -18,19 +17,20 @@ export default function LoginPage({ searchParams }: PageProps<"/[locale]/login">
   const t = useTranslations("Auth");
   return (
     <>
-      <h1 className="text-4xl sm:text-5xl">{t("loginTitle")}</h1>
-      <p className="mt-2 mb-7">{t("loginLead")}</p>
+      <h1 className="font-sans text-[28px] leading-9 font-bold tracking-normal normal-case">
+        {t("loginTitle")}
+      </h1>
+      <p className="mt-1 mb-6">{t("loginLead")}</p>
       {/* A skeleton, not a second form: a tap on a fallback form during the swap would submit natively. */}
       <Suspense fallback={<FormSkeleton />}>
         <LoginFormForRequest searchParams={searchParams} />
       </Suspense>
-      <div className="mt-6 flex items-start gap-3 rounded-2xl bg-mist px-4 py-3 text-sm">
-        <Key aria-hidden size={20} weight="duotone" className="mt-0.5 shrink-0 text-brand" />
+      <div className="mt-5 border-t border-hairline pt-3.5 text-sm">
         <p>
           <span className="font-bold text-ocean">{t("forgotTitle")}</span> {t("forgot")}
         </p>
       </div>
-      <p className="mt-6 border-t border-mist pt-5 text-center text-sm">
+      <p className="mt-3 text-sm">
         {t("noAccount")}{" "}
         <Link href={{ pathname: "/", hash: "book" }} className="font-bold text-brand underline">
           {t("bookFree")}

@@ -14,7 +14,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatNumber, formatToman, fromTehranTime } from "@/lib/format";
 import { classTitle, learnerNames } from "@/lib/names";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import { archiveClassAction } from "@/server/classes/actions";
 import { listCandidates, listClasses } from "@/server/classes/classes";
 import { getClassDetail } from "@/server/classes/sessions";
@@ -36,21 +36,21 @@ export default function ClassPage({ params }: PageProps<"/[locale]/admin/classes
   );
 }
 
-const card = "space-y-4 rounded-[1.75rem] border border-line/40 bg-white p-6";
+const card = "space-y-4 rounded-card border border-hairline bg-white p-6";
 const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
 
 async function ClassView({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const { id } = await params;
   const valid = z.uuid().safeParse(id);
-  const cls = valid.success ? await getClassDetail(valid.data) : null;
+  const cls = valid.success ? await getClassDetail(teacherId, valid.data) : null;
   if (!cls) notFound();
 
   const [t, locale, candidates, cards] = await Promise.all([
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
-    listCandidates(),
-    listClasses(),
+    listCandidates(teacherId),
+    listClasses(teacherId),
   ]);
   const n = (v: number) => formatNumber(v, locale);
   const daysShort = t.raw("weekdaysShort") as string[];

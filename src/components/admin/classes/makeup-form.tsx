@@ -27,7 +27,7 @@ type Busy = BusyLike & { startsAt: Date; endsAt: Date };
 
 const LENGTHS = [30, 45, 60, 75, 90, 120];
 const initial: ClassFormState = { status: "idle" };
-const section = "space-y-5 rounded-[1.75rem] border border-line/40 bg-white p-6 sm:p-7";
+const section = "space-y-5 rounded-card border border-hairline bg-white p-6 sm:p-7";
 const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
 
 /** A one-off make-up session: what it replaces, the day (with that day's other sessions), the time, who comes. */

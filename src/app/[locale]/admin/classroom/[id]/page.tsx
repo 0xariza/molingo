@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { ClassroomPage, ClassroomSkeleton } from "@/components/classroom/classroom-page";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Classroom");
@@ -18,7 +18,7 @@ export default function TeacherClassroom({ params }: PageProps<"/[locale]/admin/
 }
 
 async function Room({ params }: { params: Promise<{ id: string }> }) {
-  const user = await requireAdmin();
+  const user = await requireTeacher();
   const { id } = await params;
   return <ClassroomPage user={user} sessionId={id} />;
 }

@@ -1,4 +1,13 @@
-import { boolean, index, pgTable, smallint, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  pgTable,
+  primaryKey,
+  smallint,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { citext, id, timestamps } from "./_shared";
 import { leads } from "./funnel";
 import { authTokenKindEnum, localeEnum, studentStatusEnum, userRoleEnum } from "./enums";
@@ -57,37 +66,63 @@ export const teachers = pgTable("teachers", {
     .notNull()
     .unique()
     .references(() => users.id, { onDelete: "restrict" }),
+  /** Their public page: hoopo.ir/<slug>. Lowercase Latin; reserved words are refused. */
+  slug: citext().notNull().unique(),
+  /** What learners see: "Mona English". Hoopo shows only as "powered by hoopo". */
+  brandName: text().notNull(),
+  /** How their page names them in each language ("مونا" / "Mona"). */
+  nameFa: text().notNull(),
+  nameEn: text().notNull(),
   bio: text(),
   weeklyHourLimit: smallint().notNull().default(29),
   dailyHourLimit: smallint().notNull().default(6),
   ...timestamps,
 });
 
-export const students = pgTable(
-  "students",
+/**
+ * One person learning on the platform: one row per mobile number, shared by every teacher they
+ * study with. What a teacher knows about them (status, notes) lives on `teacherLearners`.
+ */
+export const students = pgTable("students", {
+  id: id(),
+  /** Null until a teacher creates the learner's login. */
+  userId: uuid()
+    .unique()
+    .references(() => users.id, { onDelete: "set null" }),
+  fullNameFa: text().notNull(),
+  /** Shown in the English UI; falls back to the Persian name when empty. */
+  fullNameEn: text(),
+  /** E.164. One learner per number. */
+  phone: text().notNull().unique(),
+  email: citext(),
+  messengerHandle: text(),
+  ...timestamps,
+});
+
+/** A teacher's own record of a learner: each teacher sees only their links. */
+export const teacherLearners = pgTable(
+  "teacher_learners",
   {
-    id: id(),
-    /** Null until Mona creates the learner's login. */
-    userId: uuid()
-      .unique()
-      .references(() => users.id, { onDelete: "set null" }),
-    fullNameFa: text().notNull(),
-    /** Shown in the English UI; falls back to the Persian name when empty. */
-    fullNameEn: text(),
-    /** E.164. One learner per number. */
-    phone: text().notNull().unique(),
-    email: citext(),
-    messengerHandle: text(),
+    teacherId: uuid()
+      .notNull()
+      .references(() => teachers.id, { onDelete: "restrict" }),
+    studentId: uuid()
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
     status: studentStatusEnum().notNull().default("lead"),
-    /** Private admin notes. */
+    /** The teacher's private notes. */
     notes: text(),
     /** The free-session booking this learner came from. */
     leadId: uuid()
       .unique()
       .references(() => leads.id, { onDelete: "set null" }),
-    /** First time the learner became active (drives "new learners per month"). */
+    /** First time the learner became active with this teacher ("new learners per month"). */
     startedAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
-  (t) => [index().on(t.status), index().on(t.startedAt)],
+  (t) => [
+    primaryKey({ columns: [t.teacherId, t.studentId] }),
+    index().on(t.teacherId, t.status),
+    index().on(t.teacherId, t.startedAt),
+  ],
 );

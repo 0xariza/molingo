@@ -2,8 +2,7 @@ import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { classes, leads, levelCheckSlots, sessions } from "@/db/schema";
-import { createUser, resetDb } from "@/test/factories";
-import { teacherIdFor } from "../../classes/classes";
+import { createTeacher, createUser, resetDb } from "@/test/factories";
 import {
   addSlot,
   assignLeadSchema,
@@ -23,15 +22,15 @@ import {
 let teacherId: string;
 beforeEach(async () => {
   await resetDb(db);
-  const mona = await createUser(db, { phone: "+989120000001", role: "admin" });
-  teacherId = await teacherIdFor(mona.id);
+  const mona = await createUser(db, { phone: "+989120000001", role: "teacher" });
+  teacherId = (await createTeacher(db, mona.id)).id;
 });
 
 const HOUR = 60 * 60 * 1000;
 const inHours = (h: number) => new Date(Date.now() + h * HOUR);
 
 async function slotAt(startsAt: Date) {
-  const [row] = await db.insert(levelCheckSlots).values({ startsAt }).returning();
+  const [row] = await db.insert(levelCheckSlots).values({ teacherId, startsAt }).returning();
   return row;
 }
 
@@ -75,7 +74,7 @@ describe("listOpenSlots", () => {
     const booked = await slotAt(inHours(5));
     await bookLevelCheck(booking(booked.id));
 
-    expect((await listOpenSlots()).map((s) => s.id)).toEqual([soon.id, later.id]);
+    expect((await listOpenSlots(teacherId)).map((s) => s.id)).toEqual([soon.id, later.id]);
   });
 });
 
@@ -139,25 +138,25 @@ describe("slotInputSchema", () => {
 
 describe("addSlot", () => {
   it("opens a future slot", async () => {
-    expect(await addSlot(inHours(5), teacherId)).toEqual({ ok: true });
+    expect(await addSlot(teacherId, inHours(5))).toEqual({ ok: true });
     expect(await db.select().from(levelCheckSlots)).toHaveLength(1);
   });
 
   it("refuses past times", async () => {
-    expect(await addSlot(inHours(-1), teacherId)).toEqual({ ok: false, error: "past" });
+    expect(await addSlot(teacherId, inHours(-1))).toEqual({ ok: false, error: "past" });
   });
 
   it("refuses a time that overlaps another slot, but allows back-to-back slots", async () => {
     const start = inHours(5);
-    await addSlot(start, teacherId);
+    await addSlot(teacherId, start);
     const tenMinutes = 10 * 60 * 1000;
     const twentyMinutes = 2 * tenMinutes;
-    expect(await addSlot(start, teacherId)).toEqual({ ok: false, error: "overlap" });
-    expect(await addSlot(new Date(start.getTime() + tenMinutes), teacherId)).toEqual({
+    expect(await addSlot(teacherId, start)).toEqual({ ok: false, error: "overlap" });
+    expect(await addSlot(teacherId, new Date(start.getTime() + tenMinutes))).toEqual({
       ok: false,
       error: "overlap",
     });
-    expect(await addSlot(new Date(start.getTime() + twentyMinutes), teacherId)).toEqual({
+    expect(await addSlot(teacherId, new Date(start.getTime() + twentyMinutes))).toEqual({
       ok: true,
     });
   });
@@ -181,9 +180,9 @@ describe("addSlot", () => {
       .insert(sessions)
       .values({ teacherId, classId: cls.id, startsAt: inHours(5), endsAt: inHours(6) })
       .returning();
-    expect(await addSlot(inHours(5.5), teacherId)).toEqual({ ok: false, error: "overlap" });
+    expect(await addSlot(teacherId, inHours(5.5))).toEqual({ ok: false, error: "overlap" });
     await db.update(sessions).set({ status: "cancelled" }).where(eq(sessions.id, session.id));
-    expect(await addSlot(inHours(5.5), teacherId)).toEqual({ ok: true });
+    expect(await addSlot(teacherId, inHours(5.5))).toEqual({ ok: true });
   });
 });
 
@@ -193,8 +192,8 @@ describe("removeFreeSlot", () => {
     const booked = await slotAt(inHours(4));
     await bookLevelCheck(booking(booked.id));
 
-    expect(await removeFreeSlot(free.id)).toBe(true);
-    expect(await removeFreeSlot(booked.id)).toBe(false);
+    expect(await removeFreeSlot(teacherId, free.id)).toBe(true);
+    expect(await removeFreeSlot(teacherId, booked.id)).toBe(false);
     expect((await db.select().from(levelCheckSlots)).map((s) => s.id)).toEqual([booked.id]);
   });
 });
@@ -206,7 +205,7 @@ describe("listUpcomingSlots", () => {
     const booked = await slotAt(inHours(3));
     await bookLevelCheck(booking(booked.id));
 
-    expect(await listUpcomingSlots()).toEqual([
+    expect(await listUpcomingSlots(teacherId)).toEqual([
       { id: free.id, startsAt: free.startsAt, lead: null },
       {
         id: booked.id,
@@ -220,6 +219,7 @@ describe("listUpcomingSlots", () => {
 describe("assignSlot", () => {
   const assign = (input: Record<string, string>) =>
     assignSlot(
+      teacherId,
       "leadId" in input
         ? assignLeadSchema.parse(input)
         : assignNewPersonSchema.parse({ locale: "fa", ...input }),
@@ -242,7 +242,7 @@ describe("assignSlot", () => {
     });
     const [lead] = await db.select().from(leads);
     expect(lead).toMatchObject({ phone: "+989352104417", source: "manual", status: "scheduled" });
-    expect((await slotsBetween(inHours(0), inHours(4)))[0].lead).toMatchObject({
+    expect((await slotsBetween(teacherId, inHours(0), inHours(4)))[0].lead).toMatchObject({
       name: "سینا مرادی",
       source: "manual",
     });
@@ -251,17 +251,17 @@ describe("assignSlot", () => {
   it("books it for someone on the list who holds no time, once", async () => {
     const [lead] = await db
       .insert(leads)
-      .values({ name: "Mahsa", phone: "+989017723305", locale: "fa" })
+      .values({ teacherId, name: "Mahsa", phone: "+989017723305", locale: "fa" })
       .returning();
-    expect(await listWaitingLeads()).toMatchObject([{ id: lead.id, status: "new" }]);
+    expect(await listWaitingLeads(teacherId)).toMatchObject([{ id: lead.id, status: "new" }]);
     const [a, b] = [await slotAt(inHours(3)), await slotAt(inHours(4))];
 
     expect(await assign({ slotId: a.id, leadId: lead.id })).toEqual({ ok: true });
     // She first came online, but Mona booked this time.
-    expect((await slotsBetween(inHours(0), inHours(5)))[0].lead).toMatchObject({
+    expect((await slotsBetween(teacherId, inHours(0), inHours(5)))[0].lead).toMatchObject({
       source: "manual",
     });
-    expect(await listWaitingLeads()).toEqual([]);
+    expect(await listWaitingLeads(teacherId)).toEqual([]);
     expect(await assign({ slotId: b.id, leadId: lead.id })).toEqual({ ok: false, error: "lead" });
   });
 
@@ -283,15 +283,17 @@ describe("cancelBooking", () => {
     const slot = await slotAt(inHours(3));
     await bookLevelCheck(booking(slot.id));
 
-    expect(await cancelBooking(slot.id)).toBe(true);
-    expect((await listOpenSlots()).map((s) => s.id)).toEqual([slot.id]);
-    expect(await listWaitingLeads()).toMatchObject([{ name: "Sara Ahmadi", status: "new" }]);
-    expect(await cancelBooking(slot.id)).toBe(false);
+    expect(await cancelBooking(teacherId, slot.id)).toBe(true);
+    expect((await listOpenSlots(teacherId)).map((s) => s.id)).toEqual([slot.id]);
+    expect(await listWaitingLeads(teacherId)).toMatchObject([
+      { name: "Sara Ahmadi", status: "new" },
+    ]);
+    expect(await cancelBooking(teacherId, slot.id)).toBe(false);
   });
 
   it("leaves past bookings alone", async () => {
     const slot = await slotAt(inHours(3));
     await bookLevelCheck(booking(slot.id));
-    expect(await cancelBooking(slot.id, inHours(4))).toBe(false);
+    expect(await cancelBooking(teacherId, slot.id, inHours(4))).toBe(false);
   });
 });

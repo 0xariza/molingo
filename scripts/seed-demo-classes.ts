@@ -15,6 +15,7 @@ import {
   sessionParticipants,
   sessions,
   students,
+  teacherLearners,
   teachers,
   users,
 } from "../src/db/schema";
@@ -66,22 +67,25 @@ export async function seedDemoClasses(now = new Date()) {
     .where(eq(classes.nameFa, "مکالمه B1"));
   if (already) return console.log("Demo classes already there.");
 
-  await db
-    .insert(students)
-    .values(
-      EXTRA_LEARNERS.map((l) => ({
-        ...l,
-        status: "active" as const,
-        startedAt: new Date(now.getTime() - 30 * DAY),
-      })),
-    )
-    .onConflictDoNothing({ target: students.phone });
+  await db.insert(students).values(EXTRA_LEARNERS).onConflictDoNothing({ target: students.phone });
   const byPhone = new Map(
     (await db.select({ id: students.id, phone: students.phone }).from(students)).map((s) => [
       s.phone,
       s.id,
     ]),
   );
+  // Every demo learner is one of Mona's.
+  await db
+    .insert(teacherLearners)
+    .values(
+      EXTRA_LEARNERS.map((l) => ({
+        teacherId: mona.teacherId,
+        studentId: byPhone.get(l.phone)!,
+        status: "active" as const,
+        startedAt: new Date(now.getTime() - 30 * DAY),
+      })),
+    )
+    .onConflictDoNothing();
   const id = (phone: string) => byPhone.get(phone)!;
   const [niloofar, arash, sara, parisa] = [
     "+989121182040",
@@ -309,12 +313,13 @@ export async function seedDemoClasses(now = new Date()) {
 
   // Learners in running classes are active.
   await db
-    .update(students)
+    .update(teacherLearners)
     .set({ status: "active" })
     .where(
       and(
-        inArray(students.id, [id(neda), id(kian), id(omid), id(shirin), id(babak)]),
-        eq(students.status, "lead"),
+        eq(teacherLearners.teacherId, mona.teacherId),
+        inArray(teacherLearners.studentId, [id(neda), id(kian), id(omid), id(shirin), id(babak)]),
+        eq(teacherLearners.status, "lead"),
       ),
     );
   console.log(`Demo classes ready: ${demos.length} classes.`);

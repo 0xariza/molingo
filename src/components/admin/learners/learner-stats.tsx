@@ -14,7 +14,7 @@ const statusColor = {
   left: "#8a5cc2",
 } as const;
 
-const card = "rounded-[1.75rem] border border-line/40 bg-white p-6";
+const card = "rounded-card border border-hairline bg-white p-6";
 const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
 
 /** Stat tiles and the two charts at the top of the learners page. */

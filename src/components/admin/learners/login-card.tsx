@@ -40,7 +40,7 @@ export function LoginCard({
   return (
     <section
       aria-labelledby="login-title"
-      className="space-y-4 rounded-[1.75rem] border border-whale bg-white p-6"
+      className="space-y-4 rounded-card border border-whale bg-white p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h2

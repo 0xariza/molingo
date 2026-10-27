@@ -102,11 +102,11 @@ export async function LearnerList({
       </div>
 
       {rows.length === 0 ? (
-        <p className="rounded-[1.75rem] border border-line/40 bg-white p-6">
+        <p className="rounded-card border border-hairline bg-white p-6">
           {status || q ? t("list.noMatch") : t("list.empty")}
         </p>
       ) : (
-        <ul className="divide-y divide-mist overflow-hidden rounded-[1.75rem] border border-line/40 bg-white">
+        <ul className="divide-y divide-mist overflow-hidden rounded-card border border-hairline bg-white">
           {rows.map((row) => {
             const { primary, secondary } = learnerNames(row, locale);
             return (

@@ -8,8 +8,8 @@ test.describe("Landing page", () => {
   test("roadmap-changes-with-the-goal", async ({ page }) => {
     // 1. Open /en
     await page.goto("/en");
-    // The hero shows a sample roadmap too, so look inside the roadmap section.
-    const roadmap = page.locator("#roadmap");
+    // The sample roadmap lives in the hero's card.
+    const roadmap = page.locator("#top");
     const goals = roadmap.getByRole("group", { name: t.try });
     await expect(goals.getByRole("button", { name: t.goals.work.label })).toHaveAttribute(
       "aria-pressed",

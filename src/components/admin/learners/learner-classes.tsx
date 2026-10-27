@@ -7,19 +7,25 @@ import { classTitle } from "@/lib/names";
 import { learnerClasses } from "@/server/classes/stats";
 
 /** The learner's classes on their profile: current places first, then ended ones. */
-export async function LearnerClasses({ studentId }: { studentId: string }) {
+export async function LearnerClasses({
+  teacherId,
+  studentId,
+}: {
+  teacherId: string;
+  studentId: string;
+}) {
   const [t, tc, locale, rows] = await Promise.all([
     getTranslations("Admin.learners.classes"),
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
-    learnerClasses(studentId),
+    learnerClasses(teacherId, studentId),
   ]);
   const date = (d: Date) => formatDate(d, locale, { weekday: false });
 
   return (
     <section
       aria-labelledby="classes-title"
-      className="space-y-3 rounded-[1.75rem] border border-line/40 bg-white p-6"
+      className="space-y-3 rounded-card border border-hairline bg-white p-6"
     >
       <div className="flex items-center justify-between gap-2">
         <h2

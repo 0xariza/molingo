@@ -1,17 +1,24 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { leads, students, users } from "@/db/schema";
+import { leads, users } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
-import { resetDb } from "@/test/factories";
+import { createLearner, createTeacher, createUser, resetDb } from "@/test/factories";
 import { learnerStats } from "../stats";
 
-beforeEach(() => resetDb(db));
+/** Mona's teacher id. */
+let tid: string;
+beforeEach(async () => {
+  await resetDb(db);
+  const mona = await createUser(db, { phone: "+989120000001", role: "teacher" });
+  tid = (await createTeacher(db, mona.id)).id;
+});
 
 // Wed 22 Mehr 1405 (Tehran). The window is Ordibehesht–Mehr 1405.
 const now = fromTehranTime("2026-10-14", "12:00");
 let n = 0;
 const learner = (status: "lead" | "active" | "paused" | "left", startedAt: Date | null) =>
-  db.insert(students).values({
+  createLearner(db, {
+    teacherId: tid,
     fullNameFa: `زبان‌آموز ${++n}`,
     phone: `+98912000${String(n).padStart(4, "0")}`,
     status,
@@ -27,7 +34,7 @@ describe("learnerStats", () => {
     await learner("active", fromTehranTime("2026-04-20", "10:00")); // Farvardin: outside
     await learner("lead", null);
 
-    const s = await learnerStats(now);
+    const s = await learnerStats(tid, now);
     expect(s.perMonth.map((m) => [m.key, m.count])).toEqual([
       ["1405-02", 1],
       ["1405-03", 0],
@@ -41,11 +48,12 @@ describe("learnerStats", () => {
 
   it("counts bookings since the window began and how many converted", async () => {
     const since = fromTehranTime("2026-04-21", "00:00");
-    expect((await learnerStats(now)).bookings.since).toEqual(since);
+    expect((await learnerStats(tid, now)).bookings.since).toEqual(since);
     await db.insert(leads).values([
-      { name: "A", phone: "+989121110000", locale: "fa", status: "converted" },
-      { name: "B", phone: "+989121110001", locale: "fa", status: "scheduled" },
+      { teacherId: tid, name: "A", phone: "+989121110000", locale: "fa", status: "converted" },
+      { teacherId: tid, name: "B", phone: "+989121110001", locale: "fa", status: "scheduled" },
       {
+        teacherId: tid,
         name: "Old",
         phone: "+989121110002",
         locale: "fa",
@@ -53,7 +61,7 @@ describe("learnerStats", () => {
         createdAt: new Date(since.getTime() - 1000),
       },
     ]);
-    expect((await learnerStats(now)).bookings).toMatchObject({ total: 2, converted: 1 });
+    expect((await learnerStats(tid, now)).bookings).toMatchObject({ total: 2, converted: 1 });
   });
 
   it("counts logins whose activation link hasn't been used", async () => {
@@ -65,10 +73,13 @@ describe("learnerStats", () => {
       .insert(users)
       .values({ phone: "+989121111112", role: "student", displayName: "O", isActive: false })
       .returning();
-    await db.insert(students).values([
-      { fullNameFa: "P", phone: pending.phone, userId: pending.id },
-      { fullNameFa: "O", phone: off.phone, userId: off.id },
-    ]);
-    expect((await learnerStats(now)).pendingLogins).toBe(1);
+    await createLearner(db, {
+      teacherId: tid,
+      fullNameFa: "P",
+      phone: pending.phone,
+      userId: pending.id,
+    });
+    await createLearner(db, { teacherId: tid, fullNameFa: "O", phone: off.phone, userId: off.id });
+    expect((await learnerStats(tid, now)).pendingLogins).toBe(1);
   });
 });

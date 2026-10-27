@@ -15,7 +15,7 @@ import type { Locale } from "@/i18n/routing";
 import { formatDate } from "@/lib/format";
 import { learnerNames } from "@/lib/names";
 import { formatPhone } from "@/lib/phone";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import { getLearner } from "@/server/students/learners";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -37,10 +37,10 @@ export default function LearnerPage({ params }: PageProps<"/[locale]/admin/stude
 }
 
 async function Profile({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const { id } = await params;
   const valid = z.uuid().safeParse(id);
-  const learner = valid.success ? await getLearner(valid.data) : null;
+  const learner = valid.success ? await getLearner(teacherId, valid.data) : null;
   if (!learner) notFound();
 
   const [t, locale] = await Promise.all([
@@ -48,7 +48,7 @@ async function Profile({ params }: { params: Promise<{ id: string }> }) {
     getLocale() as Promise<Locale>,
   ]);
   const { primary, secondary } = learnerNames(learner, locale);
-  const card = "space-y-4 rounded-[1.75rem] border border-line/40 bg-white p-6";
+  const card = "space-y-4 rounded-card border border-hairline bg-white p-6";
   const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
   const details: [string, React.ReactNode][] = [
     [
@@ -118,7 +118,7 @@ async function Profile({ params }: { params: Promise<{ id: string }> }) {
               ))}
             </dl>
           </section>
-          <LearnerClasses studentId={learner.id} />
+          <LearnerClasses teacherId={teacherId} studentId={learner.id} />
           <section aria-labelledby="notes-title" className={card}>
             <h2 id="notes-title" className={heading}>
               {t("notesTitle")}

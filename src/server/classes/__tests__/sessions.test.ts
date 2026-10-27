@@ -1,10 +1,10 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { attendance, levelCheckSlots, sessions, students } from "@/db/schema";
+import { attendance, levelCheckSlots, sessions, students, teacherLearners } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
-import { createUser, resetDb } from "@/test/factories";
-import { createClass, enroll, newClassSchema, teacherIdFor } from "../classes";
+import { createTeacher, createUser, resetDb } from "@/test/factories";
+import { createClass, enroll, newClassSchema } from "../classes";
 import {
   addMakeup,
   awaitingConfirmation,
@@ -19,7 +19,13 @@ import {
   sessionsBetween,
 } from "../sessions";
 
-beforeEach(() => resetDb(db));
+/** Mona's teacher id. */
+let tid: string;
+beforeEach(async () => {
+  await resetDb(db);
+  const mona = await createUser(db, { phone: "+989120000001", role: "teacher" });
+  tid = (await createTeacher(db, mona.id)).id;
+});
 
 const now = fromTehranTime("2026-10-14", "12:00");
 const at = (date: string, time: string) => fromTehranTime(date, time);
@@ -31,16 +37,15 @@ async function learner() {
     .values({
       fullNameFa: `زبان‌آموز ${++n}`,
       phone: `+98912200${String(n).padStart(4, "0")}`,
-      status: "active",
     })
     .returning({ id: students.id });
+  await db.insert(teacherLearners).values({ teacherId: tid, studentId: row.id, status: "active" });
   return row.id;
 }
 
 /** A Sat/Mon 08:00 group class from Sat 2026-10-24, 4 × 90 min, with two learners. */
 async function setup() {
-  const mona = await createUser(db, { phone: "+989120000001", role: "admin" });
-  const teacherId = await teacherIdFor(mona.id);
+  const teacherId = tid;
   const r = await createClass(
     newClassSchema.parse({
       nameFa: "صبح A2",
@@ -65,8 +70,8 @@ async function setup() {
   );
   if (!r.ok) throw new Error(r.error);
   const [a, b] = [await learner(), await learner()];
-  await enroll(r.id, a);
-  await enroll(r.id, b);
+  await enroll(tid, r.id, a);
+  await enroll(tid, r.id, b);
   const list = await db
     .select()
     .from(sessions)
@@ -92,8 +97,8 @@ describe("sessionPhase", () => {
 describe("cancelSession", () => {
   it("cancels only sessions that haven't started", async () => {
     const { first } = await setup();
-    expect(await cancelSession(first.id, null, at("2026-10-24", "08:10"))).toBe(false);
-    expect(await cancelSession(first.id, "I'm unwell", now)).toBe(true);
+    expect(await cancelSession(tid, first.id, null, at("2026-10-24", "08:10"))).toBe(false);
+    expect(await cancelSession(tid, first.id, "I'm unwell", now)).toBe(true);
     const [row] = await db.select().from(sessions).where(eq(sessions.id, first.id));
     expect(row).toMatchObject({ status: "cancelled", cancelReason: "I'm unwell" });
   });
@@ -102,19 +107,19 @@ describe("cancelSession", () => {
 describe("markHeld", () => {
   it("records everyone's attendance once the session has started", async () => {
     const { first, a, b } = await setup();
-    expect(await markHeld(first.id, { [a]: "present", [b]: "absent" }, now)).toEqual({
+    expect(await markHeld(tid, first.id, { [a]: "present", [b]: "absent" }, now)).toEqual({
       ok: false,
       error: "not_ready",
     });
     const during = at("2026-10-24", "09:00");
-    expect(await markHeld(first.id, { [a]: "present" }, during)).toEqual({
+    expect(await markHeld(tid, first.id, { [a]: "present" }, during)).toEqual({
       ok: false,
       error: "attendance",
     });
-    expect(await markHeld(first.id, { [a]: "present", [b]: "excused" }, during)).toEqual({
+    expect(await markHeld(tid, first.id, { [a]: "present", [b]: "excused" }, during)).toEqual({
       ok: true,
     });
-    expect(await markHeld(first.id, { [a]: "present", [b]: "excused" }, during)).toEqual({
+    expect(await markHeld(tid, first.id, { [a]: "present", [b]: "excused" }, during)).toEqual({
       ok: false,
       error: "not_ready",
     });
@@ -124,8 +129,8 @@ describe("markHeld", () => {
 
   it("shows counts on the class page", async () => {
     const { classId, first, a, b } = await setup();
-    await markHeld(first.id, { [a]: "present", [b]: "absent" }, at("2026-10-24", "10:00"));
-    const detail = await getClassDetail(classId, at("2026-10-24", "10:00"));
+    await markHeld(tid, first.id, { [a]: "present", [b]: "absent" }, at("2026-10-24", "10:00"));
+    const detail = await getClassDetail(tid, classId, at("2026-10-24", "10:00"));
     expect(detail!.sessions[0]).toMatchObject({
       number: 1,
       phase: "held",
@@ -142,13 +147,14 @@ describe("addMakeup", () => {
 
   it("adds a make-up for chosen learners, replacing a cancelled session", async () => {
     const { classId, first, a } = await setup();
-    await cancelSession(first.id, null, now);
+    await cancelSession(tid, first.id, null, now);
     const r = await addMakeup(
+      tid,
       input({ classId, studentIds: [a], replacesSessionId: first.id }),
       now,
     );
     expect(r.ok).toBe(true);
-    const detail = await getClassDetail(classId, now);
+    const detail = await getClassDetail(tid, classId, now);
     const makeup = detail!.sessions.find((s) => s.kind === "makeup")!;
     expect(makeup).toMatchObject({ number: null, replacesNumber: 1, phase: "upcoming" });
     // Regular sessions keep their numbers around the make-up.
@@ -159,6 +165,7 @@ describe("addMakeup", () => {
     // …and only once.
     expect(
       await addMakeup(
+        tid,
         input({ classId, studentIds: [a], replacesSessionId: first.id, date: "2026-11-06" }),
         now,
       ),
@@ -168,22 +175,28 @@ describe("addMakeup", () => {
   it("refuses clashes, past times, outsiders and sessions that weren't cancelled", async () => {
     const { classId, second, a } = await setup();
     expect(
-      await addMakeup(input({ classId, studentIds: [a], date: "2026-10-26", time: "09:00" }), now),
+      await addMakeup(
+        tid,
+        input({ classId, studentIds: [a], date: "2026-10-26", time: "09:00" }),
+        now,
+      ),
     ).toMatchObject({
       ok: false,
       error: "clash",
       clash: { nameEn: "Morning A2" },
     });
-    expect(await addMakeup(input({ classId, studentIds: [a], date: "2026-10-01" }), now)).toEqual({
+    expect(
+      await addMakeup(tid, input({ classId, studentIds: [a], date: "2026-10-01" }), now),
+    ).toEqual({
       ok: false,
       error: "past",
     });
-    expect(await addMakeup(input({ classId, studentIds: [await learner()] }), now)).toEqual({
+    expect(await addMakeup(tid, input({ classId, studentIds: [await learner()] }), now)).toEqual({
       ok: false,
       error: "learners",
     });
     expect(
-      await addMakeup(input({ classId, studentIds: [a], replacesSessionId: second.id }), now),
+      await addMakeup(tid, input({ classId, studentIds: [a], replacesSessionId: second.id }), now),
     ).toEqual({
       ok: false,
       error: "replaces",
@@ -192,9 +205,11 @@ describe("addMakeup", () => {
 
   it("a held make-up only takes attendance for its own learners", async () => {
     const { classId, a } = await setup();
-    const r = await addMakeup(input({ classId, studentIds: [a] }), now);
+    const r = await addMakeup(tid, input({ classId, studentIds: [a] }), now);
     const id = r.ok ? r.id : "";
-    expect(await markHeld(id, { [a]: "present" }, at("2026-11-05", "18:00"))).toEqual({ ok: true });
+    expect(await markHeld(tid, id, { [a]: "present" }, at("2026-11-05", "18:00"))).toEqual({
+      ok: true,
+    });
   });
 });
 
@@ -208,7 +223,7 @@ describe("dashboard queries", () => {
     expect(await awaitingConfirmation(teacherId, during)).toEqual([]);
 
     // Two days later both sessions are over; the first was marked, the second wasn't.
-    await markHeld(first.id, { [a]: "present", [b]: "present" }, during);
+    await markHeld(tid, first.id, { [a]: "present", [b]: "present" }, during);
     const later = at("2026-10-26", "12:00");
     expect((await awaitingConfirmation(teacherId, later)).map((s) => s.id)).toEqual([second.id]);
   });
@@ -216,7 +231,7 @@ describe("dashboard queries", () => {
 
 describe("moveSession", () => {
   const move = (sessionId: string, date: string, time: string, when = now) =>
-    moveSession(moveSchema.parse({ sessionId, date, time }), when);
+    moveSession(tid, moveSchema.parse({ sessionId, date, time }), when);
   const row = async (id: string) =>
     (await db.select().from(sessions).where(eq(sessions.id, id)))[0];
 
@@ -247,7 +262,9 @@ describe("moveSession", () => {
       error: "clash",
       clash: { kind: "class", nameEn: "Morning A2" },
     });
-    await db.insert(levelCheckSlots).values({ startsAt: at("2026-10-25", "18:00") });
+    await db
+      .insert(levelCheckSlots)
+      .values({ teacherId: tid, startsAt: at("2026-10-25", "18:00") });
     expect(await move(first.id, "2026-10-25", "16:45")).toEqual({
       ok: false,
       error: "clash",
@@ -262,7 +279,7 @@ describe("moveSession", () => {
       ok: false,
       error: "not_movable",
     });
-    await cancelSession(second.id, null, now);
+    await cancelSession(tid, second.id, null, now);
     expect(await move(second.id, "2026-10-27", "10:00")).toEqual({
       ok: false,
       error: "not_movable",
@@ -282,5 +299,43 @@ describe("moveSession", () => {
       [at("2026-10-25", "10:00"), at("2026-10-24", "08:00"), 2],
       [at("2026-10-26", "08:00"), null, 2],
     ]);
+  });
+});
+
+describe("another teacher", () => {
+  it("can't see, cancel, move, confirm or add to Mona's sessions", async () => {
+    const { classId, first, a, b } = await setup();
+    const ali = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    const other = (await createTeacher(db, ali.id)).id;
+    expect(await getClassDetail(other, classId, now)).toBeNull();
+    expect(await cancelSession(other, first.id, null, now)).toBe(false);
+    expect(
+      await moveSession(
+        other,
+        moveSchema.parse({ sessionId: first.id, date: "2026-10-27", time: "10:00" }),
+        now,
+      ),
+    ).toEqual({ ok: false, error: "not_movable" });
+    expect(
+      await markHeld(
+        other,
+        first.id,
+        { [a]: "present", [b]: "present" },
+        at("2026-10-24", "09:00"),
+      ),
+    ).toEqual({ ok: false, error: "not_ready" });
+    expect(
+      await addMakeup(
+        other,
+        makeupSchema.parse({
+          classId,
+          date: "2026-10-27",
+          time: "10:00",
+          minutes: "60",
+          studentIds: [a],
+        }),
+        now,
+      ),
+    ).toEqual({ ok: false, error: "not_found" });
   });
 });

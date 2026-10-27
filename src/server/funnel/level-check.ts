@@ -26,13 +26,14 @@ export type BookingInput = z.output<typeof bookingInputSchema>;
 
 export type OpenSlot = { id: string; startsAt: Date };
 
-/** Slots a visitor can still book: free, in the future, within the booking window. */
-export async function listOpenSlots(now = new Date()): Promise<OpenSlot[]> {
+/** A teacher's slots a visitor can still book: free, in the future, within the booking window. */
+export async function listOpenSlots(teacherId: string, now = new Date()): Promise<OpenSlot[]> {
   return db
     .select({ id: levelCheckSlots.id, startsAt: levelCheckSlots.startsAt })
     .from(levelCheckSlots)
     .where(
       and(
+        eq(levelCheckSlots.teacherId, teacherId),
         isNull(levelCheckSlots.leadId),
         gt(levelCheckSlots.startsAt, now),
         lt(levelCheckSlots.startsAt, new Date(now.getTime() + BOOKING_DAYS * DAY_MS)),
@@ -46,7 +47,8 @@ class SlotTaken extends Error {}
 /**
  * Saves the lead and takes the slot in one transaction. The conditional update means two
  * visitors racing for one slot can't both get it: the second sees no free row and nothing is saved.
- * Returns the visitor's room link code (`/l/<code>`); only its hash is stored.
+ * Returns the visitor's room link code (`/l/<code>`); only its hash is stored. The lead belongs to
+ * the slot's teacher.
  */
 export async function bookLevelCheck(
   input: BookingInput,
@@ -55,9 +57,14 @@ export async function bookLevelCheck(
   const code = generateToken();
   try {
     return await db.transaction(async (tx) => {
+      const [owner] = await tx
+        .select({ teacherId: levelCheckSlots.teacherId })
+        .from(levelCheckSlots)
+        .where(eq(levelCheckSlots.id, slotId));
+      if (!owner) throw new SlotTaken();
       const [row] = await tx
         .insert(leads)
-        .values({ ...lead, status: "scheduled" })
+        .values({ ...lead, teacherId: owner.teacherId, status: "scheduled" })
         .returning({ id: leads.id });
       const [slot] = await tx
         .update(levelCheckSlots)
@@ -79,7 +86,7 @@ export async function bookLevelCheck(
   }
 }
 
-/** Mona enters Tehran wall-clock time; error keys map to `Admin.schedule.errors`. */
+/** The teacher enters Tehran wall-clock time; error keys map to `Admin.schedule.errors`. */
 export const slotInputSchema = z
   .object({
     date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date"),
@@ -90,12 +97,12 @@ export const slotInputSchema = z
 export type AddSlotResult = { ok: true } | { ok: false; error: "past" | "overlap" };
 
 /**
- * Opens a new time. Refuses past times and any time that overlaps one of Mona's sessions or
- * another level-check time.
+ * Opens a new time. Refuses past times and any time that overlaps one of the teacher's sessions or
+ * their other level-check times.
  */
 export async function addSlot(
-  startsAt: Date,
   teacherId: string,
+  startsAt: Date,
   now = new Date(),
 ): Promise<AddSlotResult> {
   if (startsAt <= now) return { ok: false, error: "past" };
@@ -103,14 +110,13 @@ export async function addSlot(
   if (await findClash(teacherId, [{ startsAt, endsAt }])) return { ok: false, error: "overlap" };
   const inserted = await db
     .insert(levelCheckSlots)
-    .values({ startsAt })
-    .onConflictDoNothing({ target: levelCheckSlots.startsAt })
+    .values({ teacherId, startsAt })
+    .onConflictDoNothing({ target: [levelCheckSlots.teacherId, levelCheckSlots.startsAt] })
     .returning({ id: levelCheckSlots.id });
   return inserted.length ? { ok: true } : { ok: false, error: "overlap" };
 }
 
-/** Who Mona gives an open time to: someone already on her list, or a new person she names. */
-/** Mona gives an open time to someone already on her list… */
+/** The teacher gives an open time to someone already on their list… */
 export const assignLeadSchema = z.object({ slotId: z.uuid(), leadId: z.uuid() });
 
 /** …or to someone new. (Separate schemas, so a bad field reports its own error key.) */
@@ -131,10 +137,11 @@ class AssignFailed extends Error {
 }
 
 /**
- * Mona books an open time for someone herself (a "manual" booking). The lead must not already
- * hold a time; the slot must still be open and ahead.
+ * The teacher books one of their open times for someone (a "manual" booking). The lead must be
+ * theirs and not already hold a time; the slot must still be open and ahead.
  */
 export async function assignSlot(
+  teacherId: string,
   input: AssignInput,
   now = new Date(),
 ): Promise<{ ok: true } | { ok: false; error: "slot_taken" | "lead" }> {
@@ -144,11 +151,12 @@ export async function assignSlot(
       if ("leadId" in input) {
         const [lead] = await tx
           .update(leads)
-          // Mona booked this time, whoever first put them on the list.
+          // The teacher booked this time, whoever first put them on the list.
           .set({ status: "scheduled", source: "manual" })
           .where(
             and(
               eq(leads.id, input.leadId),
+              eq(leads.teacherId, teacherId),
               inArray(leads.status, ["new", "contacted"]),
               sql`not exists (select 1 from ${levelCheckSlots} s where s.lead_id = ${input.leadId})`,
             ),
@@ -160,6 +168,7 @@ export async function assignSlot(
         const [lead] = await tx
           .insert(leads)
           .values({
+            teacherId,
             name: input.name,
             phone: input.phone,
             locale: input.locale,
@@ -175,6 +184,7 @@ export async function assignSlot(
         .where(
           and(
             eq(levelCheckSlots.id, input.slotId),
+            eq(levelCheckSlots.teacherId, teacherId),
             isNull(levelCheckSlots.leadId),
             gt(levelCheckSlots.startsAt, now),
           ),
@@ -191,14 +201,24 @@ export async function assignSlot(
 
 /**
  * Cancels a booking that hasn't happened yet. The time opens again for someone else and the
- * person goes back to Mona's list to be offered a new one.
+ * person goes back to the teacher's list to be offered a new one.
  */
-export async function cancelBooking(slotId: string, now = new Date()): Promise<boolean> {
+export async function cancelBooking(
+  teacherId: string,
+  slotId: string,
+  now = new Date(),
+): Promise<boolean> {
   return db.transaction(async (tx) => {
     const [slot] = await tx
       .select({ leadId: levelCheckSlots.leadId })
       .from(levelCheckSlots)
-      .where(and(eq(levelCheckSlots.id, slotId), gt(levelCheckSlots.startsAt, now)))
+      .where(
+        and(
+          eq(levelCheckSlots.id, slotId),
+          eq(levelCheckSlots.teacherId, teacherId),
+          gt(levelCheckSlots.startsAt, now),
+        ),
+      )
       .for("update");
     if (!slot?.leadId) return false;
     await tx
@@ -217,7 +237,11 @@ export async function cancelBooking(slotId: string, now = new Date()): Promise<b
  * A new room link for a booked level check that hasn't ended. The earlier link stops working,
  * since only the newest hash is kept.
  */
-export async function newJoinCode(slotId: string, now = new Date()): Promise<string | null> {
+export async function newJoinCode(
+  teacherId: string,
+  slotId: string,
+  now = new Date(),
+): Promise<string | null> {
   const code = generateToken();
   const updated = await db
     .update(levelCheckSlots)
@@ -225,6 +249,7 @@ export async function newJoinCode(slotId: string, now = new Date()): Promise<str
     .where(
       and(
         eq(levelCheckSlots.id, slotId),
+        eq(levelCheckSlots.teacherId, teacherId),
         isNotNull(levelCheckSlots.leadId),
         gt(levelCheckSlots.startsAt, new Date(now.getTime() - LEVEL_CHECK_MINUTES * 60_000)),
       ),
@@ -233,17 +258,20 @@ export async function newJoinCode(slotId: string, now = new Date()): Promise<str
   return updated.length ? code : null;
 }
 
-/** Mona's private notes on a person she checked; not once they are a learner. */
+/** A teacher's private notes on a person they checked; not once they are a learner. */
 export const leadNotesSchema = z.object({
   leadId: z.uuid(),
   notes: z.string().trim().max(2000),
 });
 
-export async function saveLeadNotes({ leadId, notes }: z.output<typeof leadNotesSchema>) {
+export async function saveLeadNotes(
+  teacherId: string,
+  { leadId, notes }: z.output<typeof leadNotesSchema>,
+) {
   const updated = await db
     .update(leads)
     .set({ notes: notes || null })
-    .where(and(eq(leads.id, leadId), ne(leads.status, "converted")))
+    .where(and(eq(leads.id, leadId), eq(leads.teacherId, teacherId), ne(leads.status, "converted")))
     .returning({ id: leads.id });
   return updated.length > 0;
 }
@@ -256,8 +284,8 @@ export type WaitingLead = {
   status: "new" | "contacted";
 };
 
-/** People Mona can give a time to: on her list, not converted or lost, holding no time. */
-export async function listWaitingLeads(): Promise<WaitingLead[]> {
+/** People the teacher can give a time to: on their list, not converted or lost, holding no time. */
+export async function listWaitingLeads(teacherId: string): Promise<WaitingLead[]> {
   const rows = await db
     .select({
       id: leads.id,
@@ -268,16 +296,28 @@ export async function listWaitingLeads(): Promise<WaitingLead[]> {
     })
     .from(leads)
     .leftJoin(levelCheckSlots, eq(levelCheckSlots.leadId, leads.id))
-    .where(and(inArray(leads.status, ["new", "contacted"]), isNull(levelCheckSlots.id)))
+    .where(
+      and(
+        eq(leads.teacherId, teacherId),
+        inArray(leads.status, ["new", "contacted"]),
+        isNull(levelCheckSlots.id),
+      ),
+    )
     .orderBy(desc(leads.createdAt));
   return rows.map((r) => ({ ...r, status: r.status as WaitingLead["status"] }));
 }
 
-/** Removes a time Mona no longer offers. Booked slots stay (the visitor is expecting the call). */
-export async function removeFreeSlot(id: string): Promise<boolean> {
+/** Removes a time the teacher no longer offers. Booked slots stay (the visitor expects the call). */
+export async function removeFreeSlot(teacherId: string, id: string): Promise<boolean> {
   const deleted = await db
     .delete(levelCheckSlots)
-    .where(and(eq(levelCheckSlots.id, id), isNull(levelCheckSlots.leadId)))
+    .where(
+      and(
+        eq(levelCheckSlots.id, id),
+        eq(levelCheckSlots.teacherId, teacherId),
+        isNull(levelCheckSlots.leadId),
+      ),
+    )
     .returning({ id: levelCheckSlots.id });
   return deleted.length > 0;
 }
@@ -292,8 +332,11 @@ export type UpcomingSlot = {
   } | null;
 };
 
-/** Mona's view: every upcoming slot, with who booked it. */
-export async function listUpcomingSlots(now = new Date()): Promise<UpcomingSlot[]> {
+/** The teacher's view: every upcoming slot of theirs, with who booked it. */
+export async function listUpcomingSlots(
+  teacherId: string,
+  now = new Date(),
+): Promise<UpcomingSlot[]> {
   const rows = await db
     .select({
       id: levelCheckSlots.id,
@@ -304,7 +347,7 @@ export async function listUpcomingSlots(now = new Date()): Promise<UpcomingSlot[
     })
     .from(levelCheckSlots)
     .leftJoin(leads, eq(leads.id, levelCheckSlots.leadId))
-    .where(gt(levelCheckSlots.startsAt, now))
+    .where(and(eq(levelCheckSlots.teacherId, teacherId), gt(levelCheckSlots.startsAt, now)))
     .orderBy(asc(levelCheckSlots.startsAt));
   return rows.map(({ id, startsAt, name, phone, levelGuess }) => ({
     id,
@@ -325,7 +368,7 @@ export type WeekSlot = {
 };
 
 /** Level-check times starting in [from, to), open or booked, for the week calendar. */
-export async function slotsBetween(from: Date, to: Date): Promise<WeekSlot[]> {
+export async function slotsBetween(teacherId: string, from: Date, to: Date): Promise<WeekSlot[]> {
   const rows = await db
     .select({
       id: levelCheckSlots.id,
@@ -337,7 +380,13 @@ export async function slotsBetween(from: Date, to: Date): Promise<WeekSlot[]> {
     })
     .from(levelCheckSlots)
     .leftJoin(leads, eq(leads.id, levelCheckSlots.leadId))
-    .where(and(gte(levelCheckSlots.startsAt, from), lt(levelCheckSlots.startsAt, to)))
+    .where(
+      and(
+        eq(levelCheckSlots.teacherId, teacherId),
+        gte(levelCheckSlots.startsAt, from),
+        lt(levelCheckSlots.startsAt, to),
+      ),
+    )
     .orderBy(asc(levelCheckSlots.startsAt));
   return rows.map(({ id, startsAt, name, phone, levelGuess, source }) => ({
     id,

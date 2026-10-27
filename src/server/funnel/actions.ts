@@ -2,11 +2,10 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
-import { requireAdmin } from "../auth/current";
+import { requireTeacher } from "../auth/current";
 import { fieldErrors, formLocale, text } from "../forms";
 import { consumeRateLimit } from "../rate-limit";
 import { getClientIp } from "../request";
-import { teacherIdFor } from "../classes/classes";
 import {
   addSlot,
   assignLeadSchema,
@@ -21,6 +20,7 @@ import {
   removeFreeSlot,
   slotInputSchema,
 } from "./level-check";
+import { createTeacherLead, teacherLeadSchema } from "./teacher-leads";
 import { joinWaitlist, waitlistInputSchema } from "./waitlist";
 
 const HOUR = 60 * 60;
@@ -94,14 +94,31 @@ export async function joinWaitlistAction(_: FormState, form: FormData): Promise<
   return { status: "success" };
 }
 
+/** "Request early access" on the platform home page: a teacher lead for the owner. */
+export async function requestAccessAction(_: FormState, form: FormData): Promise<FormState> {
+  const values = Object.fromEntries(["name", "phone", "learners"].map((k) => [k, text(form, k)]));
+  if (isBot(form)) return { status: "success" };
+
+  const parsed = teacherLeadSchema.safeParse({ ...values, locale: formLocale(form) });
+  if (!parsed.success) {
+    return { status: "error", fieldErrors: fieldErrors(parsed.error.issues), values };
+  }
+
+  const limit = await consumeRateLimit(`teacher-lead:ip:${await getClientIp()}`, 5, HOUR);
+  if (!limit.allowed) return { status: "error", error: "rate_limited", values };
+
+  await createTeacherLead(parsed.data);
+  return { status: "success" };
+}
+
 export async function addSlotAction(_: FormState, form: FormData): Promise<FormState> {
-  const admin = await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const values = { date: text(form, "date"), time: text(form, "time") };
   const parsed = slotInputSchema.safeParse(values);
   if (!parsed.success) {
     return { status: "error", fieldErrors: fieldErrors(parsed.error.issues), values };
   }
-  const result = await addSlot(parsed.data, await teacherIdFor(admin.id));
+  const result = await addSlot(teacherId, parsed.data);
   if (!result.ok) return { status: "error", error: result.error, values };
   refresh();
   // Keep the chosen day so Mona can add several times on it in a row.
@@ -109,16 +126,16 @@ export async function addSlotAction(_: FormState, form: FormData): Promise<FormS
 }
 
 export async function removeSlotAction(form: FormData): Promise<void> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const slotId = z.uuid().safeParse(text(form, "slotId"));
   if (!slotId.success) return;
-  await removeFreeSlot(slotId.data);
+  await removeFreeSlot(teacherId, slotId.data);
   refresh();
 }
 
 /** Mona gives an open time to someone on her list (`leadId`) or to a new person (name, phone). */
 export async function assignSlotAction(_: FormState, form: FormData): Promise<FormState> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const values = Object.fromEntries(
     ["slotId", "leadId", "name", "phone"].map((k) => [k, text(form, k)]),
   );
@@ -133,7 +150,7 @@ export async function assignSlotAction(_: FormState, form: FormData): Promise<Fo
   if (!parsed.success) {
     return { status: "error", fieldErrors: fieldErrors(parsed.error.issues), values };
   }
-  const result = await assignSlot(parsed.data);
+  const result = await assignSlot(teacherId, parsed.data);
   refresh();
   return result.ok ? { status: "success" } : { status: "error", error: result.error, values };
 }
@@ -142,24 +159,24 @@ export async function assignSlotAction(_: FormState, form: FormData): Promise<Fo
 export async function newLevelCheckLinkAction(
   slotId: string,
 ): Promise<{ ok: true; url: string } | { ok: false }> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const id = z.uuid().safeParse(slotId);
-  const code = id.success ? await newJoinCode(id.data) : null;
+  const code = id.success ? await newJoinCode(teacherId, id.data) : null;
   return code ? { ok: true, url: levelCheckUrl(code) } : { ok: false };
 }
 
 /** Saves Mona's notes on the visitor during (or after) a level check. */
 export async function saveLeadNotesAction(leadId: string, notes: string): Promise<boolean> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const parsed = leadNotesSchema.safeParse({ leadId, notes });
-  return parsed.success && (await saveLeadNotes(parsed.data));
+  return parsed.success && (await saveLeadNotes(teacherId, parsed.data));
 }
 
 export async function cancelBookingAction(_: FormState, form: FormData): Promise<FormState> {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const slotId = z.uuid().safeParse(text(form, "slotId"));
   if (!slotId.success) return { status: "error", error: "slot_taken" };
-  const ok = await cancelBooking(slotId.data);
+  const ok = await cancelBooking(teacherId, slotId.data);
   refresh();
   return ok ? { status: "success" } : { status: "error", error: "slot_taken" };
 }

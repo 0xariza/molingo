@@ -22,9 +22,11 @@ type Props = {
   /** Server time, so the server and the browser draw the same days. */
   now: string;
   slots: Slot[];
+  /** The teacher's name in the page's language. */
+  teacher: string;
 };
 
-export function BookingForm({ now, slots }: Props) {
+export function BookingForm({ now, slots, teacher }: Props) {
   const t = useTranslations("Landing.booking");
   const locale = useLocale() as Locale;
   const [state, action] = useActionState(bookLevelCheckAction, initial);
@@ -52,7 +54,7 @@ export function BookingForm({ now, slots }: Props) {
         <FormSuccess>{t("success", when(selected))}</FormSuccess>
         {state.link && (
           <p className="px-1">
-            {t("roomLink")}{" "}
+            {t("roomLink", { teacher })}{" "}
             <a
               href={state.link}
               dir="ltr"
@@ -65,7 +67,8 @@ export function BookingForm({ now, slots }: Props) {
       </div>
     );
   }
-  if (!firstOpen) return <p className="py-6 text-lg font-semibold text-ocean">{t("noSlots")}</p>;
+  if (!firstOpen)
+    return <p className="py-6 text-lg font-semibold text-ocean">{t("noSlots", { teacher })}</p>;
 
   const err = (field: string) => {
     const key = state.fieldErrors?.[field];
@@ -152,7 +155,7 @@ export function BookingForm({ now, slots }: Props) {
           <input type="hidden" name="slotId" value={selected.id} />
           <Honeypot />
           <p className="rounded-2xl bg-mist px-4 py-3 font-semibold text-ocean">
-            {t("summary", when(selected))}
+            {t("summary", { ...when(selected), teacher })}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field
@@ -172,7 +175,7 @@ export function BookingForm({ now, slots }: Props) {
               dir="ltr"
               required
               defaultValue={v.phone}
-              hint={t("phoneHint")}
+              hint={t("phoneHint", { teacher })}
               error={err("phone")}
               className="rtl:text-end"
             />

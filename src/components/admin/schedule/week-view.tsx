@@ -54,7 +54,7 @@ export function WeekView(data: WeekData) {
     <>
       <section
         aria-labelledby="week-hours"
-        className="space-y-2.5 rounded-3xl border border-line/40 bg-white px-5 py-4"
+        className="space-y-2.5 rounded-card border border-hairline bg-white px-5 py-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
           <p className="flex items-baseline gap-3">
@@ -89,7 +89,7 @@ export function WeekView(data: WeekData) {
                     ? "border-ocean bg-ocean text-white"
                     : day === today
                       ? "border-brand bg-white text-ocean"
-                      : "border-line/40 bg-white text-ocean"
+                      : "border-hairline bg-white text-ocean"
                 }`}
               >
                 <small className="text-[11px] opacity-80">{parts.weekday}</small>
@@ -123,7 +123,7 @@ export function WeekView(data: WeekData) {
             <div key={day} className="min-w-0">
               <div
                 className={`flex flex-col rounded-2xl border px-2 pt-2 pb-1.5 text-center leading-normal ${
-                  isToday ? "border-ocean bg-ocean text-white" : "border-line/40 bg-white"
+                  isToday ? "border-ocean bg-ocean text-white" : "border-hairline bg-white"
                 }`}
               >
                 <small className={`text-[11px] ${isToday ? "text-whale" : "text-body"}`}>
@@ -312,7 +312,7 @@ function Card({
         roomy ? "px-4 py-2.5" : "py-1.5 ps-2 pe-2.5"
       } ${
         text.color
-          ? `border bg-white before:absolute before:inset-y-0 before:start-0 before:w-1 before:bg-(--accent) hover:border-brand ${live ? "border-ocean ring-1 ring-ocean" : "border-line/40"}`
+          ? `border bg-white before:absolute before:inset-y-0 before:start-0 before:w-1 before:bg-(--accent) hover:border-brand ${live ? "border-ocean ring-1 ring-ocean" : "border-hairline"}`
           : "border-[1.5px] border-dashed border-whale hover:bg-white"
       } ${cancelled ? "[&>*]:opacity-55" : ""}`}
     >

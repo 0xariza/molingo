@@ -6,7 +6,7 @@ import type {
 } from "react";
 
 export const inputClass =
-  "min-h-13 w-full rounded-2xl border-[1.5px] border-line bg-surface px-4 text-base text-ocean placeholder:text-body/60 outline-none transition hover:border-body focus:border-brand focus:bg-white focus:ring-4 focus:ring-brand/15 aria-[invalid=true]:border-red-600 aria-[invalid=true]:bg-red-50/40";
+  "min-h-12 w-full rounded-lg border border-line bg-white px-3.5 text-base text-ocean placeholder:text-body/60 outline-none transition hover:border-body focus:border-teal focus:ring-4 focus:ring-teal/15 aria-[invalid=true]:border-red-600 aria-[invalid=true]:bg-red-50/40";
 
 type ShellProps = {
   id: string;

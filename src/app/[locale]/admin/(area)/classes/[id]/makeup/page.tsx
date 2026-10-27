@@ -8,8 +8,8 @@ import { MakeupForm } from "@/components/admin/classes/makeup-form";
 import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { tehranDateKey } from "@/lib/format";
 import { classTitle } from "@/lib/names";
-import { requireAdmin } from "@/server/auth/current";
-import { teacherIdFor } from "@/server/classes/classes";
+import { requireTeacher } from "@/server/auth/current";
+
 import { getClassDetail, upcomingTeacherSessions } from "@/server/classes/sessions";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -47,12 +47,12 @@ async function Makeup({
   title: string;
   lead: string;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireTeacher();
   const [{ id }, { replaces }] = await Promise.all([params, searchParams]);
   const valid = z.uuid().safeParse(id);
-  const cls = valid.success ? await getClassDetail(valid.data) : null;
+  const cls = valid.success ? await getClassDetail(admin.teacherId, valid.data) : null;
   if (!cls || cls.state === "archived" || cls.state === "finished") notFound();
-  const busy = await upcomingTeacherSessions(await teacherIdFor(admin.id));
+  const busy = await upcomingTeacherSessions(admin.teacherId);
   const replaced = new Set(
     cls.sessions.filter((s) => s.phase !== "cancelled").map((s) => s.replacesNumber),
   );

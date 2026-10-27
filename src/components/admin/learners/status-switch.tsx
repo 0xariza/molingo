@@ -11,7 +11,7 @@ export async function StatusSwitch({ id, status }: { id: string; status: Learner
   return (
     <section
       aria-labelledby="status-title"
-      className="space-y-4 rounded-[1.75rem] border border-line/40 bg-white p-6"
+      className="space-y-4 rounded-card border border-hairline bg-white p-6"
     >
       <h2
         id="status-title"

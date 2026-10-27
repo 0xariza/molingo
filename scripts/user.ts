@@ -1,8 +1,8 @@
 /**
- * Account helper for the command line. Mona creates learners and their logins in the admin area
- * (/admin/students); this is mainly for admin accounts.
+ * Account helper for the command line. The owner adds teachers on /owner and teachers add their
+ * learners; this creates the owner account and makes fresh links for any login.
  *
- *   pnpm user create --role admin --phone 09121234567 --name "Mona" [--locale fa]
+ *   pnpm user create --role owner --phone 09121234567 --name "Reza" [--locale fa]
  *   pnpm user link --phone 09121234567 [--reset]
  *
  * Prints a one-time activation (or reset) link to send over WhatsApp/Telegram.
@@ -15,7 +15,7 @@ import { parseArgs } from "node:util";
 const { positionals, values } = parseArgs({
   allowPositionals: true,
   options: {
-    role: { type: "string", default: "student" },
+    role: { type: "string", default: "owner" },
     phone: { type: "string" },
     name: { type: "string" },
     locale: { type: "string", default: "fa" },
@@ -27,7 +27,7 @@ async function main() {
   // Imported after dotenv so DATABASE_URL is set.
   const { eq } = await import("drizzle-orm");
   const { db } = await import("../src/db");
-  const { students, teachers, users } = await import("../src/db/schema");
+  const { users } = await import("../src/db/schema");
   const { normalizePhone } = await import("../src/lib/phone");
   const { issueAuthToken } = await import("../src/server/auth/tokens");
 
@@ -41,26 +41,15 @@ async function main() {
   let kind: "activation" | "reset" = "activation";
 
   if (command === "create") {
-    const role = values.role as "admin" | "student";
-    if (!["admin", "student"].includes(role)) throw new Error("--role must be admin or student");
+    // Teachers are added on the owner's page, learners by their teacher; this makes the owner.
+    if (values.role !== "owner") throw new Error("--role must be owner");
     if (!values.name) throw new Error("--name is required");
-    userId = await db.transaction(async (tx) => {
-      const [user] = await tx
-        .insert(users)
-        .values({ phone, role, displayName: values.name!, locale })
-        .returning({ id: users.id });
-      if (role === "admin") await tx.insert(teachers).values({ userId: user.id });
-      else
-        await tx.insert(students).values({
-          userId: user.id,
-          fullNameFa: values.name!,
-          phone,
-          status: "active",
-          startedAt: new Date(),
-        });
-      return user.id;
-    });
-    console.log(`Created ${role} ${values.name} (${phone}).`);
+    const [user] = await db
+      .insert(users)
+      .values({ phone, role: "owner", displayName: values.name, locale })
+      .returning({ id: users.id });
+    userId = user.id;
+    console.log(`Created owner ${values.name} (${phone}).`);
   } else if (command === "link") {
     const [user] = await db.select({ id: users.id }).from(users).where(eq(users.phone, phone));
     if (!user) throw new Error(`No user with phone ${phone}`);

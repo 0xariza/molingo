@@ -10,9 +10,8 @@ test.describe("Landing page", () => {
     await createSlot(tomorrowAt("18:00"));
     await page.goto("/en");
     for (const heading of [
-      t.roadmap.title1,
+      t.guides.title1.replace("{teacher}", "Mona"),
       t.ai.title1,
-      t.week.title1,
       t.formats.title1,
       t.booking.title1,
       t.faq.title1,

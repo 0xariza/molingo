@@ -13,7 +13,7 @@ import { classTitle, learnerNames } from "@/lib/names";
 import { cefrLevels, type ClassCard } from "@/server/classes/classes";
 import type { ClassStats as Stats } from "@/server/classes/stats";
 
-const card = "rounded-[1.75rem] border border-line/40 bg-white p-6";
+const card = "rounded-card border border-hairline bg-white p-6";
 const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
 
 /** Stat tiles and the two charts at the top of the classes page. */

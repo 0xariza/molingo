@@ -1,4 +1,4 @@
-import { eq, type SQL } from "drizzle-orm";
+import { and, eq, type SQL } from "drizzle-orm";
 import { db } from "@/db";
 import { leads, levelCheckSlots } from "@/db/schema";
 import { hashToken } from "../auth/crypto";
@@ -102,9 +102,13 @@ export function visitorLevelCheck(code: string, now = new Date()) {
   return access("student", eq(levelCheckSlots.joinCodeHash, hashToken(code)), now);
 }
 
-/** Mona's way in to a booked time. The caller has checked she is the admin. */
-export function teacherLevelCheck(slotId: string, now = new Date()) {
+/** The teacher's way in to one of their booked times. */
+export function teacherLevelCheck(teacherId: string, slotId: string, now = new Date()) {
   if (!/^[0-9a-f-]{36}$/i.test(slotId))
     return Promise.resolve({ ok: false, error: "notFound" } as const);
-  return access("teacher", eq(levelCheckSlots.id, slotId), now);
+  return access(
+    "teacher",
+    and(eq(levelCheckSlots.id, slotId), eq(levelCheckSlots.teacherId, teacherId))!,
+    now,
+  );
 }

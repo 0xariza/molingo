@@ -28,8 +28,7 @@ Mona adds learners and creates their logins on `/admin/students`; the command li
 admin accounts:
 
 ```bash
-pnpm user create --role admin --phone 0912xxxxxxx --name "Mona"     # prints an activation link
-pnpm user create --role student --phone 0912xxxxxxx --name "Sara"
+pnpm user create --role owner --phone 0912xxxxxxx --name "Reza"     # the platform owner; prints an activation link
 pnpm user link --phone 0912xxxxxxx --reset                         # new password-reset link
 ```
 

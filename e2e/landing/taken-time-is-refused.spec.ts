@@ -15,7 +15,13 @@ test.describe("Landing page", () => {
     await page.getByRole("button", { name: "18:00" }).click();
     const [other] = await db
       .insert(leads)
-      .values({ name: "Someone else", phone: "+989121112222", locale: "en", status: "scheduled" })
+      .values({
+        teacherId: six.teacherId,
+        name: "Someone else",
+        phone: "+989121112222",
+        locale: "en",
+        status: "scheduled",
+      })
       .returning();
     await db
       .update(levelCheckSlots)

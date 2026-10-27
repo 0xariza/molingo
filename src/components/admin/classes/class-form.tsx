@@ -57,7 +57,7 @@ const initial: ClassFormState = { status: "idle" };
 /** Day · start time · ends · remove, one line per weekly session. */
 const slotGrid =
   "grid grid-cols-[minmax(0,1fr)_8rem_2.75rem] items-center gap-3 sm:grid-cols-[minmax(0,1fr)_9rem_5rem_2.75rem]";
-const section = "space-y-5 rounded-[1.75rem] border border-line/40 bg-white p-6 sm:p-7";
+const section = "space-y-5 rounded-card border border-hairline bg-white p-6 sm:p-7";
 const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
 const segment =
   "min-h-13 rounded-xl px-3 font-bold leading-tight text-body transition aria-pressed:bg-white aria-pressed:text-ocean aria-pressed:shadow-[0_1px_3px_rgba(7,30,54,.12)]";

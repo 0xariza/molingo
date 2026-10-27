@@ -60,7 +60,7 @@ async function Home() {
       ) : (
         <section
           aria-labelledby="next-class"
-          className="flex flex-wrap items-center gap-5 rounded-[1.75rem] border border-line/40 bg-white p-6"
+          className="flex flex-wrap items-center gap-5 rounded-card border border-hairline bg-white p-6"
         >
           <span className="grid size-13 shrink-0 place-items-center rounded-2xl bg-mist text-brand">
             <VideoCamera aria-hidden size={26} />
@@ -77,7 +77,7 @@ async function Home() {
         </section>
       )}
 
-      <section className="space-y-2 rounded-[1.75rem] bg-whale p-6 text-ocean">
+      <section className="space-y-2 rounded-card bg-whale p-6 text-ocean">
         <p className="flex items-center gap-2 text-sm font-extrabold">
           <Sparkle aria-hidden size={18} weight="fill" />
           {t("aiTag")}

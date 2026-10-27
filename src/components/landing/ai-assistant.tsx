@@ -1,74 +1,85 @@
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
-import { cardTitle, Eyebrow, SectionTitle } from "./section-heading";
+import { Mascot } from "@/components/mascot";
+import { Eyebrow, SectionTitle } from "./section-heading";
 import { WaitlistForm } from "./waitlist-form";
 
-/** The AI assistant across the learning loop (coming soon), with the waitlist. */
+/** The learning loop: Hoopo before, during and after class (coming soon), and the waitlist. */
 export function AiAssistant() {
   const t = useTranslations("Landing.ai");
   const w = useTranslations("Landing.waitlist");
   return (
-    <section id="ai" className="scroll-mt-20 bg-ocean text-mist">
-      <div className="mx-auto max-w-6xl space-y-12 px-4 py-16 sm:py-28">
-        <div className="grid gap-6 md:grid-cols-[1.4fr_1fr] md:items-end">
-          <div className="space-y-4">
-            <Eyebrow className="text-sand">{t("eyebrow")}</Eyebrow>
-            <SectionTitle
-              first={t("title1")}
-              second={t("title2")}
-              accent="text-whale"
-              className="text-white"
-            />
+    <section id="loop" className="scroll-mt-20 border-y border-hairline bg-white">
+      <div className="mx-auto flex max-w-6xl flex-col gap-11 px-4 py-24">
+        <div className="flex flex-wrap items-end justify-between gap-5">
+          <div className="flex min-w-0 flex-[999_1_520px] flex-col gap-3.5">
+            <Eyebrow>{t("eyebrow")}</Eyebrow>
+            <SectionTitle first={t("title1")} second={t("title2")} />
           </div>
-          <p className="text-lg text-mist/90">{t("lead")}</p>
+          <p className="flex-[1_1_320px] text-lg">{t("lead")}</p>
         </div>
-
-        <div className="grid gap-4 lg:grid-cols-3">
-          <Stage step="01" tag={t("before.tag")} title={t("before.title")} body={t("before.body")}>
-            <Example label={t("before.exampleLabel")}>{t("before.example")}</Example>
-          </Stage>
-          <Stage step="02" tag={t("during.tag")} title={t("during.title")} body={t("during.body")}>
-            <Example label={t("during.exampleLabel")}>
-              <span dir="ltr" lang="en">
-                <s className="text-[#ff9a8f]">{t("during.wrong")}</s>
-                {" → "}
-                <b className="text-[#7fe0ae]">{t("during.right")}</b>
-              </span>
-            </Example>
+        <div className="grid gap-5 md:grid-cols-3">
+          <Stage
+            state="neutral"
+            tag={t("before.tag")}
+            title={t("before.title")}
+            body={t("before.body")}
+          >
+            <div className="rounded-card border border-hairline bg-white px-3.5 py-3 text-[15px] text-ocean">
+              {t("before.example")}
+            </div>
           </Stage>
           <Stage
-            step="03"
+            state="closed"
+            tag={t("during.tag")}
+            title={t("during.title")}
+            body={t("during.body")}
+          >
+            <div
+              dir="ltr"
+              aria-label={t("during.exampleLabel")}
+              className="rounded-card border border-hairline bg-white px-3.5 py-3 text-[15px]"
+            >
+              <s className="text-[#b42318]">{t("during.wrong")}</s>
+              <span aria-hidden="true"> → </span>
+              <b className="text-[#1f7a4d]">{t("during.right")}</b>
+            </div>
+          </Stage>
+          <Stage
+            state="open"
             tag={t("after.tag")}
             title={t("after.title")}
             body={t("after.body")}
-            highlight
+            warm
           >
             <div
+              dir="ltr"
               role="group"
               aria-label={t("after.chatLabel")}
-              dir="ltr"
-              lang="en"
-              className="mt-auto flex flex-col gap-2 rounded-2xl bg-white p-3 text-sm leading-snug text-ocean"
+              className="flex flex-col gap-2 rounded-card bg-white p-3 font-['Lexend'] text-sm leading-normal text-ocean"
             >
-              <p className="self-start rounded-2xl rounded-es-sm bg-mist px-3 py-2">
+              <p className="self-start rounded-[14px_14px_14px_4px] bg-teal-soft px-3 py-2">
                 {t("after.chatQ")}
               </p>
-              <p className="self-end rounded-2xl rounded-ee-sm bg-ocean px-3 py-2 text-white">
+              <p className="self-end rounded-[14px_14px_4px_14px] bg-ocean px-3 py-2 text-white">
                 {t("after.chatA")}
               </p>
-              <p className="self-start rounded-2xl rounded-es-sm bg-mist px-3 py-2">
+              <p className="self-start rounded-[14px_14px_14px_4px] bg-teal-soft px-3 py-2">
                 {t("after.chatFix")}
               </p>
             </div>
           </Stage>
         </div>
-
-        <div className="grid gap-5 rounded-card bg-white p-6 text-body sm:p-8 md:grid-cols-[1fr_1.1fr] md:items-center">
-          <div>
-            <h3 className={cardTitle}>{w("title")}</h3>
-            <p className="mt-1">{w("lead")}</p>
+        <div className="flex flex-wrap items-center justify-between gap-4 rounded-[22px] bg-ocean px-6 py-5 text-room-ink">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="font-sans text-[19px] font-extrabold tracking-normal normal-case text-white">
+              {w("title")}
+            </h3>
+            <p className="text-[15px] text-room-muted">{w("lead")}</p>
           </div>
-          <WaitlistForm />
+          <div className="w-full max-w-lg flex-[1_1_360px] rounded-card bg-white p-3">
+            <WaitlistForm />
+          </div>
         </div>
       </div>
     </section>
@@ -76,42 +87,35 @@ export function AiAssistant() {
 }
 
 function Stage({
-  step,
+  state,
   tag,
   title,
   body,
-  highlight = false,
+  warm = false,
   children,
 }: {
-  step: string;
+  state: "neutral" | "closed" | "open";
   tag: string;
   title: string;
   body: string;
-  highlight?: boolean;
+  warm?: boolean;
   children: ReactNode;
 }) {
   return (
     <article
-      className={`flex flex-col gap-4 rounded-card p-6 sm:p-8 ${highlight ? "bg-whale text-ocean" : "border border-white/10 bg-white/5"}`}
+      className={`flex flex-col gap-3 rounded-[22px] p-7 ${warm ? "bg-cinnamon-soft" : "bg-surface"}`}
     >
+      <Mascot state={state} className="size-21" />
       <p
-        className={`flex items-center gap-2 text-sm font-bold ${highlight ? "text-deep" : "text-whale"}`}
+        className={`text-xs font-semibold tracking-[0.06em] uppercase ${warm ? "text-cinnamon-ink" : ""}`}
       >
-        <span className="text-lg tracking-widest">{step}</span>
         {tag}
       </p>
-      <h3 className={`text-3xl sm:text-4xl ${highlight ? "text-ocean" : "text-white"}`}>{title}</h3>
-      <p className={highlight ? "text-ocean/80" : ""}>{body}</p>
-      {children}
+      <h3 className="font-sans text-2xl leading-normal font-extrabold tracking-normal normal-case text-ocean">
+        {title}
+      </h3>
+      <p>{body}</p>
+      <div className="mt-auto">{children}</div>
     </article>
-  );
-}
-
-function Example({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="mt-auto rounded-2xl bg-ocean px-4 py-3">
-      <p className="text-sm text-whale">{label}</p>
-      <div className="font-semibold text-white">{children}</div>
-    </div>
   );
 }

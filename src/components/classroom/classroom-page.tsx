@@ -63,12 +63,14 @@ export async function ClassroomPage({ user, sessionId }: { user: SessionUser; se
  * A booked level check's 1:1 room: the visitor comes with the code from their link, Mona (already
  * checked by her page) with the slot id. Same pre-join and room as a class, without moderation.
  */
-export async function LevelCheckPage(props: { code: string } | { slotId: string }) {
+export async function LevelCheckPage(
+  props: { code: string } | { slotId: string; teacherId: string },
+) {
   const visitor = "code" in props;
   const [t, locale, access] = await Promise.all([
     getTranslations("Classroom"),
     getLocale() as Promise<Locale>,
-    visitor ? visitorLevelCheck(props.code) : teacherLevelCheck(props.slotId),
+    visitor ? visitorLevelCheck(props.code) : teacherLevelCheck(props.teacherId, props.slotId),
   ]);
   const backHref = visitor ? "/" : "/admin/schedule";
   const backLabel = visitor ? t("levelCheck.backSite") : t("levelCheck.backSchedule");

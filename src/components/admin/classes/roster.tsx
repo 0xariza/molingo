@@ -60,7 +60,7 @@ export function Roster({
   return (
     <section
       aria-labelledby="roster-title"
-      className="space-y-4 rounded-[1.75rem] border border-line/40 bg-white p-6"
+      className="space-y-4 rounded-card border border-hairline bg-white p-6"
     >
       <div className="flex items-center justify-between gap-2">
         <h2

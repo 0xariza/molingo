@@ -46,7 +46,7 @@ export function LearnerForm(props: Props) {
 
   if (state.saved) {
     return (
-      <div className="space-y-5 rounded-[1.75rem] border border-line/40 bg-white p-6 sm:p-8">
+      <div className="space-y-5 rounded-card border border-hairline bg-white p-6 sm:p-8">
         <FormSuccess>{t("form.saved", { name: state.saved.name })}</FormSuccess>
         <LinkPanel link={state.saved.link} phone={state.saved.phone} />
         <Link href={`/admin/students/${state.saved.id}`} className={buttonClass("primary")}>
@@ -60,7 +60,7 @@ export function LearnerForm(props: Props) {
     <form
       action={action}
       noValidate
-      className="space-y-6 rounded-[1.75rem] border border-line/40 bg-white p-6 sm:p-8"
+      className="space-y-6 rounded-card border border-hairline bg-white p-6 sm:p-8"
     >
       <input type="hidden" name="locale" value={locale} />
       {props.mode === "edit" && <input type="hidden" name="id" value={props.id} />}

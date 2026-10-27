@@ -1,8 +1,9 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { students, users } from "@/db/schema";
+import { students, teacherLearners, users } from "@/db/schema";
 import type { Locale } from "@/i18n/routing";
 import { issueAuthToken, type AuthTokenKind } from "../auth/tokens";
+import { isSoleTeacher } from "./learners";
 
 /**
  * - `none`: no login yet
@@ -23,7 +24,10 @@ export type LoginLink = { url: string; kind: AuthTokenKind; expiresAt: Date };
 
 export type LoginLinkResult =
   | ({ ok: true } & LoginLink)
-  | { ok: false; error: "not_found" | "has_login" | "no_login" | "login_off" | "phone_taken" };
+  | {
+      ok: false;
+      error: "not_found" | "has_login" | "no_login" | "login_off" | "phone_taken" | "shared";
+    };
 
 function linkUrl(token: string, kind: AuthTokenKind, locale: Locale) {
   const base = process.env.APP_URL;
@@ -31,28 +35,47 @@ function linkUrl(token: string, kind: AuthTokenKind, locale: Locale) {
   return `${base}/${locale}/${kind === "activation" ? "activate" : "reset"}/${token}`;
 }
 
-async function issueLink(userId: string, kind: AuthTokenKind, locale: Locale, createdBy: string) {
+/** A one-time activation or reset link for any login (learners and teachers). */
+export async function issueLink(
+  userId: string,
+  kind: AuthTokenKind,
+  locale: Locale,
+  createdBy: string,
+) {
   const { token, expiresAt } = await issueAuthToken(userId, kind, createdBy);
   return { ok: true as const, url: linkUrl(token, kind, locale), kind, expiresAt };
 }
 
-/** Creates the learner's login (mobile number + a password they choose) and its activation link. */
-export async function createLogin(studentId: string, createdBy: string): Promise<LoginLinkResult> {
+/**
+ * Creates the learner's login (mobile number + a password they choose) and its activation link.
+ * Only the learner's sole teacher may: a login link lets whoever holds it into the account.
+ */
+export async function createLogin(
+  teacherId: string,
+  studentId: string,
+  createdBy: string,
+): Promise<LoginLinkResult> {
   type Created =
-    { error: "not_found" | "has_login" | "phone_taken" } | { user: { id: string; locale: Locale } };
+    | { error: "not_found" | "has_login" | "phone_taken" | "shared" }
+    | { user: { id: string; locale: Locale } };
   const result = await db.transaction(async (tx): Promise<Created> => {
     const [learner] = await tx
       .select({
         userId: students.userId,
         phone: students.phone,
         name: students.fullNameFa,
-        status: students.status,
+        status: teacherLearners.status,
       })
       .from(students)
+      .innerJoin(
+        teacherLearners,
+        and(eq(teacherLearners.studentId, students.id), eq(teacherLearners.teacherId, teacherId)),
+      )
       .where(eq(students.id, studentId))
       .for("update");
     if (!learner) return { error: "not_found" };
     if (learner.userId) return { error: "has_login" };
+    if (!(await isSoleTeacher(tx, teacherId, studentId))) return { error: "shared" };
 
     const [user] = await tx
       .insert(users)
@@ -64,7 +87,7 @@ export async function createLogin(studentId: string, createdBy: string): Promise
       })
       .onConflictDoNothing({ target: users.phone })
       .returning({ id: users.id, locale: users.locale });
-    // Another account (e.g. Mona's) already logs in with this number.
+    // Another account (e.g. a teacher's) already logs in with this number.
     if (!user) return { error: "phone_taken" };
     await tx.update(students).set({ userId: user.id }).where(eq(students.id, studentId));
     return { user };
@@ -77,7 +100,11 @@ export async function createLogin(studentId: string, createdBy: string): Promise
  * A fresh link for an existing login: activation until the learner has set a password, a
  * password reset after that. Issuing it turns the previous link of that kind off.
  */
-export async function newLoginLink(studentId: string, createdBy: string): Promise<LoginLinkResult> {
+export async function newLoginLink(
+  teacherId: string,
+  studentId: string,
+  createdBy: string,
+): Promise<LoginLinkResult> {
   const [row] = await db
     .select({
       userId: users.id,
@@ -86,9 +113,14 @@ export async function newLoginLink(studentId: string, createdBy: string): Promis
       locale: users.locale,
     })
     .from(students)
+    .innerJoin(
+      teacherLearners,
+      and(eq(teacherLearners.studentId, students.id), eq(teacherLearners.teacherId, teacherId)),
+    )
     .leftJoin(users, eq(users.id, students.userId))
     .where(eq(students.id, studentId));
   if (!row) return { ok: false, error: "not_found" };
+  if (!(await isSoleTeacher(db, teacherId, studentId))) return { ok: false, error: "shared" };
   if (!row.userId) return { ok: false, error: "no_login" };
   if (!row.isActive) return { ok: false, error: "login_off" };
   return issueLink(row.userId, row.passwordHash ? "reset" : "activation", row.locale!, createdBy);

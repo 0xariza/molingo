@@ -68,7 +68,7 @@ export async function ClassList({
       </nav>
 
       {shown.length === 0 ? (
-        <p className="rounded-[1.75rem] border border-line/40 bg-white p-6">
+        <p className="rounded-card border border-hairline bg-white p-6">
           {cards.length === 0 ? t("empty") : t("noMatch")}
         </p>
       ) : (
@@ -79,7 +79,7 @@ export async function ClassList({
             return (
               <li
                 key={c.id}
-                className="relative flex flex-col gap-3 rounded-[1.75rem] border border-line/40 bg-white p-5 transition hover:border-brand focus-within:ring-4 focus-within:ring-brand/20"
+                className="relative flex flex-col gap-3 rounded-card border border-hairline bg-white p-5 transition hover:border-brand focus-within:ring-4 focus-within:ring-brand/20"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -91,7 +91,7 @@ export async function ClassList({
                     </span>
                     <Link
                       href={`/admin/classes/${c.id}`}
-                      className="truncate text-lg font-extrabold text-ocean outline-none after:absolute after:inset-0 after:rounded-[1.75rem] after:content-['']"
+                      className="truncate text-lg font-extrabold text-ocean outline-none after:absolute after:inset-0 after:rounded-card after:content-['']"
                     >
                       {classTitle(c, locale)}
                     </Link>

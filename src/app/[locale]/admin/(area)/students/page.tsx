@@ -8,7 +8,7 @@ import { LearnerStats } from "@/components/admin/learners/learner-stats";
 import { buttonClass } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import {
   countByStatus,
   learnerStatuses,
@@ -40,7 +40,7 @@ async function Learners({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const params = await searchParams;
   const statusParam = one(params.status);
   const status = learnerStatuses.includes(statusParam as LearnerStatus)
@@ -51,10 +51,10 @@ async function Learners({
   const [t, locale, stats, followUps, rows, counts] = await Promise.all([
     getTranslations("Admin.learners"),
     getLocale() as Promise<Locale>,
-    learnerStats(),
-    listFollowUps(),
-    listLearners({ status, q }),
-    countByStatus(),
+    learnerStats(teacherId),
+    listFollowUps(teacherId),
+    listLearners(teacherId, { status, q }),
+    countByStatus(teacherId),
   ]);
   const total = learnerStatuses.reduce((sum, s) => sum + counts[s], 0);
 

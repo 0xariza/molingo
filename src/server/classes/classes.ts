@@ -8,7 +8,7 @@ import {
   enrollments,
   sessions,
   students,
-  teachers,
+  teacherLearners,
 } from "@/db/schema";
 import { toLatinDigits } from "@/lib/format";
 import {
@@ -30,15 +30,9 @@ export const MAX_GROUP_CAPACITY = 4;
 type Db = typeof db;
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 
-/** Mona's teacher record (created on first use; the MVP has one teacher). */
-export async function teacherIdFor(userId: string): Promise<string> {
-  const [row] = await db
-    .insert(teachers)
-    .values({ userId })
-    .onConflictDoUpdate({ target: teachers.userId, set: { userId } })
-    .returning({ id: teachers.id });
-  return row.id;
-}
+/** Limits an enrollments query to places in this teacher's classes. */
+const inTeachersClass = (teacherId: string) =>
+  sql`exists (select 1 from ${classes} c where c.id = ${enrollments.classId} and c.teacher_id = ${teacherId})`;
 
 const money = z
   .string()
@@ -199,13 +193,14 @@ export async function createClass(
             and(
               eq(enrollments.classId, input.fromClassId),
               eq(enrollments.status, "active"),
+              inTeachersClass(teacherId),
               // Only a finished class hands its learners on.
               sql`not exists (select 1 from ${sessions} s where s.class_id = ${input.fromClassId} and s.status = 'scheduled')`,
             ),
           );
       }
       for (const studentId of input.studentIds) {
-        const placed = await placeLearner(tx, row.id, studentId, now);
+        const placed = await placeLearner(tx, teacherId, row.id, studentId, now);
         if (!placed.ok) throw new Refused({ ok: false, error: "learner_unavailable" });
       }
       return row.id;
@@ -222,11 +217,13 @@ export type PlaceResult =
   { ok: true } | { ok: false; error: "full" | "already" | "unavailable" | "finished" };
 
 /**
- * Gives a learner a seat. The class row is locked, so two people can't take the last seat at once.
- * A lead becomes active. Learners who left can't be placed.
+ * Gives a learner a seat in one of this teacher's classes. The class row is locked, so two people
+ * can't take the last seat at once. The learner must be the teacher's; a lead becomes active, and
+ * learners who left can't be placed.
  */
 export async function placeLearner(
   tx: Tx,
+  teacherId: string,
   classId: string,
   studentId: string,
   now = new Date(),
@@ -234,7 +231,7 @@ export async function placeLearner(
   const [cls] = await tx
     .select({ capacity: classes.capacity, archivedAt: classes.archivedAt })
     .from(classes)
-    .where(eq(classes.id, classId))
+    .where(and(eq(classes.id, classId), eq(classes.teacherId, teacherId)))
     .for("update");
   if (!cls || cls.archivedAt) return { ok: false, error: "finished" };
   const [open] = await tx
@@ -243,10 +240,14 @@ export async function placeLearner(
     .where(and(eq(sessions.classId, classId), eq(sessions.status, "scheduled")));
   if (open.n === 0) return { ok: false, error: "finished" };
 
+  const mine = and(
+    eq(teacherLearners.teacherId, teacherId),
+    eq(teacherLearners.studentId, studentId),
+  );
   const [learner] = await tx
-    .select({ status: students.status })
-    .from(students)
-    .where(eq(students.id, studentId));
+    .select({ status: teacherLearners.status })
+    .from(teacherLearners)
+    .where(mine);
   if (!learner || learner.status === "left") return { ok: false, error: "unavailable" };
 
   const [taken] = await tx
@@ -269,21 +270,30 @@ export async function placeLearner(
   await tx.insert(enrollments).values({ classId, studentId, startedAt: now });
   if (learner.status === "lead") {
     await tx
-      .update(students)
+      .update(teacherLearners)
       .set({
         status: "active",
-        startedAt: sql`coalesce(${students.startedAt}, ${now.toISOString()}::timestamptz)`,
+        startedAt: sql`coalesce(${teacherLearners.startedAt}, ${now.toISOString()}::timestamptz)`,
       })
-      .where(eq(students.id, studentId));
+      .where(mine);
   }
   return { ok: true };
 }
 
-export async function enroll(classId: string, studentId: string): Promise<PlaceResult> {
-  return db.transaction((tx) => placeLearner(tx, classId, studentId));
+export async function enroll(
+  teacherId: string,
+  classId: string,
+  studentId: string,
+): Promise<PlaceResult> {
+  return db.transaction((tx) => placeLearner(tx, teacherId, classId, studentId));
 }
 
-export async function endEnrollment(classId: string, studentId: string, now = new Date()) {
+export async function endEnrollment(
+  teacherId: string,
+  classId: string,
+  studentId: string,
+  now = new Date(),
+) {
   const rows = await db
     .update(enrollments)
     .set({ status: "ended", endedAt: now })
@@ -292,6 +302,7 @@ export async function endEnrollment(classId: string, studentId: string, now = ne
         eq(enrollments.classId, classId),
         eq(enrollments.studentId, studentId),
         eq(enrollments.status, "active"),
+        inTeachersClass(teacherId),
       ),
     )
     .returning({ id: enrollments.id });
@@ -306,6 +317,7 @@ class MoveRefused extends Error {
 
 /** Ends the place in one class and gives a seat in another, or neither. */
 export async function moveLearner(
+  teacherId: string,
   fromClassId: string,
   toClassId: string,
   studentId: string,
@@ -321,11 +333,12 @@ export async function moveLearner(
             eq(enrollments.classId, fromClassId),
             eq(enrollments.studentId, studentId),
             eq(enrollments.status, "active"),
+            inTeachersClass(teacherId),
           ),
         )
         .returning({ id: enrollments.id });
       if (!ended.length) throw new MoveRefused("not_enrolled");
-      const placed = await placeLearner(tx, toClassId, studentId, now);
+      const placed = await placeLearner(tx, teacherId, toClassId, studentId, now);
       if (!placed.ok) throw new MoveRefused(placed.error);
     });
     return { ok: true };
@@ -337,6 +350,7 @@ export async function moveLearner(
 
 /** Edits what can change after creation. Capacity can't drop below the learners already in it. */
 export async function updateClass(
+  teacherId: string,
   id: string,
   input: EditClass,
 ): Promise<{ ok: true } | { ok: false; error: "not_found" | "capacity" }> {
@@ -344,7 +358,7 @@ export async function updateClass(
     const [cls] = await tx
       .select({ type: classes.type })
       .from(classes)
-      .where(eq(classes.id, id))
+      .where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)))
       .for("update");
     if (!cls) return { ok: false, error: "not_found" };
     const capacity = cls.type === "private" ? 1 : input.capacity;
@@ -371,13 +385,18 @@ export async function updateClass(
 }
 
 /** Archiving hides a class. Only possible once nobody is in it. */
-export async function archiveClass(id: string, now = new Date()): Promise<boolean> {
+export async function archiveClass(
+  teacherId: string,
+  id: string,
+  now = new Date(),
+): Promise<boolean> {
   const rows = await db
     .update(classes)
     .set({ archivedAt: now })
     .where(
       and(
         eq(classes.id, id),
+        eq(classes.teacherId, teacherId),
         isNull(classes.archivedAt),
         sql`not exists (select 1 from ${enrollments} e where e.class_id = ${classes.id} and e.status = 'active')`,
       ),
@@ -414,8 +433,8 @@ function stateOf(c: {
   return c.taken >= c.capacity ? "full" : "open";
 }
 
-/** Every class with its seats and state, newest first. */
-export async function listClasses(): Promise<ClassCard[]> {
+/** Every class of this teacher with its seats and state, newest first. */
+export async function listClasses(teacherId: string): Promise<ClassCard[]> {
   const rows = await db
     .select({
       id: classes.id,
@@ -430,6 +449,7 @@ export async function listClasses(): Promise<ClassCard[]> {
       scheduled: sql<number>`(select count(*)::int from ${sessions} s where s.class_id = "classes"."id" and s.status = 'scheduled')`,
     })
     .from(classes)
+    .where(eq(classes.teacherId, teacherId))
     .orderBy(sql`${classes.createdAt} desc`);
   if (rows.length === 0) return [];
   const ids = rows.map((r) => r.id);
@@ -462,18 +482,19 @@ export async function listClasses(): Promise<ClassCard[]> {
   });
 }
 
-/** Learners Mona can add to a class: everyone except those who left. */
-export async function listCandidates() {
+/** Learners the teacher can add to a class: all of theirs except those who left. */
+export async function listCandidates(teacherId: string) {
   return db
     .select({
       id: students.id,
       fullNameFa: students.fullNameFa,
       fullNameEn: students.fullNameEn,
       phone: students.phone,
-      status: students.status,
+      status: teacherLearners.status,
     })
-    .from(students)
-    .where(ne(students.status, "left"))
+    .from(teacherLearners)
+    .innerJoin(students, eq(students.id, teacherLearners.studentId))
+    .where(and(eq(teacherLearners.teacherId, teacherId), ne(teacherLearners.status, "left")))
     .orderBy(asc(students.fullNameFa));
 }
 
@@ -486,8 +507,15 @@ export type ClassDefaults = Omit<NewClass, "price" | "fromClassId"> & {
  * Prefill for "continue with next course": one level up, same learners and weekly times, starting
  * on the first class day after the last session. Only once every session is over.
  */
-export async function nextCourseDefaults(id: string, today: string): Promise<ClassDefaults | null> {
-  const [cls] = await db.select().from(classes).where(eq(classes.id, id));
+export async function nextCourseDefaults(
+  teacherId: string,
+  id: string,
+  today: string,
+): Promise<ClassDefaults | null> {
+  const [cls] = await db
+    .select()
+    .from(classes)
+    .where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)));
   if (!cls || cls.archivedAt) return null;
   const [state] = await db
     .select({
@@ -529,9 +557,9 @@ export async function nextCourseDefaults(id: string, today: string): Promise<Cla
   };
 }
 
-/** Public group classes that still have seats and sessions ahead, for the landing page. */
-export async function listFormingGroups() {
-  const cards = await listClasses();
+/** A teacher's public group classes that still have seats and sessions ahead, for their page. */
+export async function listFormingGroups(teacherId: string) {
+  const cards = await listClasses(teacherId);
   const forming = cards.filter((c) => c.type === "group" && c.isPublic && c.state === "open");
   if (forming.length === 0) return [];
   const starts = await db

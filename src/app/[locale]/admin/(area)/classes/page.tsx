@@ -7,7 +7,7 @@ import { ClassStats } from "@/components/admin/classes/class-stats";
 import { buttonClass } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import { listCandidates, listClasses } from "@/server/classes/classes";
 import { classStats } from "@/server/classes/stats";
 
@@ -31,16 +31,16 @@ async function Classes({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const { show } = await searchParams;
   const filter = classFilters.includes(show as ClassFilter) ? (show as ClassFilter) : "running";
   const [t, locale, cards, candidates] = await Promise.all([
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
-    listClasses(),
-    listCandidates(),
+    listClasses(teacherId),
+    listCandidates(teacherId),
   ]);
-  const stats = await classStats(cards);
+  const stats = await classStats(teacherId, cards);
   const running = cards.filter((c) => c.state === "open" || c.state === "full").length;
 
   return (

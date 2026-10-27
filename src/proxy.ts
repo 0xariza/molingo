@@ -5,7 +5,7 @@ import { routing } from "./i18n/routing";
 import { SESSION_COOKIE, sessionCookieOptions } from "./server/auth/constants";
 
 const intl = createMiddleware(routing);
-const PROTECTED = new RegExp(`^/(${routing.locales.join("|")})(/(?:admin|app))(/.*)?$`);
+const PROTECTED = new RegExp(`^/(${routing.locales.join("|")})(/(?:admin|app|owner))(/.*)?$`);
 
 export default function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
 import { leads, levelCheckSlots } from "@/db/schema";
-import { resetDb } from "@/test/factories";
+import { createTeacher, createUser, resetDb } from "@/test/factories";
 import {
   bookingInputSchema,
   bookLevelCheck,
@@ -11,7 +11,12 @@ import {
 } from "../../funnel/level-check";
 import { teacherLevelCheck, visitorLevelCheck } from "../level-check";
 
-beforeEach(() => resetDb(db));
+let teacherId: string;
+beforeEach(async () => {
+  await resetDb(db);
+  const mona = await createUser(db, { phone: "+989120000001", role: "teacher" });
+  teacherId = (await createTeacher(db, mona.id)).id;
+});
 
 const MINUTE = 60_000;
 const startsAt = new Date(Date.now() + 3 * 60 * MINUTE);
@@ -19,7 +24,7 @@ const plus = (m: number) => new Date(startsAt.getTime() + m * MINUTE);
 
 /** A booked 20-minute level check three hours ahead, and the visitor's link code. */
 async function booked() {
-  const [slot] = await db.insert(levelCheckSlots).values({ startsAt }).returning();
+  const [slot] = await db.insert(levelCheckSlots).values({ teacherId, startsAt }).returning();
   const r = await bookLevelCheck(
     bookingInputSchema.parse({
       slotId: slot.id,
@@ -62,7 +67,7 @@ describe("visitorLevelCheck", () => {
 
   it("stops the old link when Mona makes a new one", async () => {
     const { slot, code } = await booked();
-    const fresh = await newJoinCode(slot.id);
+    const fresh = await newJoinCode(teacherId, slot.id);
     expect(fresh).toBeTruthy();
     expect(await visitorLevelCheck(code, startsAt)).toEqual({ ok: false, error: "notFound" });
     expect((await visitorLevelCheck(fresh!, startsAt)).ok).toBe(true);
@@ -70,10 +75,13 @@ describe("visitorLevelCheck", () => {
 
   it("stops the link when the booking is cancelled, and gives no link for a free time", async () => {
     const { slot, code } = await booked();
-    await cancelBooking(slot.id);
+    await cancelBooking(teacherId, slot.id);
     expect(await visitorLevelCheck(code, startsAt)).toEqual({ ok: false, error: "notFound" });
-    expect(await newJoinCode(slot.id)).toBeNull();
-    expect(await teacherLevelCheck(slot.id, startsAt)).toEqual({ ok: false, error: "notFound" });
+    expect(await newJoinCode(teacherId, slot.id)).toBeNull();
+    expect(await teacherLevelCheck(teacherId, slot.id, startsAt)).toEqual({
+      ok: false,
+      error: "notFound",
+    });
   });
 
   it("refuses malformed codes without a lookup", async () => {
@@ -84,13 +92,16 @@ describe("visitorLevelCheck", () => {
 describe("teacherLevelCheck", () => {
   it("lets Mona in an hour early and half an hour after the end", async () => {
     const { slot } = await booked();
-    expect((await teacherLevelCheck(slot.id, plus(-61))).ok).toBe(false);
-    expect(await teacherLevelCheck(slot.id, plus(-60))).toMatchObject({
+    expect((await teacherLevelCheck(teacherId, slot.id, plus(-61))).ok).toBe(false);
+    expect(await teacherLevelCheck(teacherId, slot.id, plus(-60))).toMatchObject({
       ok: true,
       room: { role: "teacher" },
     });
-    expect((await teacherLevelCheck(slot.id, plus(50))).ok).toBe(true);
-    expect(await teacherLevelCheck(slot.id, plus(51))).toEqual({ ok: false, error: "ended" });
+    expect((await teacherLevelCheck(teacherId, slot.id, plus(50))).ok).toBe(true);
+    expect(await teacherLevelCheck(teacherId, slot.id, plus(51))).toEqual({
+      ok: false,
+      error: "ended",
+    });
   });
 });
 
@@ -98,8 +109,10 @@ describe("visitor details for Mona", () => {
   it("carries the visitor's booking and Mona's saved notes", async () => {
     const { slot } = await booked();
     const [lead] = await db.select().from(leads);
-    expect(await saveLeadNotes({ leadId: lead.id, notes: "B1, wants IELTS" })).toBe(true);
-    expect(await teacherLevelCheck(slot.id, startsAt)).toMatchObject({
+    expect(await saveLeadNotes(teacherId, { leadId: lead.id, notes: "B1, wants IELTS" })).toBe(
+      true,
+    );
+    expect(await teacherLevelCheck(teacherId, slot.id, startsAt)).toMatchObject({
       visitor: {
         leadId: lead.id,
         name: "Sara Ahmadi",
@@ -113,6 +126,22 @@ describe("visitor details for Mona", () => {
   it("stops saving notes once the person is a learner", async () => {
     await booked();
     const [lead] = await db.update(leads).set({ status: "converted" }).returning();
-    expect(await saveLeadNotes({ leadId: lead.id, notes: "late" })).toBe(false);
+    expect(await saveLeadNotes(teacherId, { leadId: lead.id, notes: "late" })).toBe(false);
+  });
+});
+
+describe("another teacher", () => {
+  it("can't enter the room, make a new link, cancel it or write notes", async () => {
+    const { slot } = await booked();
+    const [lead] = await db.select().from(leads);
+    const ali = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    const other = (await createTeacher(db, ali.id)).id;
+    expect(await teacherLevelCheck(other, slot.id, startsAt)).toEqual({
+      ok: false,
+      error: "notFound",
+    });
+    expect(await newJoinCode(other, slot.id)).toBeNull();
+    expect(await cancelBooking(other, slot.id)).toBe(false);
+    expect(await saveLeadNotes(other, { leadId: lead.id, notes: "x" })).toBe(false);
   });
 });

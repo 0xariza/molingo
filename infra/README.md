@@ -26,9 +26,9 @@ infra/ship.sh $APP            # add a call-test tag as the second argument to up
 ```
 
 `ship.sh` runs `pnpm db:migrate` from the Mac through an SSH tunnel (the database listens on the
-VPS's loopback only). Mona's admin account: open the same tunnel and run
-`DATABASE_URL=… APP_URL=https://hoopo.ir pnpm user create --role admin --phone … --name Mona`, which
-prints her one-time activation link.
+VPS's loopback only). The owner account: open the same tunnel and run
+`DATABASE_URL=… APP_URL=https://hoopo.ir pnpm user create --role owner --phone … --name …`, which
+prints its one-time activation link. Teachers are then added on `/owner`.
 
 SSH uses the project key in `.deploy/` (git-ignored). Secrets stay on the VPS in
 `/opt/molingo/.env` (mode 600); read the test password with

@@ -8,7 +8,7 @@ import { FormSkeleton } from "@/components/ui/form-skeleton";
 import type { Locale } from "@/i18n/routing";
 import { tehranDateKey } from "@/lib/format";
 import { classTitle } from "@/lib/names";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import { listCandidates, nextCourseDefaults } from "@/server/classes/classes";
 import { getClassDetail } from "@/server/classes/sessions";
 
@@ -49,17 +49,17 @@ async function NewClass({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const [t, locale, { from }, candidates] = await Promise.all([
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
     searchParams,
-    listCandidates(),
+    listCandidates(teacherId),
   ]);
   const today = tehranDateKey(new Date());
   const fromId = z.uuid().safeParse(from);
-  const next = fromId.success ? await nextCourseDefaults(fromId.data, today) : null;
-  const fromClass = next ? await getClassDetail(next.fromClassId) : null;
+  const next = fromId.success ? await nextCourseDefaults(teacherId, fromId.data, today) : null;
+  const fromClass = next ? await getClassDetail(teacherId, next.fromClassId) : null;
 
   return (
     <>

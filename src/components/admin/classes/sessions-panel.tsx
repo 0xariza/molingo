@@ -75,7 +75,7 @@ export function SessionsPanel({
   return (
     <section
       aria-labelledby="sessions-title"
-      className="space-y-4 rounded-[1.75rem] border border-line/40 bg-white p-6"
+      className="space-y-4 rounded-card border border-hairline bg-white p-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2

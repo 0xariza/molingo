@@ -1,6 +1,14 @@
 "use client";
 
-import { CalendarDots, ChalkboardTeacher, House, Users, type Icon } from "@phosphor-icons/react";
+import {
+  CalendarDots,
+  ChalkboardTeacher,
+  GraduationCap,
+  House,
+  IdentificationCard,
+  Users,
+  type Icon,
+} from "@phosphor-icons/react";
 import { Link, usePathname } from "@/i18n/navigation";
 
 /** Icons by name: server layouts can't pass components to this client component. */
@@ -9,11 +17,20 @@ const ICONS = {
   schedule: CalendarDots,
   learners: Users,
   classes: ChalkboardTeacher,
+  page: IdentificationCard,
+  teachers: GraduationCap,
 } satisfies Record<string, Icon>;
 
 export type AreaNavItem = {
   href:
-    "/admin" | "/admin/schedule" | "/admin/students" | "/admin/classes" | "/app" | "/app/schedule";
+    | "/admin"
+    | "/admin/schedule"
+    | "/admin/students"
+    | "/admin/classes"
+    | "/admin/my-page"
+    | "/app"
+    | "/app/schedule"
+    | "/owner";
   label: string;
   icon: keyof typeof ICONS;
   /** A small count next to the label (e.g. upcoming bookings). */

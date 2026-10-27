@@ -1,16 +1,10 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { sessions, students } from "@/db/schema";
+import { sessions, students, teacherLearners } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
-import { createUser, resetDb } from "@/test/factories";
-import {
-  createClass,
-  endEnrollment,
-  enroll,
-  newClassSchema,
-  teacherIdFor,
-} from "../../classes/classes";
+import { createTeacher, createUser, resetDb } from "@/test/factories";
+import { createClass, endEnrollment, enroll, newClassSchema } from "../../classes/classes";
 import { addMakeup, cancelSession, makeupSchema } from "../../classes/sessions";
 import { learnerSchedule } from "../learner";
 
@@ -20,16 +14,19 @@ const at = (date: string, time: string) => fromTehranTime(date, time);
 const now = at("2026-10-14", "12:00");
 
 async function setup() {
-  const mona = await createUser(db, { phone: "+989120000001", role: "admin" });
-  const teacherId = await teacherIdFor(mona.id);
+  const mona = await createUser(db, { phone: "+989120000001", role: "teacher" });
+  const teacherId = (await createTeacher(db, mona.id)).id;
   const sara = await createUser(db, { phone: "+989120000002", role: "student" });
   const [mine, other] = await db
     .insert(students)
     .values([
-      { fullNameFa: "سارا", phone: "+989120000002", userId: sara.id, status: "active" },
-      { fullNameFa: "نیما", phone: "+989120000003", status: "active" },
+      { fullNameFa: "سارا", phone: "+989120000002", userId: sara.id },
+      { fullNameFa: "نیما", phone: "+989120000003" },
     ])
     .returning({ id: students.id });
+  await db
+    .insert(teacherLearners)
+    .values([mine, other].map((l) => ({ teacherId, studentId: l.id, status: "active" as const })));
   // Sat/Mon 10:30 from Sat 17 Oct, 6 × 90 min: three sessions fall in the next two weeks.
   const r = await createClass(
     newClassSchema.parse({
@@ -54,17 +51,17 @@ async function setup() {
     now,
   );
   if (!r.ok) throw new Error(r.error);
-  await enroll(r.id, mine.id);
-  await enroll(r.id, other.id);
-  return { classId: r.id, userId: sara.id, mine: mine.id, other: other.id };
+  await enroll(teacherId, r.id, mine.id);
+  await enroll(teacherId, r.id, other.id);
+  return { classId: r.id, teacherId, userId: sara.id, mine: mine.id, other: other.id };
 }
 
 describe("learnerSchedule", () => {
   it("lists the next two weeks of the learner's sessions, numbered, cancelled ones included", async () => {
-    const { classId, userId } = await setup();
+    const { classId, teacherId, userId } = await setup();
     const list = await db.select().from(sessions).where(eq(sessions.classId, classId));
     const second = list.find((s) => s.startsAt.getTime() === at("2026-10-19", "10:30").getTime())!;
-    await cancelSession(second.id, "بیمار هستم", now);
+    await cancelSession(teacherId, second.id, "بیمار هستم", now);
 
     const mine = await learnerSchedule(userId, now);
     expect(mine.map((s) => [s.startsAt, s.number, s.phase, s.cancelReason])).toEqual([
@@ -77,8 +74,9 @@ describe("learnerSchedule", () => {
   });
 
   it("shows make-ups only to the learners invited, and nothing after the place ends", async () => {
-    const { classId, userId, mine, other } = await setup();
+    const { classId, teacherId, userId, mine, other } = await setup();
     await addMakeup(
+      teacherId,
       makeupSchema.parse({
         classId,
         date: "2026-10-20",
@@ -91,6 +89,7 @@ describe("learnerSchedule", () => {
     expect((await learnerSchedule(userId, now)).some((s) => s.kind === "makeup")).toBe(false);
 
     await addMakeup(
+      teacherId,
       makeupSchema.parse({
         classId,
         date: "2026-10-21",
@@ -104,7 +103,7 @@ describe("learnerSchedule", () => {
       { number: null, startsAt: at("2026-10-21", "15:00") },
     ]);
 
-    await endEnrollment(classId, mine);
+    await endEnrollment(teacherId, classId, mine);
     expect((await learnerSchedule(userId, now)).every((s) => s.kind === "makeup")).toBe(true);
   });
 });

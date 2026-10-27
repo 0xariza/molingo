@@ -7,7 +7,7 @@ import { BackLink } from "@/components/admin/learners/back-link";
 import { LearnerForm } from "@/components/admin/learners/learner-form";
 import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { formatPhone } from "@/lib/phone";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import { getLearner } from "@/server/students/learners";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -30,10 +30,10 @@ export default async function EditLearnerPage({
 }
 
 async function EditLearner({ params }: { params: Promise<{ id: string }> }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const { id } = await params;
   const valid = z.uuid().safeParse(id);
-  const learner = valid.success ? await getLearner(valid.data) : null;
+  const learner = valid.success ? await getLearner(teacherId, valid.data) : null;
   if (!learner) notFound();
 
   return (

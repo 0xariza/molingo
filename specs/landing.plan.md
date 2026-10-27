@@ -4,8 +4,9 @@
 
 The public landing page (Persian default, English) sells Molingo around two promises: a personal
 roadmap for each learner's goal and an AI assistant (coming soon) across the learning loop. Sections:
-hero, highlights, an interactive sample roadmap (pick a goal, the stops change), the AI assistant with
-its waitlist, a sample week, class formats (private and group; open groups show a "forming" state until
+the teacher's own header (brand, "powered by hoopo"), a hero with an interactive sample roadmap
+(pick a goal, the stops and Hoopo's nudge change), highlights, the teacher and Hoopo side by side,
+the learning loop with its waitlist, class formats (private and group; open groups show a "forming" state until
 M4/M5), free-session booking, about Mona, FAQ and a closing call to action.
 
 Booking works like Calendly: visitors see only the times Mona opened (next two weeks, Tehran time),
@@ -24,7 +25,7 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. With an open time tomorrow, open `/en` - expect: section headings for the roadmap, AI assistant, sample week, class formats,
+1. With an open time tomorrow, open `/en` - expect: section headings for the two guides, the learning loop, class formats,
    booking and FAQ - expect: the group card shows "New groups are forming" - expect: the hero's
    "Get my free roadmap" link points to the booking section (`#book`) - expect: the page doesn't
    scroll sideways on a phone
@@ -35,7 +36,7 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. Open `/en` - expect: in the roadmap section, "Work & interviews" is pressed and its first stop
+1. Open `/en` - expect: in the hero's roadmap card, "Work & interviews" is pressed and its first stop
    is shown (the hero shows the same stops, so look inside the section)
 2. Press "Moving abroad" - expect: it is pressed - expect: the moving-abroad stops replace the
    interview stops

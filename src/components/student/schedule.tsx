@@ -32,7 +32,7 @@ export function NextSessionCard({
   return (
     <section
       aria-labelledby="next-session"
-      className="flex flex-col items-start gap-1.5 rounded-[1.75rem] bg-ocean p-6 text-mist"
+      className="flex flex-col items-start gap-1.5 rounded-card bg-ocean p-6 text-mist"
     >
       <span className="rounded-pill bg-sand px-3 text-xs font-extrabold text-ocean">
         {session.phase === "live" ? t("live") : today ? t("nextToday") : t("next")}
@@ -143,7 +143,7 @@ function SessionCard({
   return (
     <article
       style={{ "--accent": color } as CSSProperties}
-      className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-line/40 bg-white px-4 py-3 before:absolute before:inset-y-0 before:start-0 before:w-1.5 before:bg-(--accent)"
+      className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-hairline bg-white px-4 py-3 before:absolute before:inset-y-0 before:start-0 before:w-1.5 before:bg-(--accent)"
     >
       <span
         className={`flex min-w-13 flex-col items-center leading-tight ${cancelled ? "opacity-55" : ""}`}

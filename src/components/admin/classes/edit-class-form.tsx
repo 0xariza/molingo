@@ -45,7 +45,7 @@ export function EditClassForm({
     <form
       action={action}
       noValidate
-      className="space-y-5 rounded-[1.75rem] border border-line/40 bg-white p-6 sm:p-7"
+      className="space-y-5 rounded-card border border-hairline bg-white p-6 sm:p-7"
     >
       <input type="hidden" name="locale" value={locale} />
       <input type="hidden" name="id" value={cls.id} />

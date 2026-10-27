@@ -18,7 +18,7 @@ export async function FollowUps({ items }: { items: FollowUp[] }) {
   return (
     <section
       aria-labelledby="follow-ups"
-      className="rounded-[1.75rem] border border-line/40 bg-white p-6"
+      className="rounded-card border border-hairline bg-white p-6"
     >
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h2

@@ -3,7 +3,8 @@ import en from "../messages/en.json" with { type: "json" };
 import fa from "../messages/fa.json" with { type: "json" };
 import { connectTestDb, type TestDb } from "@/test/database";
 import { formatDate, formatDayParts, fromTehranTime, tehranDateKey } from "@/lib/format";
-import { leads, sessionParticipants, sessions } from "@/db/schema";
+import { eq } from "drizzle-orm";
+import { leads, sessionParticipants, sessions, teachers } from "@/db/schema";
 import { addDays, weekStartOf, type Weekday } from "@/lib/schedule";
 import {
   createAuthToken,
@@ -25,7 +26,7 @@ export const STUDENT = { phone: "+989120000002", local: "09120000002", name: "Sa
 
 type Fixtures = {
   db: TestDb;
-  /** Creates Mona (admin) and Sara (student), both activated with PASSWORD. */
+  /** Creates Mona (teacher, page /mona) and Sara (student), both activated with PASSWORD. */
   seedAccounts: () => Promise<{ adminId: string; studentId: string }>;
   createUser: (overrides?: Parameters<typeof createUser>[1]) => ReturnType<typeof createUser>;
   createAuthToken: (
@@ -80,10 +81,14 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
     await use((userId, kind, expiresAt) => createAuthToken(db, userId, kind, expiresAt));
   },
   createSlot: async ({ db }, use) => {
-    await use((startsAt, bookedBy) => createLevelCheckSlot(db, startsAt, bookedBy));
+    await use(async (startsAt, bookedBy) =>
+      createLevelCheckSlot(db, (await mona(db)).teacherId, startsAt, bookedBy),
+    );
   },
   createLearner: async ({ db }, use) => {
-    await use((overrides) => createLearner(db, overrides));
+    await use(async (overrides) =>
+      createLearner(db, { teacherId: (await mona(db)).teacherId, ...overrides }),
+    );
   },
   createClass: async ({ db }, use) => {
     await use((input) => createClass(db, input));
@@ -91,14 +96,15 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
   seedTeaching: async ({ db, seedAccounts }, use) => {
     await use(async () => {
       const { adminId, studentId } = await seedAccounts();
-      const teacher = await createTeacher(db, adminId);
+      const { teacherId } = await mona(db);
       const sara = await createLearner(db, {
+        teacherId,
         userId: studentId,
         fullNameFa: "سارا احمدی",
         fullNameEn: STUDENT.name,
         phone: STUDENT.phone,
       });
-      return { adminId, teacherId: teacher.id, saraId: sara.id };
+      return { adminId, teacherId, saraId: sara.id };
     });
   },
   seedSchedule: async ({ db, seedTeaching }, use) => {
@@ -113,13 +119,15 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
         ],
         studentIds: [saraId],
       });
-      await createLevelCheckSlot(db, nextWeekAt(2, "18:00"));
-      await createLevelCheckSlot(db, nextWeekAt(3, "18:00"), {
+      await createLevelCheckSlot(db, teacherId, nextWeekAt(2, "18:00"));
+      await createLevelCheckSlot(db, teacherId, nextWeekAt(3, "18:00"), {
         name: "Nika Rahimi",
         phone: "+989125551234",
       });
       // Booked online earlier; her time was cancelled, so she's waiting again.
-      await db.insert(leads).values({ name: "Mahsa", phone: "+989121112233", locale: "fa" });
+      await db
+        .insert(leads)
+        .values({ teacherId, name: "Mahsa", phone: "+989121112233", locale: "fa" });
       return cls;
     });
   },
@@ -150,24 +158,41 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
   },
   seedAccounts: async ({ db }, use) => {
     await use(async () => {
-      const admin = await createUser(db, {
-        phone: ADMIN.phone,
-        displayName: ADMIN.name,
-        role: "admin",
-        password: PASSWORD,
-      });
+      const { adminId } = await mona(db);
       const student = await createUser(db, {
         phone: STUDENT.phone,
         displayName: STUDENT.name,
         role: "student",
         password: PASSWORD,
       });
-      return { adminId: admin.id, studentId: student.id };
+      return { adminId, studentId: student.id };
     });
   },
 });
 
 export { expect };
+
+/** Mona: a teacher with her page at /mona (which hoopo.ir opens), made on first use in a test. */
+async function mona(db: TestDb) {
+  const [found] = await db
+    .select({ adminId: teachers.userId, teacherId: teachers.id })
+    .from(teachers)
+    .where(eq(teachers.slug, "mona"));
+  if (found) return found;
+  const user = await createUser(db, {
+    phone: ADMIN.phone,
+    displayName: ADMIN.name,
+    role: "teacher",
+    password: PASSWORD,
+  });
+  const teacher = await createTeacher(db, user.id, {
+    slug: "mona",
+    brandName: "Mona English",
+    nameFa: "مونا",
+    nameEn: "Mona",
+  });
+  return { adminId: user.id, teacherId: teacher.id };
+}
 
 /** Tomorrow (Tehran) at a Tehran wall-clock time such as "18:00". */
 export const tomorrowAt = (time: string) =>

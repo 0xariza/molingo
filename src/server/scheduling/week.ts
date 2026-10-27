@@ -19,7 +19,7 @@ export type WeekSchedule = {
   limits: { day: number; week: number };
 };
 
-/** Everything on Mona's calendar for the Sat–Fri week starting on `start`. */
+/** Everything on the teacher's calendar for the Sat–Fri week starting on `start`. */
 export async function weekSchedule(
   teacherId: string,
   start: string,
@@ -29,7 +29,7 @@ export async function weekSchedule(
   const to = fromTehranTime(addDays(start, 7), "00:00");
   const [sessions, slots, [teacher]] = await Promise.all([
     sessionsBetween(teacherId, from, to, now),
-    slotsBetween(from, to),
+    slotsBetween(teacherId, from, to),
     db
       .select({ day: teachers.dailyHourLimit, week: teachers.weeklyHourLimit })
       .from(teachers)

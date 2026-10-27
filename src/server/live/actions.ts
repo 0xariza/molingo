@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { requireAdmin, requireUser } from "../auth/current";
+import { requireTeacher, requireUser } from "../auth/current";
 import {
   ensureRoom,
   joinToken,
@@ -54,23 +54,23 @@ export async function joinLevelCheckAction(code: string): Promise<JoinResult> {
   return connect(access.room.visitorIdentity, access.room, 1);
 }
 
-/** Mona's way into a booked level check. */
+/** The teacher's way into one of their booked level checks. */
 export async function teacherJoinLevelCheckAction(slotId: string): Promise<JoinResult> {
-  const admin = await requireAdmin();
-  const access = await teacherLevelCheck(String(slotId));
+  const teacher = await requireTeacher();
+  const access = await teacherLevelCheck(teacher.teacherId, String(slotId));
   if (!access.ok) return { ok: false, error: access.error };
-  return connect(admin.id, access.room, 1);
+  return connect(teacher.id, access.room, 1);
 }
 
-/** Mona's moderation runs only while she may be in that room herself. */
+/** The teacher's moderation runs only while they may be in that room themselves. */
 async function moderate(
   id: string,
   run: (session: string) => Promise<unknown>,
 ): Promise<ModerationResult> {
-  const admin = await requireAdmin();
+  const teacher = await requireTeacher();
   const parsed = sessionId.safeParse(id);
   if (!parsed.success) return { ok: false, error: "notFound" };
-  const access = await roomFor(admin, parsed.data);
+  const access = await roomFor(teacher, parsed.data);
   if (!access.ok) return { ok: false, error: access.error };
   try {
     await run(parsed.data);

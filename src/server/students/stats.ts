@@ -1,6 +1,6 @@
 import { and, count, eq, gte, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db";
-import { leads, students, users } from "@/db/schema";
+import { leads, students, teacherLearners, users } from "@/db/schema";
 import { jalaliMonthKey, recentJalaliMonths } from "@/lib/format";
 import { countByStatus, type LearnerStatus } from "./learners";
 
@@ -17,26 +17,39 @@ export type LearnerStats = {
   pendingLogins: number;
 };
 
-export async function learnerStats(now = new Date()): Promise<LearnerStats> {
+export async function learnerStats(teacherId: string, now = new Date()): Promise<LearnerStats> {
   const months = recentJalaliMonths(now, STATS_MONTHS);
   const since = months[0].date;
 
   const [byStatus, started, bookingRows, [pending]] = await Promise.all([
-    countByStatus(),
+    countByStatus(teacherId),
     db
-      .select({ startedAt: students.startedAt })
-      .from(students)
-      .where(and(isNotNull(students.startedAt), gte(students.startedAt, since))),
+      .select({ startedAt: teacherLearners.startedAt })
+      .from(teacherLearners)
+      .where(
+        and(
+          eq(teacherLearners.teacherId, teacherId),
+          isNotNull(teacherLearners.startedAt),
+          gte(teacherLearners.startedAt, since),
+        ),
+      ),
     db
       .select({ status: leads.status, n: count() })
       .from(leads)
-      .where(gte(leads.createdAt, since))
+      .where(and(eq(leads.teacherId, teacherId), gte(leads.createdAt, since)))
       .groupBy(leads.status),
     db
       .select({ n: count() })
-      .from(students)
+      .from(teacherLearners)
+      .innerJoin(students, eq(students.id, teacherLearners.studentId))
       .innerJoin(users, eq(users.id, students.userId))
-      .where(and(isNull(users.passwordHash), eq(users.isActive, true))),
+      .where(
+        and(
+          eq(teacherLearners.teacherId, teacherId),
+          isNull(users.passwordHash),
+          eq(users.isActive, true),
+        ),
+      ),
   ]);
 
   const perMonth = months.map((m) => ({ ...m, count: 0 }));

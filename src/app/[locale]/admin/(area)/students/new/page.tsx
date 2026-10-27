@@ -7,7 +7,7 @@ import { LearnerForm } from "@/components/admin/learners/learner-form";
 import { FormSkeleton } from "@/components/ui/form-skeleton";
 import { splitBookingName } from "@/lib/names";
 import { formatPhone } from "@/lib/phone";
-import { requireAdmin } from "@/server/auth/current";
+import { requireTeacher } from "@/server/auth/current";
 import { getOpenLead } from "@/server/students/learners";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,13 +36,13 @@ async function NewLearner({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireAdmin();
+  const { teacherId } = await requireTeacher();
   const [t, { lead: leadParam }] = await Promise.all([
     getTranslations("Admin.learners.form"),
     searchParams,
   ]);
   const leadId = z.uuid().safeParse(leadParam);
-  const lead = leadId.success ? await getOpenLead(leadId.data) : null;
+  const lead = leadId.success ? await getOpenLead(teacherId, leadId.data) : null;
   const names = lead ? splitBookingName(lead.name) : null;
 
   return (

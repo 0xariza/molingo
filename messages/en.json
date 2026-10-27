@@ -1,7 +1,7 @@
 {
   "Metadata": {
     "title": "Hoopo: English with a roadmap made for you",
-    "description": "Live English classes with Mona, private or in a group, with a personal roadmap for your goal and an AI assistant. Book your free session."
+    "description": "Live English classes with a real teacher, private or in a group, with a personal roadmap for your goal and an AI assistant. Book your free session."
   },
   "Common": {
     "brand": "Hoopo",
@@ -40,7 +40,7 @@
   },
   "Auth": {
     "loginTitle": "Welcome back",
-    "loginLead": "Log in with the mobile number Mona registered for you.",
+    "loginLead": "Log in with the mobile number your teacher registered for you.",
     "phone": "Mobile number",
     "phoneHint": "0912 123 4567",
     "password": "Password",
@@ -51,7 +51,7 @@
     "hidePassword": "Hide password",
     "submitLogin": "Log in",
     "submitting": "Please wait…",
-    "forgot": "Ask Mona to send you a new link.",
+    "forgot": "Ask your teacher to send you a new link.",
     "activateTitle": "Welcome, {name}",
     "activateLead": "Choose a password for your Hoopo account. You'll log in with your mobile number and this password.",
     "submitActivate": "Save and continue",
@@ -59,7 +59,7 @@
     "resetLead": "Hi {name}, choose a new password for your account.",
     "submitReset": "Save new password",
     "linkInvalidTitle": "This link doesn't work anymore",
-    "linkInvalidBody": "It may have expired or already been used. Ask Mona to send you a new link.",
+    "linkInvalidBody": "It may have expired or already been used. Ask your teacher to send you a new link.",
     "goToLogin": "Go to login",
     "errors": {
       "invalid": "The mobile number or password is incorrect.",
@@ -69,7 +69,7 @@
       "too_short": "The password must be at least 8 characters.",
       "too_common": "This password is too easy to guess. Choose another one.",
       "mismatch": "The two passwords don't match.",
-      "link": "This link has expired or was already used. Ask Mona for a new one."
+      "link": "This link has expired or was already used. Ask your teacher for a new one."
     },
     "activatePageTitle": "Activate your account",
     "loginPageTitle": "Log in",
@@ -82,18 +82,19 @@
       "title2": "is waiting.",
       "body": "Everything you need for your next step, in one place.",
       "classes": "Upcoming classes, one tap to join",
-      "homework": "Homework and Mona's feedback",
+      "homework": "Homework and your teacher's feedback",
       "roadmap": "The next stop on your roadmap"
     }
   },
   "Admin": {
     "title": "Dashboard",
-    "role": "Teacher & admin",
+    "role": "Teacher",
     "nav": {
       "dashboard": "Dashboard",
       "learners": "Learners",
       "classes": "Classes",
-      "schedule": "Weekly schedule"
+      "schedule": "Weekly schedule",
+      "myPage": "My page"
     },
     "home": {
       "bookedTitle": "Booked level checks",
@@ -179,7 +180,8 @@
           "has_login": "They already have a login.",
           "no_login": "Create a login first.",
           "login_off": "Their login is off. Change their status first.",
-          "phone_taken": "Another account already logs in with this number. Change the learner's mobile number first."
+          "phone_taken": "Another account already logs in with this number. Change the learner's mobile number first.",
+          "shared": "This learner also studies with another teacher, so only the teacher who manages their account can send login links."
         }
       },
       "stats": {
@@ -255,9 +257,10 @@
         "messengerHandle": "Keep it under 64 characters.",
         "notes": "Keep notes under 2,000 characters.",
         "status": "Choose a status.",
-        "phone_taken": "Another learner already has this mobile number.",
+        "phone_taken": "Another of your learners already has this mobile number.",
         "lead_unavailable": "This booking has already become a learner.",
-        "not_found": "This learner no longer exists."
+        "not_found": "This learner no longer exists.",
+        "shared": "This learner also studies with another teacher, so their mobile number can't change here."
       },
       "profile": {
         "since": "Learner since {date}",
@@ -703,6 +706,21 @@
       "newLink": "New room link",
       "newLinkNote": "Their earlier link no longer works. The room opens 10 minutes before the time.",
       "newLinkFailed": "This booking has ended or was cancelled."
+    },
+    "myPage": {
+      "title": "My page",
+      "address": "Your page:",
+      "brandName": "Brand name",
+      "brandHint": "What learners see at the top of your page and panel.",
+      "bio": "About you",
+      "bioHint": "A few lines for your page. It replaces the general text there. Your photo comes later.",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved. Your page shows it now.",
+      "errors": {
+        "brandName": "Enter a brand name (2 to 60 letters).",
+        "bio": "Keep it under 1,000 characters."
+      }
     }
   },
   "Student": {
@@ -715,7 +733,7 @@
     "home": {
       "greeting": "Hi {name}, welcome.",
       "nextTitle": "Next class",
-      "nextEmpty": "Once Mona places you in a class, your next class and its join button will appear here.",
+      "nextEmpty": "Once your teacher places you in a class, your next class and its join button will appear here.",
       "aiTag": "Always-on tutor · Coming soon",
       "aiTitle": "Practise speaking, any time",
       "aiBody": "Soon you'll practise between classes with an AI tutor that knows your roadmap.",
@@ -746,92 +764,83 @@
   },
   "Error": {
     "title": "Something went wrong",
-    "body": "Please try again. If it keeps happening, let Mona know.",
+    "body": "Please try again. If it keeps happening, let your teacher know.",
     "retry": "Try again"
   },
   "Landing": {
     "nav": {
-      "roadmap": "Roadmap",
       "ai": "AI",
       "classes": "Classes",
-      "mona": "Mona",
+      "mona": "{teacher} & Hoopo",
       "faq": "FAQ"
     },
     "hero": {
-      "eyebrow": "A real teacher · Your own path · AI",
-      "title1": "Name your goal.",
-      "title2": "We'll map the way.",
-      "lead": "Mona draws a step-by-step roadmap for your goal, teaches you live, and an AI assistant keeps you moving between classes.",
-      "secondary": "See a sample roadmap",
-      "ctaNote": "20 minutes with Mona · Free · No strings attached",
+      "eyebrow": "A real teacher + an AI guide",
+      "title1": "Name your goal,",
+      "title2": "and we'll walk the way together.",
+      "lead": "{teacher} draws a step-by-step roadmap for your goal and is with you in every class. Between classes, Hoopo, your AI guide, keeps you moving (coming soon).",
+      "secondary": "What does Hoopo do?",
+      "ctaNote": "20 minutes with {teacher} · Free · No payment",
       "card": {
         "owner": "Sara's roadmap",
-        "goal": "Goal: job interview",
-        "levels": "B1 → B2",
-        "progress": "Sara's progress on this roadmap",
-        "now": "this week"
+        "levels": "B1 → B2"
       },
-      "assistant": "“Sara, want a quick practice round on the weakness question before tomorrow's class?”"
+      "hoopo": "Hoopo"
     },
     "highlights": {
       "label": "Highlights",
-      "roadmap": "Personal roadmap",
-      "teacher": "Real teacher",
-      "assistant": "AI assistant",
+      "roadmap": "A personal roadmap, free",
+      "teacher": "Live classes with a real teacher",
+      "assistant": "24/7 practice with Hoopo · coming soon",
       "formats": "Private or group"
     },
     "roadmap": {
-      "eyebrow": "Personal roadmap",
-      "title1": "English, with a map",
-      "title2": "that's yours alone.",
-      "lead": "Moving abroad? Job interview? Next trip? Mona plots your route stop by stop. Every class ticks one off, so you always know where you are and what's next.",
       "try": "Try it: what do you need English for?",
-      "badges": {
-        "done": "Done",
-        "now": "This week",
-        "next": "Next"
-      },
-      "promises": {
-        "p1": "Yours after the free session",
-        "p2": "Updated after every class",
-        "p3": "Goal changed? So does the map"
-      },
       "goals": {
         "work": {
           "label": "Work & interviews",
           "s1": "Introduce yourself in 30 seconds",
           "s2": "Talk about your experience",
           "s3": "Answer “What's your weakness?”",
-          "s4": "Mock interview with Mona"
+          "s4": "Mock interview with {teacher}",
+          "nudge": "Sara, one practice round on the weakness question before tomorrow's class?"
         },
         "move": {
           "label": "Moving abroad",
           "s1": "Shops, banks and the doctor",
           "s2": "Small talk with neighbours",
           "s3": "Phone calls without panic",
-          "s4": "Chat freely about anything"
+          "s4": "Chat freely about anything",
+          "nudge": "Shall we practise calling a doctor's office today?"
         },
         "travel": {
           "label": "Travel",
           "s1": "Airports and hotels, stress-free",
           "s2": "Order food like a local",
           "s3": "Sort it out when things go wrong",
-          "s4": "Make new friends"
+          "s4": "Make new friends",
+          "nudge": "Five minutes of ordering at a restaurant, together?"
         },
         "exam": {
           "label": "Exams",
           "s1": "Speaking part 1 without pauses",
           "s2": "Describe pictures and charts",
           "s3": "Argue and discuss",
-          "s4": "Mock exam with feedback"
+          "s4": "Mock exam with feedback",
+          "nudge": "A two-minute chart description, then a score and feedback."
         }
+      },
+      "badges": {
+        "done": "Done",
+        "now": "This week",
+        "next": "Next"
       }
     },
     "ai": {
-      "eyebrow": "Hoopo AI assistant · Coming soon",
+      "eyebrow": "Hoopo · coming soon",
       "title1": "Class ends.",
       "title2": "Your learning doesn't.",
-      "lead": "Mona is your teacher and always will be. The AI assistant knows your roadmap and stays with you before, during and after every class, so no day on your path goes to waste.",
+      "lead": "Watch Hoopo's crest: closed while it listens, fanned out when you get it right.",
       "before": {
         "tag": "Before class",
         "title": "Walk in ready",
@@ -869,36 +878,6 @@
         "rate_limited": "Too many attempts. Please try again later."
       }
     },
-    "week": {
-      "eyebrow": "A week on Sara's roadmap",
-      "title1": "Mona shows the way.",
-      "title2": "The assistant keeps you going.",
-      "who": {
-        "mona": "Mona",
-        "assistant": "Assistant",
-        "roadmap": "Roadmap"
-      },
-      "d1": {
-        "day": "Saturday",
-        "body": "Live class: handling tough interview questions"
-      },
-      "d2": {
-        "day": "Saturday night",
-        "body": "Personal summary: 4 corrections, 6 new words"
-      },
-      "d3": {
-        "day": "Sunday",
-        "body": "Ten minutes of practice conversation over breakfast"
-      },
-      "d4": {
-        "day": "Monday",
-        "body": "Homework feedback and a short mock interview"
-      },
-      "d5": {
-        "day": "Thursday",
-        "body": "Stop ticked off: “What's your weakness?”"
-      }
-    },
     "formats": {
       "eyebrow": "Choose your class",
       "title1": "Solo or with fellow travellers?",
@@ -906,7 +885,7 @@
       "lead": "Whichever you choose, your personal roadmap and the AI assistant come with you. The only difference is who you practise with.",
       "private": {
         "title": "Private",
-        "tag": "You and Mona",
+        "tag": "You and {teacher}",
         "body": "The whole session is yours. Pace, topics and timing are set around your goal.",
         "f1": "Best for urgent goals: interviews, exams, moving",
         "f2": "You choose when class happens",
@@ -921,7 +900,7 @@
         "f2": "Role-plays and discussions with real people",
         "f3": "Personal roadmap and AI assistant",
         "emptyTitle": "New groups are forming",
-        "emptyBody": "Book your free session and Mona will place you in a group that matches your level and goal.",
+        "emptyBody": "Book your free session and {teacher} will place you in a group that matches your level and goal.",
         "cta": "Book the free session",
         "formingTitle": "Groups forming now",
         "seatsLeft": "{count, plural, one {# seat left} other {# seats left}}",
@@ -929,24 +908,24 @@
       }
     },
     "booking": {
-      "eyebrow": "Free session with Mona",
+      "eyebrow": "Free session with {teacher}",
       "title1": "A 20-minute chat,",
       "title2": "a free roadmap.",
-      "lead": "It's not a test, just a friendly conversation. Mona listens to your level and your goal and hands you the first stops of your roadmap, even if you don't sign up.",
+      "lead": "It's not a test, just a friendly conversation. {teacher} listens to your level and your goal and hands you the first stops of your roadmap, even if you don't sign up.",
       "perks": {
-        "p1": "Pick the time yourself from Mona's calendar",
+        "p1": "Pick the time yourself from {teacher}'s calendar",
         "p2": "No payment or card needed",
         "p3": "We'll help you choose private or group"
       },
       "dayLabel": "Which day?",
       "timeLabel": "What time?",
       "timeZone": "Times are in Tehran time",
-      "noSlots": "All of Mona's times are taken right now. Check back in a few days.",
+      "noSlots": "All of {teacher}'s times are taken right now. Check back in a few days.",
       "pickTime": "Pick a time; the form has just three fields.",
-      "summary": "{date} at {time} · 20 minutes with Mona",
+      "summary": "{date} at {time} · 20 minutes with {teacher}",
       "name": "Your name",
       "phone": "Mobile number",
-      "phoneHint": "Mona will call you on this number.",
+      "phoneHint": "{teacher} will call you on this number.",
       "level": "Your current level",
       "levels": {
         "unsure": "Not sure",
@@ -965,15 +944,7 @@
         "rate_limited": "You've booked several times already. Please try again later.",
         "slot_taken": "Someone just took that time. Please pick another one."
       },
-      "roomLink": "Save this link: it's your room with Mona, open from 10 minutes before."
-    },
-    "mona": {
-      "eyebrow": "The one who draws your map",
-      "quote1": "“No two people learn English for the same reason,",
-      "quote2": "so why follow the same path?”",
-      "body": "I teach English through conversation, and I plan a separate route for every learner, built around their goal.",
-      "name": "Mona",
-      "photoAlt": "Photo of Mona"
+      "roomLink": "Save this link: it's your room with {teacher}, open from 10 minutes before."
     },
     "faq": {
       "title1": "Ask before",
@@ -989,11 +960,11 @@
         },
         "aiWhen": {
           "q": "When will the AI assistant be ready?",
-          "a": "We're building it now. Leave your email to be the first to try it. Until then, Mona and your roadmap have you covered."
+          "a": "We're building it now. Leave your email to be the first to try it. Until then, {teacher} and your roadmap have you covered."
         },
         "aiReplace": {
-          "q": "Will AI replace Mona?",
-          "a": "Never. Mona is your teacher and draws your route. The assistant just helps you stay on it between classes."
+          "q": "Will AI replace {teacher}?",
+          "a": "Never. {teacher} is your teacher and draws your route. The assistant just helps you stay on it between classes."
         },
         "need": {
           "q": "What do I need for class?",
@@ -1002,13 +973,26 @@
       }
     },
     "footer": {
-      "ctaTitle1": "You know where you're going.",
-      "ctaTitle2": "Let's map the way.",
-      "ctaLead": "20 minutes with Mona and the first stops of your roadmap. Free.",
-      "about": "English with a roadmap made for you. A real teacher, your own path, and an AI assistant.",
       "explore": "Hoopo",
-      "help": "We're here for you",
-      "rights": "© {brand}. All rights reserved."
+      "rights": "© {year} {brand} · Made with Hoopo",
+      "tagline": "{teacher}'s English classes, on Hoopo.",
+      "learnerLogin": "Learner login",
+      "poweredBy": "powered by hoopo"
+    },
+    "guides": {
+      "eyebrow": "Two guides, one route",
+      "title1": "{teacher} draws the way.",
+      "title2": "Hoopo keeps you going.",
+      "teacherRole": "Your teacher",
+      "teacherBody": "Listens to your level and goal, draws your personal roadmap, and is with you in a live class every week.",
+      "t1": "A roadmap built on your own goal",
+      "t2": "Live classes, private or group",
+      "t3": "Real feedback on your homework",
+      "hoopoRole": "AI guide · coming soon",
+      "hoopoBody": "Knows your roadmap. Practises with you before and after every class, and talks with you whenever you like, without the nerves.",
+      "h1": "Conversation practice at any hour",
+      "h2": "A personal summary after every session",
+      "h3": "Doesn't replace {teacher}; helps you reach the next class"
     }
   },
   "Classroom": {
@@ -1082,9 +1066,9 @@
     "notice": {
       "connecting": "Connecting…",
       "reconnecting": "Connection dropped; reconnecting…",
-      "myTurn": "Your turn! Mona is waiting to hear you.",
-      "handUp": "Your hand is up. Mona will give you the turn soon.",
-      "noTeacher": "Mona hasn't arrived yet. Stay here.",
+      "myTurn": "Your turn! Your teacher is waiting to hear you.",
+      "handUp": "Your hand is up. Your teacher will give you the turn soon.",
+      "noTeacher": "Your teacher hasn't arrived yet. Stay here.",
       "audioOnly": "Audio only: video is paused to save data.",
       "startAudio": "Tap to hear the class"
     },
@@ -1142,7 +1126,7 @@
     },
     "removed": {
       "title": "You were removed from this class",
-      "body": "Mona removed you from this session, so you can't come back into it."
+      "body": "Your teacher removed you from this session, so you can't come back into it."
     },
     "closedTitle": "The room isn't open",
     "errors": {
@@ -1150,7 +1134,7 @@
       "closed": "This session isn't running: it was cancelled or has been marked held.",
       "tooEarly": "The room opens at {time} (Tehran time).",
       "ended": "This class has ended.",
-      "removed": "Mona removed you from this session.",
+      "removed": "Your teacher removed you from this session.",
       "unavailable": "The classroom server isn't reachable right now. Try again in a minute.",
       "failed": "That didn't work. Try again."
     },
@@ -1159,7 +1143,7 @@
     "join": "Join class",
     "enter": "Enter the room",
     "levelCheck": {
-      "title": "Free level check with Mona",
+      "title": "Free level check",
       "titleWith": "Level check · {name}",
       "backSite": "Back to the site",
       "backSchedule": "Back to the schedule"
@@ -1178,6 +1162,284 @@
       },
       "addLearner": "Add as learner",
       "addHint": "Opens in a new tab; the call goes on."
+    }
+  },
+  "Owner": {
+    "title": "Teachers",
+    "role": "Platform owner",
+    "nav": {
+      "teachers": "Teachers"
+    },
+    "lead": "Add a teacher, send them their activation link, and pause them if they stop teaching.",
+    "stats": {
+      "active": "Active teachers",
+      "pending": "Waiting to activate",
+      "learners": "Learners, all teachers"
+    },
+    "empty": "No teachers yet. Add the first one.",
+    "learners": "{count, plural, one {# learner} other {# learners}}",
+    "status": {
+      "active": "Active",
+      "pending": "Not activated",
+      "paused": "Paused"
+    },
+    "pause": "Pause",
+    "resume": "Resume",
+    "newLink": "New activation link",
+    "making": "Making a link…",
+    "add": {
+      "title": "Add a teacher",
+      "nameFa": "Name in Persian",
+      "nameEn": "Name in English",
+      "brandName": "Brand name",
+      "brandHint": "Leads their page and panel, e.g. \"Mona English\". Hoopo shows only as \"powered by hoopo\".",
+      "phone": "Mobile",
+      "slug": "Page address ({host}/…)",
+      "slugHint": "Lowercase English letters, digits and dashes. It can't change later.",
+      "submit": "Add and make activation link",
+      "saving": "Adding…"
+    },
+    "errors": {
+      "nameFa": "Enter the name in Persian (2 to 60 letters).",
+      "nameEn": "Enter the name in English (2 to 60 letters).",
+      "brandName": "Enter a brand name (2 to 60 letters).",
+      "phone": "Enter a valid mobile number, e.g. 0912 123 4567.",
+      "slug": "Use 2 to 30 lowercase English letters, digits or single dashes, starting with a letter.",
+      "slug_reserved": "This address is reserved. Pick another one.",
+      "slug_taken": "Another teacher already has this address.",
+      "phone_taken": "Someone already logs in with this mobile number.",
+      "not_found": "This teacher has already activated their login."
+    },
+    "leads": {
+      "title": "Early access requests",
+      "empty": "No requests yet. They come from the platform home page.",
+      "learners": "{count, plural, one {# learner} other {# learners}} now"
+    }
+  },
+  "Home": {
+    "soon": "Coming soon",
+    "nav": {
+      "features": "Features",
+      "loop": "Learning loop",
+      "learners": "For learners",
+      "cta": "Request early access"
+    },
+    "hero": {
+      "title1": "You teach.",
+      "title2": "Hoopo handles the rest.",
+      "lead": "Classes, students, homework and payments in one place. Between lessons, Hoopo practices with your students so they show up ready.",
+      "secondary": "See a teacher page",
+      "card": {
+        "kicker": "Hoopo · Before class",
+        "class": "Today’s class,",
+        "level": "B1",
+        "ready": "3 of 4 students are ready for today’s class.",
+        "pending": "Ali hasn’t practiced yet",
+        "remind": "Remind Ali",
+        "initials": "S N M A"
+      }
+    },
+    "loop": {
+      "eyebrow": "The Hoopo learning loop",
+      "title1": "Your class ends.",
+      "title2": "Learning doesn’t.",
+      "lead": "Hoopo learns from your lesson plan and practices with each student between sessions. Before the next class, you know exactly where to start.",
+      "of": "{n} of 04",
+      "prev": "Previous step",
+      "next": "Next step",
+      "steps": {
+        "s1": {
+          "short": "Set topic",
+          "title": "You set the lesson topic",
+          "detail": "For example, “Talking about work experience.” From this, Hoopo knows what each student should practice before the next class.",
+          "tag": "You",
+          "sample": "Monday session · B1 group · Topic: talking about work experience"
+        },
+        "s2": {
+          "short": "Warm-up",
+          "title": "Hoopo gets students ready",
+          "detail": "The day before class, a five-minute warm-up with the words and questions for that topic, so students speak from minute one.",
+          "tag": "Hoopo",
+          "sample": "“Sara, want to go over six work words for tomorrow?”"
+        },
+        "s3": {
+          "short": "Live class",
+          "title": "In class, you just teach",
+          "detail": "Hoopo listens and saves the corrections you make for each student, ready to review later.",
+          "tag": "Note",
+          "sample": "I have went → I went · saved for Sara’s review"
+        },
+        "s4": {
+          "short": "Report",
+          "title": "A report before the next class",
+          "detail": "Who practiced, where they’re stuck, and what Hoopo suggests to open the next lesson. Then the loop starts again with you.",
+          "tag": "Report",
+          "sample": "12 of 16 exercises done · Suggestion: ten minutes on the present perfect"
+        }
+      }
+    },
+    "time": {
+      "quote": "“I’ll handle the busywork. You teach.”",
+      "eyebrow": "Time",
+      "title1": "The hours spent on admin",
+      "title2": "go back to teaching.",
+      "lead": "Hoopo takes care of scheduling, homework reminders and payment messages. Your part is the teaching.",
+      "i1": {
+        "title": "No more missed lessons",
+        "body": "Students get a reminder an hour before every class."
+      },
+      "i2": {
+        "title": "One class link, for good",
+        "body": "Online classes run inside Hoopo, so you never send a new link again."
+      },
+      "i3": {
+        "title": "Homework that follows itself up",
+        "body": "See who has handed in, and Hoopo nudges the rest."
+      },
+      "chart": {
+        "title": "A teacher’s week with 20 students",
+        "unit": "hours per week",
+        "before": "Before Hoopo",
+        "after": "With Hoopo",
+        "beforeHours": "[X] hrs",
+        "afterHours": "[Y] hrs",
+        "teaching": "Teaching",
+        "scheduling": "Scheduling",
+        "payments": "Payment follow-up",
+        "homework": "Homework & messages",
+        "saved": "[Z]",
+        "savedBody": "hours a week back for teaching, rest, or more students."
+      }
+    },
+    "money": {
+      "quote": "“Payment reminders are on me. Polite and on time.”",
+      "eyebrow": "Payments",
+      "title1": "Stop chasing",
+      "title2": "tuition payments.",
+      "lead": "Hoopo sends each term’s invoice, follows up politely and on time, and records every payment. You just read the report.",
+      "i1": {
+        "title": "Reminders without the awkwardness",
+        "body": "The reminder comes from Hoopo, not from your phone."
+      },
+      "i2": {
+        "title": "A receipt for every payment",
+        "body": "No more scattered transfers and screenshots."
+      },
+      "i3": {
+        "title": "Your monthly income, always clear",
+        "body": "See what’s paid and what’s outstanding at any moment."
+      },
+      "card": {
+        "label": "This month’s tuition",
+        "amount": "[X]",
+        "pending": "3 payments on the way"
+      },
+      "d1": {
+        "day": "Day 1",
+        "title": "Invoices sent",
+        "body": "Automatically, to 24 students"
+      },
+      "d2": {
+        "day": "Day 5",
+        "title": "Polite reminder",
+        "body": "Only to the 3 still pending"
+      },
+      "d3": {
+        "day": "Day 7",
+        "title": "Payment recorded",
+        "body": "With a receipt, no screenshots"
+      },
+      "d4": {
+        "day": "Day 30",
+        "title": "Monthly report",
+        "body": "Income and balances at a glance"
+      }
+    },
+    "progress": {
+      "quote": "“Every step forward, my crest opens up.”",
+      "eyebrow": "Progress",
+      "title1": "Students who see their progress",
+      "title2": "stick around.",
+      "lead": "Every student gets their own learning path: where they are, how far they’ve come and what’s next. You see everyone’s progress at a glance and spot who needs help sooner.",
+      "card": {
+        "initial": "S",
+        "title": "Sara’s learning path",
+        "goal": "Goal: job interviews in English",
+        "current": "Current stop: B1",
+        "week": "This week",
+        "weekValue": "Answering “What’s your weakness?”",
+        "practice": "Practice with Hoopo",
+        "practiceValue": "4 sessions this week",
+        "next": "To the next stop",
+        "nextValue": "2 more lessons"
+      }
+    },
+    "page": {
+      "eyebrow": "Teacher page",
+      "title1": "Your brand.",
+      "title2": "Your page.",
+      "lead": "Students meet you by name, see your classes and rates, and book a placement session straight from your calendar. Hoopo is just a small signature at the bottom.",
+      "url": "hoopo.ir/mona",
+      "brand": "Mona English",
+      "tagline": "Private and group English classes",
+      "book": "Book a free session",
+      "quote": "[Mona’s quote about working with Hoopo]",
+      "initial": "M",
+      "name": "Mona",
+      "role": "English teacher · Hoopo’s first teacher"
+    },
+    "learners": {
+      "eyebrow": "Learning English?",
+      "title": "Your learning path, free.",
+      "lead": "Placement and a personal learning path are free for everyone. With Hoopo Plus (coming soon), practice conversation whenever you like, with or without a teacher.",
+      "level": "Check my level",
+      "login": "Student login"
+    },
+    "faq": {
+      "eyebrow": "FAQ",
+      "title1": "Questions",
+      "title2": "before you start?",
+      "items": {
+        "data": {
+          "q": "Who owns my students’ data?",
+          "a": "You do. Export your student list and records anytime. Hoopo never refers your students to another teacher."
+        },
+        "ai": {
+          "q": "Will AI replace the teacher?",
+          "a": "No. Hoopo practices with students based on the plan and topics you set, then reports back to you. The teacher always makes the call."
+        },
+        "install": {
+          "q": "Do students need to install an app?",
+          "a": "No. Hoopo runs in the browser on phones and laptops. Students just open the class link."
+        },
+        "pay": {
+          "q": "How do students pay tuition?",
+          "a": "[Describe the payment and payout method here.]"
+        }
+      }
+    },
+    "start": {
+      "title1": "Run your next class",
+      "title2": "with Hoopo.",
+      "lead": "We’re opening Hoopo to teachers one by one. Leave your details and we’ll call you to set you up.",
+      "name": "Your name",
+      "phone": "Mobile number",
+      "learners": "How many learners do you teach now?",
+      "submit": "Request early access",
+      "sending": "Sending…",
+      "success": "Thanks! We’ll call you soon to get you started.",
+      "errors": {
+        "name": "Enter your name (at least 2 letters).",
+        "phone": "Enter a valid mobile number, e.g. 0912 123 4567.",
+        "learners": "Enter a number, e.g. 12.",
+        "rate_limited": "Too many tries. Please try again a bit later."
+      }
+    },
+    "footer": {
+      "about": "Class management for language teachers, with an AI guide for their students.",
+      "product": "Product",
+      "support": "Support",
+      "rights": "© {year} Hoopo. All rights reserved."
     }
   }
 }

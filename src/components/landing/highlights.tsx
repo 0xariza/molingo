@@ -1,23 +1,19 @@
+import { Check } from "@phosphor-icons/react/dist/ssr";
 import { useTranslations } from "next-intl";
-import { Fragment } from "react";
 
 const ITEMS = ["roadmap", "teacher", "assistant", "formats"] as const;
 
-/** The four promises in one line, separated by a small wave. */
+/** The four promises in one white strip. */
 export function Highlights() {
   const t = useTranslations("Landing.highlights");
   return (
-    <section aria-label={t("label")} className="border-b border-mist">
-      <ul className="font-heading mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-6 gap-y-2 px-4 pt-2 pb-8 text-2xl text-brand sm:justify-between sm:text-3xl">
-        {ITEMS.map((key, i) => (
-          <Fragment key={key}>
-            {i > 0 && (
-              <li aria-hidden="true" className="hidden text-whale sm:block">
-                ~
-              </li>
-            )}
-            <li>{t(key)}</li>
-          </Fragment>
+    <section aria-label={t("label")} className="border-y border-hairline bg-white">
+      <ul className="mx-auto flex max-w-6xl flex-wrap justify-between gap-x-8 gap-y-3 px-4 py-5 font-bold text-ocean">
+        {ITEMS.map((key) => (
+          <li key={key} className="flex items-center gap-2">
+            <Check aria-hidden size={18} weight="bold" className="text-teal" />
+            {t(key)}
+          </li>
         ))}
       </ul>
     </section>
