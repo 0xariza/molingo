@@ -7,7 +7,7 @@ const t = messages.en.Landing.roadmap;
 test.describe("Landing page", () => {
   test("roadmap-changes-with-the-goal", async ({ page }) => {
     // 1. Open /en
-    await page.goto("/en");
+    await page.goto("/en/mona");
     // The sample roadmap lives in the hero's card.
     const roadmap = page.locator("#top");
     const goals = roadmap.getByRole("group", { name: t.try });

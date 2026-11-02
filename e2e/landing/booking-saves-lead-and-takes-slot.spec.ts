@@ -7,9 +7,9 @@ const t = messages.en.Landing.booking;
 
 test.describe("Landing page", () => {
   test("booking-saves-lead-and-takes-slot", async ({ page, db, createSlot }) => {
-    // 1. With one open time tomorrow at 18:00, open /en, press the "18:00" time
+    // 1. With one open time tomorrow at 18:00, open /en/mona, press the "18:00" time
     await createSlot(tomorrowAt("18:00"));
-    await page.goto("/en");
+    await page.goto("/en/mona");
     await page.getByRole("button", { name: "18:00" }).click();
     await expect(page.getByText(/· 20 minutes with Mona/)).toContainText("18:00");
 

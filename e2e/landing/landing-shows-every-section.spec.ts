@@ -6,9 +6,9 @@ const t = messages.en.Landing;
 
 test.describe("Landing page", () => {
   test("landing-shows-every-section", async ({ page, createSlot }) => {
-    // 1. With an open time tomorrow (so the booking shows its row of days), open /en
+    // 1. With an open time tomorrow (so the booking shows its row of days), open /en/mona
     await createSlot(tomorrowAt("18:00"));
-    await page.goto("/en");
+    await page.goto("/en/mona");
     for (const heading of [
       t.guides.title1.replace("{teacher}", "Mona"),
       t.ai.title1,

@@ -1011,6 +1011,9 @@
     "header": {
       "live": "Live",
       "people": "{count, plural, one {# person} other {# people}} here",
+      "layout": "Layout",
+      "grid": "Grid view",
+      "speaker": "Speaker view",
       "elapsed": "Class time",
       "quality": {
         "excellent": "Great connection",
@@ -1185,6 +1188,14 @@
       },
       "addLearner": "Add as learner",
       "addHint": "Opens in a new tab; the call goes on."
+    },
+    "float": {
+      "label": "Class in a floating window",
+      "open": "Show class in a floating window",
+      "wholeScreen": "You're sharing your whole screen, so a floating window would be seen by everyone. Share a window or tab to keep the class in view.",
+      "minimise": "Make small",
+      "expand": "Open the class window",
+      "back": "Back to the class"
     },
     "tile": {
       "options": "Options for {name}",

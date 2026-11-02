@@ -9,7 +9,7 @@ test.describe("Landing page", () => {
   test("booking-validates-fields", async ({ page, db, createSlot }) => {
     // 1. Pick the open time, enter a one-letter name and an invalid number, submit
     await createSlot(tomorrowAt("18:00"));
-    await page.goto("/en");
+    await page.goto("/en/mona");
     await page.getByRole("button", { name: "18:00" }).click();
     await page.getByLabel(t.name).fill("N");
     await page.getByLabel(t.phone).fill("12345");

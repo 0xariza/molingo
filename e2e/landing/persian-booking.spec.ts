@@ -9,7 +9,7 @@ test.describe("Landing page", () => {
   test("persian-booking", async ({ page, db, createSlot }) => {
     // 1. On /fa, pick "۱۸:۰۰", fill the form with Persian digits, submit
     await createSlot(tomorrowAt("18:00"));
-    await page.goto("/fa");
+    await page.goto("/fa/mona");
     await page.getByRole("button", { name: "۱۸:۰۰" }).click();
     await page.getByLabel(t.name).fill("سارا احمدی");
     await page.getByLabel(t.phone).fill("۰۹۱۲ ۵۵۵ ۱۲۳۴");

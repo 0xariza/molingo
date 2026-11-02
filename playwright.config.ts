@@ -37,6 +37,8 @@ export default defineConfig({
       APP_URL: `http://localhost:${PORT}`,
       PORT: String(PORT),
       HOSTNAME: "localhost",
+      // The platform home page (M6d) is tested as it will ship; production keeps it off for now.
+      PLATFORM_HOME: "on",
     },
   },
 });

@@ -1,4 +1,4 @@
-# Molingo engineering standards
+# Hoopo engineering standards
 
 These standards are **mandatory for every milestone**, starting from M1. They are not a later
 clean-up phase. Scope and business decisions live in [PLAN.md](../PLAN.md); this file says how we build.
@@ -39,7 +39,8 @@ clean-up phase. Scope and business decisions live in [PLAN.md](../PLAN.md); this
 
 Rules that keep boundaries clean:
 
-- Every protected page, Server Action and data function calls `requireAdmin()` / `requireStudent()`.
+- Every protected page, Server Action and data function calls `requireTeacher()` / `requireOwner()` /
+  `requireStudent()` (or `requireUser()`), and every teacher query is scoped to the signed-in teacher.
   Proxy cookie checks and layout gates are conveniences, not security.
 - Files imported by `src/proxy.ts` must not import the DB client (see `src/server/auth/constants.ts`).
 - Financial code (M10) must be deterministic, auditable and safe to retry: DB transactions, unique

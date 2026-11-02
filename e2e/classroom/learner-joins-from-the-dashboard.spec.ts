@@ -16,7 +16,7 @@ test.describe("Getting into the room", () => {
     await page.getByRole("link", { name: t.join }).click();
     await expect(page).toHaveURL(new RegExp(`/en/app/classroom/${sessionId}$`));
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(t.prejoin.heading);
-    await expect(page.getByText("Morning A2 · A2")).toBeVisible();
+    await expect(page.getByText("Morning A2 · A2", { exact: true })).toBeVisible();
     await expect(page.getByRole("button", { name: t.prejoin.join })).toBeVisible();
     await expect(page.getByRole("button", { name: t.prejoin.joinAudio })).toBeVisible();
 

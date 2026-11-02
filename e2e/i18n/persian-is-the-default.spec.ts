@@ -10,7 +10,7 @@ test.describe("Language and direction", () => {
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
     await expect(page.locator("html")).toHaveAttribute("lang", "fa");
     await expect(page.getByRole("heading", { level: 1 })).toContainText(
-      messages.fa.Landing.hero.title1,
+      messages.fa.Home.hero.title1,
     );
   });
 });

@@ -11,7 +11,7 @@ test.describe("Landing page", () => {
     // 1. With two open times, pick 18:00; meanwhile someone else books it
     const six = await createSlot(tomorrowAt("18:00"));
     await createSlot(tomorrowAt("19:00"));
-    await page.goto("/en");
+    await page.goto("/en/mona");
     await page.getByRole("button", { name: "18:00" }).click();
     const [other] = await db
       .insert(leads)

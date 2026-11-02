@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 import { AiAssistant } from "@/components/landing/ai-assistant";
 import { Booking } from "@/components/landing/booking";
 import { ClassFormats } from "@/components/landing/class-formats";
@@ -12,16 +11,11 @@ import { TwoGuides } from "@/components/landing/two-guides";
 import type { Locale } from "@/i18n/routing";
 import { teacherPage } from "@/server/teachers/teachers";
 
-/** A teacher's public page: hoopo.ir/<slug> (PLAN, Multi-teacher; design: MonaPage). */
-export default function TeacherPage({ params }: PageProps<"/[locale]/[slug]">) {
-  return (
-    <Suspense fallback={<div aria-hidden="true" className="min-h-dvh bg-surface" />}>
-      <Page params={params} />
-    </Suspense>
-  );
-}
+// Look the teacher up before streaming starts, so an unknown address is a real 404 (not a 200).
+export const instant = false;
 
-async function Page({ params }: { params: Promise<{ locale: string; slug: string }> }) {
+/** A teacher's public page: hoopo.ir/<slug> (PLAN, Multi-teacher; design: MonaPage). */
+export default async function TeacherPage({ params }: PageProps<"/[locale]/[slug]">) {
   const { locale, slug } = await params;
   const teacher = await teacherPage(slug, locale as Locale);
   if (!teacher) notFound();

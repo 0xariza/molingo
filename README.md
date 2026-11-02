@@ -1,6 +1,8 @@
-# Molingo
+# Hoopo
 
-Live small-group English classes with Mona. Bilingual (Persian default, English), mobile-first.
+A platform for small live English classes, hosted in Iran (`hoopo.ir`). It started with Mona's classes and now supports
+several teachers. Bilingual (Persian default, English), mobile-first. Formerly **Molingo**: some internal names
+(cookie, test databases, image names) still use it on purpose.
 See [PLAN.md](PLAN.md) for the full implementation plan and the decisions log.
 
 ## Local development
@@ -24,8 +26,8 @@ The `Makefile` wraps these: `make setup` the first time, then `make dev`. Run `m
 ## Accounts
 
 Everyone logs in with **mobile number + password**. Accounts are activated with a one-time link.
-Mona adds learners and creates their logins on `/admin/students`; the command line is mainly for
-admin accounts:
+The owner adds teachers on `/owner`; each teacher adds their learners and creates their logins on
+`/admin/students`. The command line is mainly for the owner account:
 
 ```bash
 pnpm user create --role owner --phone 0912xxxxxxx --name "Reza"     # the platform owner; prints an activation link
@@ -33,8 +35,8 @@ pnpm user link --phone 0912xxxxxxx --reset                         # new passwor
 ```
 
 Activation links last 7 days and reset links 24 hours. Only the newest link works, and each works once.
-For local testing, `pnpm db:seed` creates `09120000001` (admin) and `09120000002` (student); the dev
-password is in `scripts/seed-dev.ts`.
+For local testing, `pnpm db:seed` creates `09120000000` (owner), `09120000001` (Mona, teacher) and
+`09120000002` (Sara, student); the dev password is in `scripts/seed-dev.ts`.
 
 ## Checks and tests
 
@@ -57,5 +59,5 @@ The mandatory engineering standards are in [docs/ENGINEERING.md](docs/ENGINEERIN
 - **Direction**: logical utilities only (`ms-*`, `pe-*`, `start-*`, `text-start`, `border-s`); `pnpm check:rtl` rejects `ml-*`, `left-*`, `text-right`, etc. Directional icons get `icon-directional`.
 - **Dates and money**: use `src/lib/format.ts` (Jalali + Persian digits for `fa`, Tehran time, integer Toman).
 - **No external requests at runtime**: fonts are self-hosted in `public/fonts`, no CDNs, no Google services.
-- **Auth**: every admin/student page, Server Action and data function calls `requireAdmin()` / `requireStudent()` (`src/server/auth/current.ts`). The proxy's cookie check and the layout gates are only conveniences.
+- **Auth**: every admin/student page, Server Action and data function calls `requireTeacher()` / `requireOwner()` / `requireStudent()` (or `requireUser()`) from `src/server/auth/current.ts`, and teacher data is always scoped to the signed-in teacher. The proxy's cookie check and the layout gates are only conveniences.
 - **Database**: Drizzle schema in `src/db/schema`, migrations in `drizzle/` (`pnpm db:generate` after schema changes).

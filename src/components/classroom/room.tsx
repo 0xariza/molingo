@@ -9,6 +9,7 @@ import {
   useParticipantAttributes,
   useParticipants,
   useRoomContext,
+  useSpeakingParticipants,
   useTrackToggle,
   useTracks,
   type TrackReferenceOrPlaceholder,
@@ -38,6 +39,7 @@ import {
   PhoneOff,
   PictureInPicture2,
   Pin,
+  PanelRight,
   PinOff,
   Signal,
   SmilePlus,
@@ -52,6 +54,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useState, type ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import { formatNumber } from "@/lib/format";
+import { canAutoFloat } from "@/lib/float-window";
 import { bestTileWidth } from "@/lib/video-grid";
 import {
   useAudioOnly,
@@ -62,6 +65,7 @@ import {
   useTalkingWhileMuted,
   useWakeLock,
 } from "./hooks";
+import { FloatWindow, floatSupported, useFloatWindow } from "./float-window";
 import { ChatPanel, ConfirmDialog, PeoplePanel, VisitorPanel } from "./panels";
 import { ReactionStream, ReactionTray, useReactions } from "./reactions";
 import { FloatingSelf } from "./self-view";
@@ -108,6 +112,9 @@ export function Room({
   const [pinned, setPinned] = useState<string | null>(null);
   // "auto": in the people column beside a big tile on desktop (as in Meet), floating otherwise.
   const [selfPick, setSelfMode] = useState<"auto" | "float" | "grid" | "min">("auto");
+  // Desktop only (a phone always shows one big tile): everyone equal, or the speaker big.
+  const [view, setView] = useState<"grid" | "speaker">("grid");
+  const speaking = useSpeakingParticipants();
   const [reacting, setReacting] = useState(false);
   const reactions = useReactions(t("you"));
   const chat = useChat();
@@ -132,6 +139,12 @@ export function Room({
   // Your own shared screen isn't shown back to you (a hall of mirrors): a "presenting" bar instead.
   const presenting = !!anyShare?.participant.isLocal;
   const share = presenting ? undefined : anyShare;
+  // While you present, the class follows you in a small always-on-top window (see float-window).
+  const surface = localParticipant
+    .getTrackPublication(Track.Source.ScreenShare)
+    ?.track?.mediaStreamTrack.getSettings().displaySurface;
+  const wholeScreen = presenting && !canAutoFloat(surface);
+  const [floatWin, openFloat] = useFloatWindow(presenting, !narrow && !wholeScreen);
   // Mona first, then raised hands, then everyone else in joining order.
   const rank = (tr: TrackReferenceOrPlaceholder) =>
     isTeacher(tr.participant) ? 0 : tr.participant.attributes.hand === "1" ? 1 : 2;
@@ -250,7 +263,8 @@ export function Room({
   // yours alone: nobody else's view changes.
   const keyOf = (tr: TrackReferenceOrPlaceholder) => `${tr.participant.identity}-${tr.source}`;
   const pinnedTrack = pinned ? tracks.find((tr) => keyOf(tr) === pinned) : undefined;
-  const spotlight = pinnedTrack ?? share ?? (narrow ? others[0] : undefined);
+  const speaker = others.find((tr) => speaking.includes(tr.participant)) ?? others[0];
+  const spotlight = pinnedTrack ?? share ?? (narrow || view === "speaker" ? speaker : undefined);
   const selfMode = selfPick !== "auto" ? selfPick : spotlight && !narrow ? "grid" : "float";
   const pinAction = (tr: TrackReferenceOrPlaceholder): TileAction =>
     pinned === keyOf(tr)
@@ -504,6 +518,8 @@ export function Room({
         count={participants.length}
         narrow={narrow}
         more={narrow ? moreMenu : null}
+        view={view}
+        onView={setView}
       />
 
       {presenting && (
@@ -512,7 +528,21 @@ export function Room({
           className={`flex flex-wrap items-center gap-3 rounded-[14px] bg-room-teal-soft py-2 ps-4 pe-2 text-room-teal ${narrow ? "mx-3 mb-2" : "mx-6 mt-4"}`}
         >
           <MonitorUp aria-hidden size={20} className="shrink-0" />
-          <span className="min-w-0 flex-1 font-medium">{t("stage.presenting")}</span>
+          <span className="min-w-0 flex-1 font-medium">
+            {t("stage.presenting")}
+            {wholeScreen && floatSupported() && (
+              <span className="block text-sm font-normal">{t("float.wholeScreen")}</span>
+            )}
+          </span>
+          {!narrow && !wholeScreen && !floatWin && floatSupported() && (
+            <button
+              type="button"
+              onClick={() => openFloat().catch(() => {})}
+              className="min-h-10 rounded-pill border border-room-teal px-4 font-bold"
+            >
+              {t("float.open")}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => localParticipant.setScreenShareEnabled(false)}
@@ -570,6 +600,20 @@ export function Room({
         )}
       </footer>
 
+      {floatWin && (
+        <FloatWindow
+          win={floatWin}
+          tracks={[speaker, ...others.filter((tr) => tr !== speaker), self].filter(
+            (tr): tr is TrackReferenceOrPlaceholder => !!tr,
+          )}
+          onBack={() => window.focus()}
+          onLeave={() => {
+            window.focus();
+            setLeaving(true);
+          }}
+        />
+      )}
+
       {leaving && (
         <ConfirmDialog
           title={t("leave.title")}
@@ -592,11 +636,15 @@ function TopBar({
   count,
   narrow,
   more,
+  view,
+  onView,
 }: {
   info: ClassroomInfo;
   count: number;
   narrow: boolean;
   more: ReactNode;
+  view: "grid" | "speaker";
+  onView: (view: "grid" | "speaker") => void;
 }) {
   const t = useTranslations("Classroom");
   const locale = useLocale() as Locale;
@@ -677,6 +725,34 @@ function TopBar({
         <span className="text-sm text-room-muted">{t("header.people", { count })}</span>
       </div>
       <div className="flex flex-wrap items-center gap-2">
+        <div
+          role="group"
+          aria-label={t("header.layout")}
+          className="inline-flex h-9 items-center gap-0.5 rounded-pill border border-room-line bg-room-card p-0.5"
+        >
+          {(
+            [
+              ["grid", LayoutGrid],
+              ["speaker", PanelRight],
+            ] as const
+          ).map(([name, Icon]) => (
+            <button
+              key={name}
+              type="button"
+              aria-pressed={view === name}
+              aria-label={t(`header.${name}`)}
+              title={t(`header.${name}`)}
+              onClick={() => onView(name)}
+              className={`grid size-8 place-items-center rounded-pill ${
+                view === name
+                  ? "bg-room-teal-soft text-room-teal"
+                  : "text-room-muted hover:text-room-ink"
+              }`}
+            >
+              <Icon aria-hidden size={16} />
+            </button>
+          ))}
+        </div>
         <span className="inline-flex h-9 items-center gap-1.5 rounded-pill border border-room-line bg-room-card px-3 text-sm">
           <Clock aria-hidden size={16} />
           <span className="sr-only">{t("header.elapsed")}</span>

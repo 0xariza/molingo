@@ -9,7 +9,7 @@ test.describe("Landing page", () => {
   test("booking-ignores-bots", async ({ page, db, createSlot }) => {
     // 1. Pick a time, fill the form and also the hidden honeypot field, submit
     await createSlot(tomorrowAt("18:00"));
-    await page.goto("/en");
+    await page.goto("/en/mona");
     await page.getByRole("button", { name: "18:00" }).click();
     await page.getByLabel(t.name).fill("Spam Bot");
     await page.getByLabel(t.phone).fill("09125551234");

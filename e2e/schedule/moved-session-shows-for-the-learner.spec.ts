@@ -10,6 +10,7 @@ import {
   messages,
   nextWeekAt,
   PASSWORD,
+  showDay,
   STUDENT,
   test,
 } from "../fixtures";
@@ -35,10 +36,12 @@ test.describe("Learner schedule", () => {
     await login(page, STUDENT.local, PASSWORD);
     await expect(page).toHaveURL(/\/en\/app$/);
     await page.goto("/en/app/schedule?w=1");
+    await showDay(page, dayOfWeek(4, 1));
     const wednesday = page.getByRole("region", { name: dateLabel(dayOfWeek(4, 1)) });
     await expect(wednesday).toContainText("16:00");
     await expect(wednesday).toContainText(t.moved);
     await expect(wednesday).toContainText(`Moved from ${dateLabel(dayOfWeek(2, 1))} 10:30`);
+    await showDay(page, dayOfWeek(2, 1));
     await expect(page.getByRole("region", { name: dateLabel(dayOfWeek(2, 1)) })).toContainText(
       t.emptyDay,
     );

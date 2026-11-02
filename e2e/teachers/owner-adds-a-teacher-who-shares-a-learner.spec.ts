@@ -30,7 +30,7 @@ test.describe("Two teachers", () => {
     });
     await login(page, "09120000000", PASSWORD);
     await expect(page).toHaveURL(/\/en\/owner$/);
-    await expect(page.getByText("Mona English")).toBeVisible();
+    await expect(page.getByText("Mona English", { exact: true })).toBeVisible();
 
     // 2. Add Ali
     const add = t.Owner.add;

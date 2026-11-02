@@ -6,9 +6,10 @@ import { expect, messages, test } from "../fixtures";
 const t = messages.en.Landing.waitlist;
 
 test.describe("Landing page", () => {
-  test("waitlist-joins-once", async ({ page, db }) => {
+  test("waitlist-joins-once", async ({ page, db, seedAccounts }) => {
     // 1. Enter an invalid email, press "Notify me"
-    await page.goto("/en");
+    await seedAccounts();
+    await page.goto("/en/mona");
     await page.getByLabel(t.email).fill("not-an-email");
     await page.getByRole("button", { name: t.submit }).click();
     await expect(page.getByText(t.errors.email)).toBeVisible();

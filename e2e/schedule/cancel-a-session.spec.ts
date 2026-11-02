@@ -40,7 +40,8 @@ test.describe("Moving and cancelling", () => {
     await logout(page);
     await login(page, STUDENT.local, PASSWORD);
     await expect(page).toHaveURL(/\/en\/app$/);
-    await page.getByRole("link", { name: messages.en.Student.nav.schedule }).click();
+    await page.goto("/en/app/schedule?w=1");
+    await showDay(page, monday);
     await expect(page.getByRole("region", { name: dateLabel(monday) })).toContainText(
       "Cancelled: “I'm unwell” · not charged",
     );

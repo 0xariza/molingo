@@ -98,7 +98,7 @@ async function MySchedule({
         </nav>
       </header>
       {next && <NextSessionCard session={next} now={now} locale={locale} />}
-      <LearnerWeek start={start} today={today} sessions={week} />
+      <LearnerWeek key={start} start={start} today={today} sessions={week} />
     </div>
   );
 }

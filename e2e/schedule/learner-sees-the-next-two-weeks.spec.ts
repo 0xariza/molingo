@@ -8,6 +8,7 @@ import {
   login,
   messages,
   PASSWORD,
+  showDay,
   STUDENT,
   test,
 } from "../fixtures";
@@ -37,9 +38,11 @@ test.describe("Learner schedule", () => {
     // The sessions start next week: step the calendar forward.
     await page.getByRole("link", { name: t.schedule.nextWeek }).click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(t.schedule.nextWeek);
+    await showDay(page, dayOfWeek(0, 1));
     await expect(page.getByRole("region", { name: dateLabel(dayOfWeek(0, 1)) })).toContainText(
       "Session 1 of 12",
     );
+    await showDay(page, dayOfWeek(2, 1));
     await expect(page.getByRole("region", { name: dateLabel(dayOfWeek(2, 1)) })).toContainText(
       "Session 2 of 12",
     );

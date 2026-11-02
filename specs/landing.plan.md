@@ -25,7 +25,7 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. With an open time tomorrow, open `/en` - expect: section headings for the two guides, the learning loop, class formats,
+1. With an open time tomorrow, open `/en/mona` - expect: section headings for the two guides, the learning loop, class formats,
    booking and FAQ - expect: the group card shows "New groups are forming" - expect: the hero's
    "Get my free roadmap" link points to the booking section (`#book`) - expect: the page doesn't
    scroll sideways on a phone
@@ -47,7 +47,7 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. With one open time tomorrow at 18:00 (Tehran), open `/en`, press the "18:00" time - expect: the
+1. With one open time tomorrow at 18:00 (Tehran), open `/en/mona`, press the "18:00" time - expect: the
    summary names tomorrow and 18:00
 2. Fill name, mobile number (with spaces) and level, press "Confirm my session" - expect: the
    "Booked" status message - expect: one `scheduled` lead with the normalized number, level and locale
@@ -78,7 +78,7 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. On `/fa`, pick the "۱۸:۰۰" time, fill the form with the number in Persian digits, submit - expect:
+1. On `/fa/mona`, pick the "۱۸:۰۰" time, fill the form with the number in Persian digits, submit - expect:
    the Persian "booked" message - expect: the lead is saved with the normalized number and locale `fa`
 
 #### 1.7. taken-time-is-refused
@@ -87,7 +87,7 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. With two open times, open `/en` and pick 18:00; meanwhile someone else books 18:00 - expect: (setup)
+1. With two open times, open `/en/mona` and pick 18:00; meanwhile someone else books 18:00 - expect: (setup)
 2. Fill the form and submit - expect: the "Someone just took that time" alert - expect: 18:00 is no
    longer offered, 19:00 still is - expect: only the other person's lead exists
 
@@ -97,7 +97,7 @@ lead and takes the slot, so nobody else can book it. Mona adds and removes free 
 
 **Steps:**
 
-1. With no open times (one past, one booked), open `/en` - expect: the "All of Mona's times are taken"
+1. With no open times (one past, one booked), open `/en/mona` - expect: the "All of Mona's times are taken"
    message and no booking form
 
 #### 1.9. waitlist-joins-once
