@@ -54,6 +54,8 @@ services:
       LIVEKIT_HTTP: http://127.0.0.1:7880
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+    volumes:
+      - uploads:/data/uploads # homework files (M8); the image creates it owned by `node`
     depends_on:
       db:
         condition: service_healthy
@@ -80,6 +82,7 @@ services:
 
 volumes:
   pgdata: {}
+  uploads: {}
   caddy_data: {}
   caddy_config: {}
   call_test_reports: {}

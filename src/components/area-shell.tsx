@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { Link } from "@/i18n/navigation";
 import { logoutAction } from "@/server/auth/actions";
 import { AreaNav, type AreaNavItem } from "./area-nav";
+import { AccountMenu } from "./account-menu";
 import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
 
@@ -11,6 +12,8 @@ type Props = {
   home: "/admin" | "/app" | "/owner";
   items: AreaNavItem[];
   user: { name: string; role: string };
+  /** Learners get an account menu (profile, settings, log out) in place of the language switch and log-out button. */
+  account?: { phone: string };
   children: ReactNode;
 };
 
@@ -19,7 +22,7 @@ type Props = {
  * board: a navy sidebar and a plain light page on desktop; a slim navy header and a tab bar at
  * the bottom on phones.
  */
-export function AreaShell({ home, items, user, children }: Props) {
+export function AreaShell({ home, items, user, account, children }: Props) {
   const t = useTranslations("Common");
   return (
     <div className="flex flex-1">
@@ -28,22 +31,30 @@ export function AreaShell({ home, items, user, children }: Props) {
           <Logo variant="dark" className="text-2xl" />
         </Link>
         <AreaNav items={items} label={t("areaNav")} variant="side" />
-        <div className="mt-auto self-start">
-          <LanguageSwitcher tone="dark" />
-        </div>
-        <div className="flex items-center gap-3 rounded-card bg-white/5 p-3">
-          <span
-            aria-hidden="true"
-            className="grid size-10 shrink-0 place-items-center rounded-full bg-cinnamon font-bold text-ocean"
-          >
-            {user.name.slice(0, 1)}
-          </span>
-          <div className="min-w-0 flex-1 leading-tight">
-            <p className="truncate font-bold text-white">{user.name}</p>
-            <p className="text-sm text-whale">{user.role}</p>
+        {account ? (
+          <div className="mt-auto">
+            <AccountMenu variant="card" name={user.name} role={user.role} phone={account.phone} />
           </div>
-          <LogoutIconButton label={t("logout")} />
-        </div>
+        ) : (
+          <>
+            <div className="mt-auto self-start">
+              <LanguageSwitcher tone="dark" />
+            </div>
+            <div className="flex items-center gap-3 rounded-card bg-white/5 p-3">
+              <span
+                aria-hidden="true"
+                className="grid size-10 shrink-0 place-items-center rounded-full bg-cinnamon font-bold text-ocean"
+              >
+                {user.name.slice(0, 1)}
+              </span>
+              <div className="min-w-0 flex-1 leading-tight">
+                <p className="truncate font-bold text-white">{user.name}</p>
+                <p className="text-sm text-whale">{user.role}</p>
+              </div>
+              <LogoutIconButton label={t("logout")} />
+            </div>
+          </>
+        )}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -52,10 +63,19 @@ export function AreaShell({ home, items, user, children }: Props) {
             <Link href={home} className="inline-flex min-h-touch items-center rounded-pill">
               <Logo variant="dark" className="text-xl" />
             </Link>
-            <div className="flex items-center gap-1.5">
-              <LanguageSwitcher tone="dark" />
-              <LogoutIconButton label={t("logout")} />
-            </div>
+            {account ? (
+              <AccountMenu
+                variant="avatar"
+                name={user.name}
+                role={user.role}
+                phone={account.phone}
+              />
+            ) : (
+              <div className="flex items-center gap-1.5">
+                <LanguageSwitcher tone="dark" />
+                <LogoutIconButton label={t("logout")} />
+              </div>
+            )}
           </div>
         </header>
         <main

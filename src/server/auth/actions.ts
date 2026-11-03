@@ -1,14 +1,16 @@
 "use server";
 
 import { hasLocale } from "next-intl";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
 import { routing, type Locale } from "@/i18n/routing";
 import { getClientIp } from "../request";
-import { endSession, getCurrentUser, startSession } from "./current";
-import { recordLogin, setPreferredLocale } from "./account";
+import { endSession, getCurrentUser, requireUser, startSession } from "./current";
+import { changePassword, recordLogin, setPreferredLocale } from "./account";
 import { authenticate } from "./login";
 import { checkPasswordPolicy } from "./password";
+import { SESSION_COOKIE } from "./constants";
 import { homePathFor, safeNextPath } from "./policy";
 import { consumeRateLimit } from "../rate-limit";
 import { findValidAuthToken, redeemAuthToken } from "./tokens";
@@ -100,4 +102,38 @@ export async function saveLocalePreference(locale: Locale): Promise<void> {
   if (user && user.locale !== locale) {
     await setPreferredLocale(user.id, locale);
   }
+}
+
+/** Error keys map to messages under `Student.settings.errors`. */
+export type PasswordFormState =
+  | { status: "idle" }
+  | { status: "success" }
+  | {
+      status: "error";
+      error: "required" | "wrong" | "mismatch" | "too_short" | "too_common" | "rate_limited";
+    };
+
+const passwordSchema = z.object({
+  current: z.string().min(1).max(200),
+  next: z.string().min(1).max(200),
+  confirm: z.string().min(1).max(200),
+});
+
+export async function changePasswordAction(
+  _: PasswordFormState,
+  form: FormData,
+): Promise<PasswordFormState> {
+  const user = await requireUser();
+  const parsed = passwordSchema.safeParse({
+    current: form.get("current"),
+    next: form.get("next"),
+    confirm: form.get("confirm"),
+  });
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!parsed.success || !token) return { status: "error", error: "required" };
+
+  const limit = await consumeRateLimit(`password:user:${user.id}`, 5, 15 * 60);
+  if (!limit.allowed) return { status: "error", error: "rate_limited" };
+  const result = await changePassword(user, parsed.data, token);
+  return result === "ok" ? { status: "success" } : { status: "error", error: result };
 }

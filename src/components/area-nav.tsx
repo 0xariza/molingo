@@ -3,6 +3,7 @@
 import {
   CalendarDots,
   ChalkboardTeacher,
+  ClipboardText,
   GraduationCap,
   House,
   IdentificationCard,
@@ -19,6 +20,7 @@ const ICONS = {
   classes: ChalkboardTeacher,
   page: IdentificationCard,
   teachers: GraduationCap,
+  homework: ClipboardText,
 } satisfies Record<string, Icon>;
 
 export type AreaNavItem = {
@@ -27,14 +29,19 @@ export type AreaNavItem = {
     | "/admin/schedule"
     | "/admin/students"
     | "/admin/classes"
+    | "/admin/homework"
     | "/admin/my-page"
     | "/app"
+    | "/app/classes"
     | "/app/schedule"
+    | "/app/homework"
     | "/owner";
   label: string;
   icon: keyof typeof ICONS;
   /** A small count next to the label (e.g. upcoming bookings). */
   badge?: string;
+  /** Left out of the phone tab bar (it stays in the sidebar). */
+  sideOnly?: boolean;
 };
 
 type Props = {
@@ -49,6 +56,7 @@ export function AreaNav({ items, label, variant }: Props) {
   const pathname = usePathname();
   const current = (href: string) =>
     pathname === href || (href !== items[0]?.href && pathname.startsWith(`${href}/`));
+  const tabs = items.filter((item) => !item.sideOnly);
 
   if (variant === "bar") {
     return (
@@ -56,7 +64,7 @@ export function AreaNav({ items, label, variant }: Props) {
         aria-label={label}
         className="fixed inset-x-0 bottom-0 z-30 grid auto-cols-fr grid-flow-col gap-1 bg-ocean px-2 pt-2 pb-safe lg:hidden"
       >
-        {items.map(({ href, label, icon, badge }) => {
+        {tabs.map(({ href, label, icon, badge }) => {
           const Icon = ICONS[icon];
           const active = current(href);
           return (

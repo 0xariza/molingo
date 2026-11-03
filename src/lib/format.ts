@@ -130,3 +130,13 @@ export function formatJalaliMonth(date: Date, locale: Locale): string {
 export function localDigits(text: string, locale: Locale): string {
   return locale === "fa" ? text.replace(/\d/g, (d) => "۰۱۲۳۴۵۶۷۸۹"[Number(d)]) : text;
 }
+
+/** "18:30" in Tehran, always Latin digits (for form fields and `fromTehranTime`). */
+export function tehranClock(date: Date): string {
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: TEHRAN,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).format(date);
+}

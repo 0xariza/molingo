@@ -7,6 +7,8 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,
+  // Homework answers carry up to five 15 MB files (plus form overhead).
+  experimental: { serverActions: { bodySizeLimit: "80mb" } },
   async headers() {
     return [
       {

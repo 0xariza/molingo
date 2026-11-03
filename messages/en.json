@@ -94,7 +94,8 @@
       "learners": "Learners",
       "classes": "Classes",
       "schedule": "Weekly schedule",
-      "myPage": "My page"
+      "myPage": "My page",
+      "homework": "Homework"
     },
     "home": {
       "bookedTitle": "Booked level checks",
@@ -528,7 +529,9 @@
         "past": "Past learners",
         "pastRange": "{from} – {to}",
         "share": "Copy share link",
-        "shareCopied": "Link copied"
+        "shareCopied": "Link copied",
+        "homework": "Homework",
+        "homeworkCount": "Homework · {count, number}"
       },
       "attendance": {
         "title": "Session {n} was held",
@@ -733,14 +736,140 @@
         "brandName": "Enter a brand name (2 to 60 letters).",
         "bio": "Keep it under 1,000 characters."
       }
+    },
+    "homework": {
+      "title": "Homework",
+      "subtitle": "{review, plural, =0 {Nothing to review} other {# to review}} · {count, plural, one {# assignment} other {# assignments}} in the last 30 days",
+      "assign": "Assign homework",
+      "stats": {
+        "toReview": "To review",
+        "oldest": "Oldest: {when}",
+        "oldestNone": "All caught up",
+        "dueWeek": "Due this week",
+        "dueWeekSub": "{in} of {of} answers in",
+        "dueWeekNone": "Nothing due",
+        "rate": "Hand-in rate",
+        "rateSub": "Last 30 days",
+        "rateNone": "No homework yet"
+      },
+      "filterLabel": "Filter",
+      "filter": {
+        "submitted": "To review",
+        "needs_revision": "Needs revision",
+        "reviewed": "Reviewed"
+      },
+      "empty": {
+        "submitted": "Nothing waiting for you. New answers show up here.",
+        "needs_revision": "No answers are waiting for a second try.",
+        "reviewed": "Reviewed answers will be listed here."
+      },
+      "row": {
+        "review": "Review",
+        "text": "Text",
+        "voice": "Voice",
+        "file": "File",
+        "photo": "Photo",
+        "photos": "Photo ×{count}",
+        "late": "late",
+        "revision": "try {n, number}",
+        "meta": "{title} · {class}"
+      },
+      "open": {
+        "title": "Open assignments",
+        "due": "Due {date}",
+        "noDue": "No deadline",
+        "source": "{class} · from session {n, number}",
+        "progress": "{in} of {of} handed in",
+        "delete": "Delete",
+        "deleteLabel": "Delete {title}",
+        "deleteTitle": "Delete this homework?",
+        "deleteBody": "“{title}” and every answer, feedback and file that belongs to it are deleted. This can't be undone.",
+        "deleteConfirm": "Delete homework",
+        "empty": "No open homework.",
+        "cancel": "Cancel"
+      },
+      "assignDialog": {
+        "title": "Assign homework",
+        "close": "Close",
+        "who": "1. Who gets it",
+        "class": "Class",
+        "classOption": "{name} · {count, plural, one {# learner} other {# learners}}",
+        "session": "Session",
+        "sessionOption": "Session {n, number} · {date}",
+        "lastHeld": "(last held)",
+        "goesTo": "Goes automatically to the {count, plural, one {# learner} other {# learners}} in {class} now. Anyone who joins later won't get it.",
+        "onlyHeld": "Only held sessions are listed. A class with none yet can't get homework.",
+        "noTargets": "Homework can be given once a session of one of your classes has been held.",
+        "task": "2. The task",
+        "titleLabel": "Title",
+        "body": "Instructions",
+        "due": "Due",
+        "optional": "(optional)",
+        "dueDate": "Due date",
+        "dueTime": "Due time",
+        "dueHelp": "Set to 1 hour before the next session. Change it or clear it.",
+        "dueClear": "Clear the deadline",
+        "pickDate": "Pick a date",
+        "attach": "Attach files",
+        "attachHint": "PDF, Word, image or audio · 15 MB each · up to 5",
+        "removeFile": "Remove {name}",
+        "cancel": "Cancel",
+        "submit": "Assign to {count, plural, one {# learner} other {# learners}}",
+        "sending": "Assigning…",
+        "sessionTitle": "Homework for session {n, number}",
+        "sessionSub": "{class} · {date} · goes to {count, plural, one {# learner} other {all # learners}}"
+      },
+      "review": {
+        "back": "Homework",
+        "queue": "Review queue",
+        "position": "{n, number} of {total, number} to review",
+        "previous": "Previous submission",
+        "next": "Next submission",
+        "meta": "{title} · {class} · session {n, number} · handed in {when}",
+        "late": "late",
+        "revision": "try {n, number}",
+        "status": {
+          "submitted": "To review",
+          "needs_revision": "Needs revision",
+          "reviewed": "Reviewed"
+        },
+        "assignment": "The assignment",
+        "noInstructions": "No written instructions.",
+        "answerOf": "{name}'s answer",
+        "noText": "No written answer.",
+        "feedback": "Your feedback",
+        "feedbackFor": "Feedback for {name}",
+        "help": "{name} sees this as soon as you choose below. Required when you ask for a revision.",
+        "markNext": "Mark reviewed, open next",
+        "mark": "Mark reviewed",
+        "revision_ask": "Ask for a revision",
+        "change": "You can change your feedback later from Reviewed.",
+        "sending": "Saving…",
+        "download": "{name} · {size}"
+      },
+      "errors": {
+        "title": "Give it a title (up to 120 characters).",
+        "body": "Instructions are too long (up to 4,000 characters).",
+        "due": "Pick both a date and a time, or clear the deadline.",
+        "not_held": "Homework can only be given for a session that was held.",
+        "no_learners": "Nobody is in this class right now.",
+        "file_type": "Attach PDF, Word, image or audio files only.",
+        "file_size": "Each file can be up to 15 MB.",
+        "file_count": "Attach up to 5 files.",
+        "feedback_required": "Write feedback to ask for a revision.",
+        "feedback": "Feedback is too long (up to 2,000 characters).",
+        "not_found": "This isn't available any more."
+      }
     }
   },
   "Student": {
     "title": "My dashboard",
-    "role": "Student",
+    "role": "Learner",
     "nav": {
       "home": "Home",
-      "schedule": "My schedule"
+      "schedule": "My schedule",
+      "classes": "My classes",
+      "homework": "Homework"
     },
     "home": {
       "greeting": "Hi {name}, welcome.",
@@ -778,6 +907,116 @@
       "weekNav": "Week",
       "days": "Days of the week",
       "emptyDay": "No sessions."
+    },
+    "account": {
+      "open": "Account menu",
+      "profile": "Profile",
+      "settings": "Settings",
+      "settingsHint": "Language, password",
+      "logout": "Log out"
+    },
+    "homework": {
+      "title": "Homework",
+      "tabs": {
+        "todo": "To do",
+        "submitted": "Handed in",
+        "reviewed": "Reviewed"
+      },
+      "emptyTodo": "Nothing to do right now.",
+      "emptySubmitted": "Nothing is waiting for your teacher.",
+      "emptyReviewed": "Reviewed homework will be listed here.",
+      "emptyAll": "When your teacher gives homework, it will appear here.",
+      "dueIn": "{count, plural, one {# day left} other {# days left}}",
+      "dueToday": "Due today",
+      "overdue": "Overdue",
+      "due": "Due: {date}",
+      "noDue": "No deadline",
+      "needsRevision": "Needs revision",
+      "submitted": "Handed in",
+      "reviewed": "Reviewed",
+      "late": "Late",
+      "teacherSays": "{teacher}: “{feedback}”",
+      "recent": "Recently reviewed",
+      "hasFeedback": "Has feedback",
+      "back": "Homework",
+      "sentOn": "Handed in: {date}",
+      "yourAnswer": "Your answer",
+      "attachTitle": "From your teacher",
+      "addFile": "File or photo",
+      "record": "Record voice",
+      "stop": "Stop recording",
+      "recording": "Recording… {time}",
+      "recorded": "Recorded voice",
+      "removeAttachment": "Remove {name}",
+      "keepLabel": "Handed in earlier",
+      "send": "Send to {teacher}",
+      "resend": "Send again",
+      "sending": "Sending…",
+      "editNote": "You can edit it until {teacher} reviews it.",
+      "feedbackTitle": "{teacher}'s feedback",
+      "revisionNote": "Fix what {teacher} asked for and send it again.",
+      "myAnswer": "My answer",
+      "noText": "No written answer.",
+      "micDenied": "The microphone isn't available. Allow it in your browser, or attach an audio file.",
+      "errors": {
+        "empty": "Write an answer, or attach a file or a voice recording.",
+        "body": "The answer is too long (up to 8,000 characters).",
+        "file_type": "Attach PDF, Word, image or audio files only.",
+        "file_size": "Each file can be up to 15 MB.",
+        "file_count": "An answer can have up to 5 files.",
+        "locked": "Your teacher already reviewed this, so it can't be edited.",
+        "not_found": "This homework isn't available any more."
+      }
+    },
+    "classes": {
+      "title": "My classes",
+      "type": {
+        "private": "Private",
+        "group": "Group"
+      },
+      "with": "with {teacher}",
+      "held": "{held, number} of {total, number} sessions held",
+      "next": "Next session:",
+      "nextNone": "No more sessions scheduled.",
+      "homework": "Homework",
+      "sessions": "Sessions",
+      "finished": "Finished classes ({count, number})",
+      "finishedLine": "{name} · {total, number} sessions",
+      "empty": "Once your teacher places you in a class, it will appear here."
+    },
+    "profile": {
+      "title": "Profile",
+      "since": "Learner since {date}",
+      "nameFa": "Persian name",
+      "nameEn": "English name",
+      "phone": "Mobile number",
+      "email": "Email",
+      "teachers": "{count, plural, one {Teacher} other {Teachers}}",
+      "none": "—",
+      "note": "To change your name or number, message your teacher. Your number is your username.",
+      "settings": "Language and password settings"
+    },
+    "settings": {
+      "title": "Settings",
+      "language": "Language",
+      "languageNote": "Pick one and every page changes right away.",
+      "passwordTitle": "Change password",
+      "current": "Current password",
+      "new": "New password",
+      "newHint": "Same rule as when you first signed in: at least 8 characters.",
+      "repeat": "Repeat new password",
+      "save": "Save new password",
+      "saving": "Saving…",
+      "note": "After changing it, you're signed out of your other devices.",
+      "saved": "Password changed.",
+      "errors": {
+        "required": "Please fill in this field.",
+        "wrong": "Your current password isn't right.",
+        "too_short": "The password must be at least 8 characters.",
+        "too_common": "That password is too easy to guess. Pick another.",
+        "mismatch": "The two new passwords don't match.",
+        "rate_limited": "Too many attempts. Try again in 15 minutes."
+      }
     }
   },
   "Error": {

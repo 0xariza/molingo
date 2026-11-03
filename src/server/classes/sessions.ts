@@ -2,6 +2,7 @@ import { and, asc, eq, gt, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import {
+  assignments,
   attendance,
   attendanceStatusEnum,
   classes,
@@ -57,6 +58,8 @@ export type SessionRow = {
   counts: Record<AttendanceStatus, number> | null;
   /** Make-up sessions for some learners only. */
   participants: Person[] | null;
+  /** Homework given for this session. */
+  homework: number;
   /** The session log (teacher only). */
   topics: string | null;
   summary: string | null;
@@ -122,7 +125,7 @@ export async function getClassDetail(
       .orderBy(asc(enrollments.startedAt)),
   ]);
   const ids = sessionRows.map((s) => s.id);
-  const [marks, invited] = ids.length
+  const [marks, invited, given] = ids.length
     ? await Promise.all([
         db.select().from(attendance).where(inArray(attendance.sessionId, ids)),
         db
@@ -136,8 +139,13 @@ export async function getClassDetail(
           .from(sessionParticipants)
           .innerJoin(students, eq(students.id, sessionParticipants.studentId))
           .where(inArray(sessionParticipants.sessionId, ids)),
+        db
+          .select({ sessionId: assignments.sessionId, count: sql<number>`count(*)::int` })
+          .from(assignments)
+          .where(inArray(assignments.sessionId, ids))
+          .groupBy(assignments.sessionId),
       ])
-    : [[], []];
+    : [[], [], []];
 
   const numberOf = new Map(
     sessionRows.filter((s) => s.kind === "class").map((s, i) => [s.id, i + 1]),
@@ -174,6 +182,7 @@ export async function getClassDetail(
         s.kind === "makeup"
           ? people.map((p) => ({ id: p.id, fullNameFa: p.fullNameFa, fullNameEn: p.fullNameEn }))
           : null,
+      homework: given.find((g) => g.sessionId === s.id)?.count ?? 0,
       topics: s.topics,
       summary: s.summary,
       privateNote: s.privateNote,

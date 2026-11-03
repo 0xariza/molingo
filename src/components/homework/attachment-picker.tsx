@@ -1,0 +1,185 @@
+"use client";
+
+import { Microphone, Paperclip, Stop, X } from "@phosphor-icons/react";
+import { useLocale, useTranslations } from "next-intl";
+import { useEffect, useRef, useState } from "react";
+import type { Locale } from "@/i18n/routing";
+import { localDigits } from "@/lib/format";
+import { MAX_FILES } from "@/server/files/limits";
+
+const ACCEPT = ".pdf,.docx,image/jpeg,image/png,image/webp,audio/*";
+
+type Kept = { id: string; name: string };
+
+/**
+ * Files for a form, sent as the `files` field. Learners can also record their voice, which is
+ * added like any other file. `kept` are files already stored: removing one drops its `keep` id.
+ */
+export function AttachmentPicker({
+  recorder = false,
+  kept = [],
+  disabled,
+}: {
+  recorder?: boolean;
+  kept?: Kept[];
+  disabled?: boolean;
+}) {
+  const t = useTranslations(recorder ? "Student.homework" : "Admin.homework.assignDialog");
+  const locale = useLocale() as Locale;
+  const [picked, setPicked] = useState<File[]>([]);
+  const [keep, setKeep] = useState(kept);
+  const [seconds, setSeconds] = useState<number | null>(null);
+  const [micDenied, setMicDenied] = useState(false);
+  const field = useRef<HTMLInputElement>(null);
+  const chooser = useRef<HTMLInputElement>(null);
+  const media = useRef<{ recorder: MediaRecorder; stream: MediaStream; timer: number } | null>(
+    null,
+  );
+  const full = picked.length + keep.length >= MAX_FILES;
+
+  // The named input is what the form submits; keep its files in step with the list.
+  useEffect(() => {
+    const transfer = new DataTransfer();
+    for (const file of picked) transfer.items.add(file);
+    if (field.current) field.current.files = transfer.files;
+  }, [picked]);
+
+  function stopTracks() {
+    if (!media.current) return;
+    clearInterval(media.current.timer);
+    media.current.stream.getTracks().forEach((track) => track.stop());
+    media.current = null;
+  }
+
+  useEffect(() => stopTracks, []);
+
+  async function start() {
+    setMicDenied(false);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Safari records MP4 audio; the others WebM.
+      const type = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4";
+      const rec = new MediaRecorder(stream, { mimeType: type });
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (e) => chunks.push(e.data);
+      rec.onstop = () => {
+        const ext = type === "audio/webm" ? "webm" : "m4a";
+        setPicked((files) => [...files, new File(chunks, `voice.${ext}`, { type })]);
+        setSeconds(null);
+        stopTracks();
+      };
+      const started = Date.now();
+      setSeconds(0);
+      media.current = {
+        recorder: rec,
+        stream,
+        timer: window.setInterval(() => setSeconds(Math.floor((Date.now() - started) / 1000)), 500),
+      };
+      rec.start();
+    } catch {
+      setMicDenied(true);
+    }
+  }
+
+  const clock = (s: number) =>
+    localDigits(`${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`, locale);
+  const attachLabel = recorder ? t("addFile") : t("attach");
+  const names = [
+    ...keep.map((k) => ({
+      key: k.id,
+      name: k.name,
+      remove: () => setKeep(keep.filter((x) => x !== k)),
+    })),
+    ...picked.map((f, i) => ({
+      key: `${f.name}-${i}`,
+      name: f.name,
+      remove: () => setPicked(picked.filter((_, j) => j !== i)),
+    })),
+  ];
+
+  return (
+    <div className="space-y-3">
+      <input ref={field} type="file" name="files" multiple hidden tabIndex={-1} aria-hidden />
+      {keep.map((k) => (
+        <input key={k.id} type="hidden" name="keep" value={k.id} />
+      ))}
+      <input
+        ref={chooser}
+        type="file"
+        multiple
+        accept={ACCEPT}
+        hidden
+        tabIndex={-1}
+        aria-hidden
+        onChange={(e) => {
+          setPicked((files) =>
+            [...files, ...Array.from(e.target.files ?? [])].slice(0, MAX_FILES - keep.length),
+          );
+          e.target.value = "";
+        }}
+      />
+      <div className="flex flex-wrap gap-3">
+        <button
+          type="button"
+          disabled={disabled || full || seconds !== null}
+          onClick={() => chooser.current?.click()}
+          className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line px-4 font-bold text-brand hover:border-brand disabled:opacity-60"
+        >
+          <Paperclip aria-hidden size={18} />
+          {attachLabel}
+        </button>
+        {recorder &&
+          (seconds === null ? (
+            <button
+              type="button"
+              disabled={disabled || full}
+              onClick={start}
+              className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line px-4 font-bold text-brand hover:border-brand disabled:opacity-60"
+            >
+              <Microphone aria-hidden size={18} />
+              {t("record")}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => media.current?.recorder.stop()}
+              className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-2xl bg-red-700 px-4 font-bold text-white"
+            >
+              <Stop aria-hidden size={18} weight="fill" />
+              {t("stop")} · {clock(seconds)}
+            </button>
+          ))}
+      </div>
+      {!recorder && <p className="text-sm">{t("attachHint")}</p>}
+      {micDenied && (
+        <p role="alert" className="text-sm font-medium text-red-700">
+          {t("micDenied")}
+        </p>
+      )}
+      {names.length > 0 && (
+        <ul className="space-y-2">
+          {names.map(({ key, name, remove }) => (
+            <li
+              key={key}
+              className="flex items-center gap-2 rounded-2xl bg-surface px-3.5 py-1.5 text-ocean"
+            >
+              <Paperclip aria-hidden size={16} className="shrink-0" />
+              <span dir="auto" className="min-w-0 flex-1 truncate font-semibold">
+                {name}
+              </span>
+              <button
+                type="button"
+                disabled={disabled}
+                aria-label={recorder ? t("removeAttachment", { name }) : t("removeFile", { name })}
+                onClick={remove}
+                className="grid size-9 shrink-0 place-items-center rounded-full hover:bg-mist"
+              >
+                <X aria-hidden size={16} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
