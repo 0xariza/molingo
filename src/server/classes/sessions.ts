@@ -17,6 +17,7 @@ import { fromTehranTime, tehranDateKey } from "@/lib/format";
 import { formatClock, parseClock, type Weekday } from "@/lib/schedule";
 import type { CefrLevel, ClassState } from "./classes";
 import { LEVEL_CHECK_MINUTES } from "../funnel/constants";
+import { minutesInRoom } from "../live/attendance";
 import { findClash, isOverlapError, type ClashWith } from "./clash";
 
 export type AttendanceStatus = (typeof attendanceStatusEnum.enumValues)[number];
@@ -56,6 +57,12 @@ export type SessionRow = {
   counts: Record<AttendanceStatus, number> | null;
   /** Make-up sessions for some learners only. */
   participants: Person[] | null;
+  /** The session log (teacher only). */
+  topics: string | null;
+  summary: string | null;
+  privateNote: string | null;
+  /** Minutes each learner (by student id) was in the room; set while the session awaits marking. */
+  roomMinutes: Record<string, number> | null;
 };
 
 export type ClassDetail = {
@@ -94,6 +101,7 @@ export async function getClassDetail(
     db
       .select({
         id: students.id,
+        userId: students.userId,
         fullNameFa: students.fullNameFa,
         fullNameEn: students.fullNameEn,
         status: teacherLearners.status,
@@ -121,6 +129,7 @@ export async function getClassDetail(
           .select({
             sessionId: sessionParticipants.sessionId,
             id: students.id,
+            userId: students.userId,
             fullNameFa: students.fullNameFa,
             fullNameEn: students.fullNameEn,
           })
@@ -132,6 +141,14 @@ export async function getClassDetail(
 
   const numberOf = new Map(
     sessionRows.filter((s) => s.kind === "class").map((s, i) => [s.id, i + 1]),
+  );
+  const studentOf = new Map([...places, ...invited].map((p) => [p.userId, p.id]));
+  const minutes = new Map(
+    await Promise.all(
+      sessionRows
+        .filter((s) => ["live", "ended"].includes(sessionPhase(s, now)))
+        .map(async (s) => [s.id, await minutesInRoom(s)] as const),
+    ),
   );
   const rows: SessionRow[] = sessionRows.map((s) => {
     const mine = marks.filter((m) => m.sessionId === s.id);
@@ -157,6 +174,16 @@ export async function getClassDetail(
         s.kind === "makeup"
           ? people.map((p) => ({ id: p.id, fullNameFa: p.fullNameFa, fullNameEn: p.fullNameEn }))
           : null,
+      topics: s.topics,
+      summary: s.summary,
+      privateNote: s.privateNote,
+      roomMinutes: minutes.has(s.id)
+        ? Object.fromEntries(
+            [...minutes.get(s.id)!].flatMap(([userId, m]) =>
+              studentOf.has(userId) ? [[studentOf.get(userId)!, m]] : [],
+            ),
+          )
+        : null,
     };
   });
 
@@ -350,6 +377,31 @@ export async function markHeld(
         .values(people.map((studentId) => ({ sessionId, studentId, status: marks[studentId] })));
     return { ok: true as const };
   });
+}
+
+const logText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, "log")
+    .transform((v) => v || null);
+
+export const logSchema = z.object({
+  sessionId: z.uuid(),
+  topics: logText(500),
+  summary: logText(2000),
+  privateNote: logText(2000),
+});
+
+/** The teacher writes or edits a held session's log; learners see its topics only. */
+export async function saveLog(teacherId: string, input: z.output<typeof logSchema>) {
+  const { sessionId, ...log } = input;
+  const [saved] = await db
+    .update(sessions)
+    .set(log)
+    .where(and(own(teacherId, sessionId), eq(sessions.status, "held")))
+    .returning({ id: sessions.id });
+  return Boolean(saved);
 }
 
 export const makeupSchema = z.object({

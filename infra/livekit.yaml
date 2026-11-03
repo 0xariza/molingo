@@ -16,6 +16,11 @@ turn:
   # 443, as LiveKit recommends when no HTTP/3 server holds UDP 443 (Caddy listens on TCP only):
   # networks that block 3478 and the media range often still pass UDP 443. Needs ufw 443/udp.
   udp_port: 443
+# Joins and leaves go to the app (attendance). ship.sh puts the real API key in place of the placeholder.
+webhook:
+  api_key: __LIVEKIT_API_KEY__
+  urls:
+    - http://127.0.0.1:3000/api/livekit/webhook
 room:
   max_participants: 6
   empty_timeout: 600

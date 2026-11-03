@@ -47,6 +47,10 @@ export type RoomInfo = {
 
 export const roomName = (sessionId: string) => `s_${sessionId}`;
 
+/** The session a class room belongs to (level-check rooms and others have none). */
+export const sessionIdOfRoom = (room: string) =>
+  /^s_[0-9a-f-]{36}$/i.test(room) ? room.slice(2) : null;
+
 /** When this side may be in the room: learners from 5 min before to the end, Mona wider. */
 export function roomWindow(role: RoomRole, s: { startsAt: Date; endsAt: Date }) {
   return role === "teacher"

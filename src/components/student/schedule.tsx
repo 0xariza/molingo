@@ -89,13 +89,15 @@ export function SessionCard({
     ? s.cancelReason
       ? t("cancelledReason", { reason: s.cancelReason })
       : t("cancelledNoReason")
-    : s.movedFrom
-      ? t("movedFrom", {
-          when: `${formatDate(s.movedFrom, locale, { year: false })} ${formatTime(s.movedFrom, locale)}`,
-        })
-      : s.number
-        ? `${s.level} · ${t("sessionOf", { n: s.number, total: s.sessionCount })}`
-        : s.level;
+    : s.phase === "held" && s.topics
+      ? t("topics", { topics: s.topics })
+      : s.movedFrom
+        ? t("movedFrom", {
+            when: `${formatDate(s.movedFrom, locale, { year: false })} ${formatTime(s.movedFrom, locale)}`,
+          })
+        : s.number
+          ? `${s.level} · ${t("sessionOf", { n: s.number, total: s.sessionCount })}`
+          : s.level;
   const pill = cancelled
     ? { text: t("cancelled"), cls: "bg-[#fdecea] text-[#b03a2e]" }
     : s.phase === "held"

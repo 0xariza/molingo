@@ -1,5 +1,5 @@
 import "server-only";
-import { AccessToken, RoomServiceClient, TrackSource } from "livekit-server-sdk";
+import { AccessToken, RoomServiceClient, TrackSource, WebhookReceiver } from "livekit-server-sdk";
 import { roomName, type RoomInfo } from "./room";
 
 /**
@@ -67,6 +67,12 @@ export async function ensureRoom(room: string, capacity: number) {
     maxParticipants: capacity + SPARE_PLACES,
     emptyTimeout: 600,
   });
+}
+
+/** Checks a webhook's signature and returns its event; throws when the signature is wrong. */
+export function receiveWebhook(body: string, authorization: string | undefined) {
+  const { apiKey, apiSecret } = config();
+  return new WebhookReceiver(apiKey, apiSecret).receive(body, authorization);
 }
 
 export const liveKitUrl = () => config().url;

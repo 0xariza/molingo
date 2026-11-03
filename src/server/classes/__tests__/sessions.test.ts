@@ -12,7 +12,9 @@ import {
   cancelSession,
   getClassDetail,
   makeupSchema,
+  logSchema,
   markHeld,
+  saveLog,
   moveSchema,
   moveSession,
   sessionPhase,
@@ -337,5 +339,28 @@ describe("another teacher", () => {
         now,
       ),
     ).toEqual({ ok: false, error: "not_found" });
+  });
+});
+
+describe("saveLog", () => {
+  it("saves the log of a held session for its own teacher only", async () => {
+    const { first, a, b } = await setup();
+    const input = logSchema.parse({
+      sessionId: first.id,
+      topics: " Past simple ",
+      summary: "",
+      privateNote: "Sara needs more speaking time",
+    });
+    expect(await saveLog(tid, input)).toBe(false);
+    await markHeld(tid, first.id, { [a]: "present", [b]: "present" }, at("2026-10-24", "09:00"));
+    const other = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    expect(await saveLog((await createTeacher(db, other.id)).id, input)).toBe(false);
+    expect(await saveLog(tid, input)).toBe(true);
+    const [row] = await db.select().from(sessions).where(eq(sessions.id, first.id));
+    expect(row).toMatchObject({
+      topics: "Past simple",
+      summary: null,
+      privateNote: "Sara needs more speaking time",
+    });
   });
 });

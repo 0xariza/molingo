@@ -111,6 +111,10 @@ export const sessions = pgTable(
     /** A make-up session can replace one that was cancelled. */
     replacesSessionId: uuid().references((): AnyPgColumn => sessions.id, { onDelete: "set null" }),
     heldAt: timestamp({ withTimezone: true }),
+    /** The session log, written by the teacher. Learners see `topics` only. */
+    topics: text(),
+    summary: text(),
+    privateNote: text(),
     ...timestamps,
   },
   (t) => [

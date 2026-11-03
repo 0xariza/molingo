@@ -27,6 +27,8 @@ export type LearnerSession = {
   canJoin: boolean;
   cancelReason: string | null;
   movedFrom: Date | null;
+  /** What the teacher logged for a held session. */
+  topics: string | null;
 };
 
 /**
@@ -60,6 +62,7 @@ export async function learnerSchedule(
       endsAt: sessions.endsAt,
       cancelReason: sessions.cancelReason,
       movedFrom: sessions.movedFrom,
+      topics: sessions.topics,
     })
     .from(sessions)
     .innerJoin(classes, eq(classes.id, sessions.classId))

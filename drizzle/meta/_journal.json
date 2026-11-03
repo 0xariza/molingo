@@ -99,6 +99,13 @@
       "when": 1793103768115,
       "tag": "0013_teacher_leads",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793664684306,
+      "tag": "0014_attendance_log",
+      "breakpoints": true
     }
   ]
 }

@@ -26,3 +26,4 @@ export const sessionKindEnum = pgEnum("session_kind", ["class", "makeup"]);
 export const sessionStatusEnum = pgEnum("session_status", ["scheduled", "held", "cancelled"]);
 export const enrollmentStatusEnum = pgEnum("enrollment_status", ["active", "ended"]);
 export const attendanceStatusEnum = pgEnum("attendance_status", ["present", "absent", "excused"]);
+export const attendanceEventEnum = pgEnum("attendance_event", ["joined", "left"]);

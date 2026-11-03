@@ -29,13 +29,10 @@ done
 echo "→ config"
 "${SSH[@]}" "sudo mkdir -p $DIR && sudo chown deploy:deploy $DIR"
 SUMS="cd $DIR && sha256sum Caddyfile livekit.yaml 2>/dev/null || true"
+# The checksums are of the files as rendered on the server (below), so an unchanged livekit.yaml
+# keeps its container.
 BEFORE="$("${SSH[@]}" "$SUMS")"
 COPYFILE_DISABLE=1 tar --no-mac-metadata -cf - compose.yaml Caddyfile livekit.yaml | "${SSH[@]}" "tar -xf - -C $DIR"
-# The files are mounted one by one, so a container keeps seeing the old copy until recreated.
-RECREATE=()
-while read -r sum file; do
-  grep -q "$sum  $file" <<<"$BEFORE" || RECREATE+=("$([ "$file" = Caddyfile ] && echo caddy || echo livekit)")
-done <<<"$("${SSH[@]}" "$SUMS")"
 
 echo "→ secrets"
 "${SSH[@]}" bash -s <<EOF
@@ -58,6 +55,14 @@ grep -q '^POSTGRES_PASSWORD=' .env || echo "POSTGRES_PASSWORD=\$(openssl rand -h
 grep -q '^APP_TAG=' .env || echo "APP_TAG=" >> .env
 sed -i "s/^CALL_TEST_TAG=.*/CALL_TEST_TAG=$TAG/; s/^APP_TAG=.*/APP_TAG=$APP_TAG/" .env
 EOF
+
+# livekit.yaml needs the API key (for the webhook signature); the file is mounted one by one, so
+# a container keeps seeing the old copy until recreated.
+"${SSH[@]}" "cd $DIR && sed -i \"s/__LIVEKIT_API_KEY__/\$(sed -n 's/^LIVEKIT_API_KEY=//p' .env)/\" livekit.yaml"
+RECREATE=()
+while read -r sum file; do
+  grep -q "$sum  $file" <<<"$BEFORE" || RECREATE+=("$([ "$file" = Caddyfile ] && echo caddy || echo livekit)")
+done <<<"$("${SSH[@]}" "$SUMS")"
 
 echo "→ database"
 # Postgres first, then the migrations from this machine through an SSH tunnel to its loopback port.
