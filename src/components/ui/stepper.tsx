@@ -47,9 +47,9 @@ export function Stepper({
         >
           <Minus aria-hidden size={18} weight="bold" />
         </button>
-        <output className="grid h-full min-w-12 flex-1 place-items-center border-x border-mist text-lg font-extrabold text-ocean">
+        <span className="grid h-full min-w-12 flex-1 place-items-center border-x border-mist text-lg font-extrabold text-ocean">
           {display}
-        </output>
+        </span>
         <button
           type="button"
           aria-label={moreLabel}

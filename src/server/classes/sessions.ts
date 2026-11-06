@@ -1,3 +1,4 @@
+import { reassignSessions } from "../paths/class-paths";
 import { and, asc, eq, gt, gte, inArray, lt, lte, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
@@ -268,9 +269,10 @@ export async function cancelSession(
   if (!s || sessionPhase(s, now) !== "upcoming") return false;
   const rows = await db
     .update(sessions)
-    .set({ status: "cancelled", cancelReason: reason })
+    .set({ status: "cancelled", cancelReason: reason, pathStationId: null })
     .where(and(eq(sessions.id, sessionId), eq(sessions.status, "scheduled")))
     .returning({ id: sessions.id });
+  if (rows.length) await reassignSessions(db, s.classId);
   return rows.length > 0;
 }
 
@@ -327,7 +329,9 @@ export async function moveSession(
         ),
       )
       .returning({ id: sessions.id });
-    return rows.length ? { ok: true } : { ok: false, error: "not_movable" };
+    if (!rows.length) return { ok: false, error: "not_movable" };
+    await reassignSessions(db, s.classId);
+    return { ok: true };
   } catch (e) {
     if (isOverlapError(e)) return { ok: false, error: "clash", clash: null };
     throw e;
@@ -489,6 +493,7 @@ export async function addMakeup(
       await tx
         .insert(sessionParticipants)
         .values(input.studentIds.map((studentId) => ({ sessionId: row.id, studentId })));
+      await reassignSessions(tx, input.classId);
       return row.id;
     });
     return { ok: true, id };

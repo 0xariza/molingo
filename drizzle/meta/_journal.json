@@ -120,6 +120,13 @@
       "when": 1793982005691,
       "tag": "0016_learning_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793982745449,
+      "tag": "0017_class_paths",
+      "breakpoints": true
     }
   ]
 }

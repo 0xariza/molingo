@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { z } from "zod";
 import { BackLink } from "@/components/admin/learners/back-link";
 import { Roster } from "@/components/admin/classes/roster";
+import { PathCard } from "@/components/admin/paths/path-card";
 import { scheduleText } from "@/components/admin/classes/schedule-text";
 import { SessionsPanel } from "@/components/admin/classes/sessions-panel";
 import { ShareLinkButton } from "@/components/admin/classes/share-link";
@@ -18,6 +19,7 @@ import { requireTeacher } from "@/server/auth/current";
 import { archiveClassAction } from "@/server/classes/actions";
 import { listCandidates, listClasses } from "@/server/classes/classes";
 import { getClassDetail } from "@/server/classes/sessions";
+import { getClassPath } from "@/server/paths/class-paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Admin.classes");
@@ -46,11 +48,12 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
   const cls = valid.success ? await getClassDetail(teacherId, valid.data) : null;
   if (!cls) notFound();
 
-  const [t, locale, candidates, cards] = await Promise.all([
+  const [t, locale, candidates, cards, path] = await Promise.all([
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
     listCandidates(teacherId),
     listClasses(teacherId),
+    getClassPath(teacherId, cls.id),
   ]);
   const n = (v: number) => formatNumber(v, locale);
   const daysShort = t.raw("weekdaysShort") as string[];
@@ -171,6 +174,8 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
           {t("detail.nextLocked", { date: formatDate(last.startsAt, locale, { year: false }) })}
         </p>
       )}
+
+      <PathCard classId={cls.id} path={path} locale={locale} editable={running} />
 
       <SessionsPanel
         classId={cls.id}

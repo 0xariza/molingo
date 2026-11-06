@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "@/i18n/navigation";
 import { requireTeacher } from "../auth/current";
 import { fieldErrors, formLocale, text } from "../forms";
+import { pathField, saveClassPath } from "./class-paths";
 import {
   addStationAfter,
   createSource,
@@ -78,4 +79,15 @@ export async function deleteStationAction(form: FormData) {
   const { teacherId } = await requireTeacher();
   if ((await deleteStation(teacherId, text(form, "stationId"))) === "ok")
     sourcePage(form, text(form, "nextId"));
+}
+
+/** Adds or edits an existing class's path. Error keys map to `Admin.paths.errors`. */
+export async function savePathAction(_: SourceFormState, form: FormData): Promise<SourceFormState> {
+  const { teacherId } = await requireTeacher();
+  const parsed = pathField.safeParse(text(form, "path"));
+  if (!parsed.success) return { status: "error", error: parsed.error.issues[0]?.message ?? "path" };
+  const error = await saveClassPath(teacherId, text(form, "classId"), parsed.data);
+  if (error) return { status: "error", error };
+  refresh();
+  return { status: "success" };
 }

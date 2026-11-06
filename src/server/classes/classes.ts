@@ -20,6 +20,7 @@ import {
   WEEKDAYS,
   type Weekday,
 } from "@/lib/schedule";
+import { pathField, setClassPath, type PathInput, type PathError } from "../paths/class-paths";
 import { findClash, isOverlapError, type ClashWith } from "./clash";
 
 export const cefrLevels = cefrLevelEnum.enumValues;
@@ -94,6 +95,17 @@ export const newClassSchema = z
     startsOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "startsOn"),
     studentIds: jsonArray(z.uuid(), "studentIds"),
     fromClassId: z.uuid().optional(),
+    /** The class path from the wizard's path step; empty for no path. */
+    path: z
+      .string()
+      .optional()
+      .transform((v, ctx): PathInput | null => {
+        if (!v) return null;
+        const parsed = pathField.safeParse(v);
+        if (parsed.success) return parsed.data;
+        ctx.addIssue({ code: "custom", message: parsed.error.issues[0]?.message ?? "path" });
+        return z.NEVER;
+      }),
   })
   .transform((v, ctx) => {
     const capacity = v.type === "private" ? 1 : v.capacity;
@@ -131,7 +143,8 @@ export type EditClass = z.output<typeof editClassSchema>;
 export type CreateResult =
   | { ok: true; id: string }
   | { ok: false; error: "past" | "clash"; clash?: ClashWith }
-  | { ok: false; error: "learner_unavailable" };
+  | { ok: false; error: "learner_unavailable" }
+  | { ok: false; error: "path"; path: PathError };
 
 class Refused extends Error {
   constructor(readonly result: Extract<CreateResult, { ok: false }>) {
@@ -185,6 +198,10 @@ export async function createClass(
         })),
       );
       await tx.insert(sessions).values(times.map((t) => ({ ...t, teacherId, classId: row.id })));
+      if (input.path) {
+        const error = await setClassPath(tx, teacherId, row.id, input.path);
+        if (error) throw new Refused({ ok: false, error: "path", path: error });
+      }
       if (input.fromClassId) {
         await tx
           .update(enrollments)
@@ -498,7 +515,7 @@ export async function listCandidates(teacherId: string) {
     .orderBy(asc(students.fullNameFa));
 }
 
-export type ClassDefaults = Omit<NewClass, "price" | "fromClassId"> & {
+export type ClassDefaults = Omit<NewClass, "price" | "fromClassId" | "path"> & {
   price: number;
   fromClassId: string;
 };

@@ -61,10 +61,16 @@ export async function createClassAction(
     isPublic: bool(form, "isPublic"),
     studentIds: text(form, "studentIds"),
     fromClassId: text(form, "fromClassId") || undefined,
+    path: text(form, "path"),
   });
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error.issues) };
+  // A new class starts with its learners; the next course takes over the finished class's.
+  if (!parsed.data.fromClassId && parsed.data.studentIds.length === 0)
+    return { status: "error", fieldErrors: { studentIds: "learnersRequired" } };
 
   const result = await createClass(parsed.data, teacherId);
+  if (!result.ok && result.error === "path")
+    return { status: "error", error: `path_${result.path}` };
   if (!result.ok)
     return {
       status: "error",

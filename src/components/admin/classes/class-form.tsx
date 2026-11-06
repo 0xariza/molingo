@@ -31,10 +31,28 @@ import {
 } from "@/lib/schedule";
 import { createClassAction, type ClassFormState } from "@/server/classes/actions";
 import type { CefrLevel } from "@/server/classes/classes";
+import { PathEditor, type PathSource } from "../paths/path-editor";
 import { learnerItems, type Candidate } from "./learner-picker-items";
 import { LevelPicker } from "./level-picker";
 
 const LENGTHS = [30, 45, 60, 75, 90, 120];
+const STEPS = ["class", "path", "schedule", "learners"] as const;
+/** Which step shows each field, so a server error opens the right one. */
+const FIELD_STEP: Record<string, number> = {
+  nameFa: 1,
+  nameEn: 1,
+  level: 1,
+  type: 1,
+  capacity: 1,
+  price: 1,
+  description: 1,
+  path: 2,
+  sessionCount: 3,
+  sessionMinutes: 3,
+  slots: 3,
+  startsOn: 3,
+  studentIds: 4,
+};
 
 export type ClassFormDefaults = {
   nameFa: string;
@@ -62,15 +80,20 @@ const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
 const segment =
   "min-h-13 rounded-xl px-3 font-bold leading-tight text-body transition aria-pressed:bg-white aria-pressed:text-ocean aria-pressed:shadow-[0_1px_3px_rgba(7,30,54,.12)]";
 
-/** New class (or the next course of a finished one): class, schedule, tuition, learners, display. */
+/**
+ * New class (or the next course of a finished one) in four steps: the class and its tuition, its
+ * path (optional), its schedule, and its learners (at least one for a new class).
+ */
 export function ClassForm({
   defaults,
   candidates,
+  sources,
   today,
   fromClassId,
 }: {
   defaults: ClassFormDefaults;
   candidates: Candidate[];
+  sources: PathSource[];
   /** Tehran date "YYYY-MM-DD"; earlier days can't start a class. */
   today: string;
   fromClassId?: string;
@@ -78,7 +101,27 @@ export function ClassForm({
   const t = useTranslations("Admin.classes");
   const ts = useTranslations("Admin.learners.status");
   const locale = useLocale() as Locale;
+  const tp = useTranslations("Admin.paths");
   const [state, action] = useActionState(createClassAction, initial);
+  const [step, setStep] = useState(1);
+  const [maxStep, setMaxStep] = useState(1);
+  const [seen, setSeen] = useState(state);
+  if (seen !== state) {
+    // A refused submit opens the first step with an error.
+    setSeen(state);
+    const fields = Object.keys(state.fieldErrors ?? {});
+    const errorStep = Math.min(
+      ...fields.map((f) => FIELD_STEP[f] ?? 4),
+      state.error?.startsWith("path")
+        ? 2
+        : state.error === "learner_unavailable"
+          ? 4
+          : state.error
+            ? 3
+            : 4,
+    );
+    if (state.status === "error") setStep(errorStep);
+  }
   const days = t.raw("weekdays") as string[];
   const n = (v: number) => formatNumber(v, locale);
 
@@ -120,6 +163,10 @@ export function ClassForm({
   const priceValue = Number(price) || 0;
   const freeDay = WEEKDAYS.find((d) => !slots.some((s) => s.weekday === d));
   const shownPicks = picks.slice(0, seats);
+  const stepBlocked =
+    (step === 1 && (nameFa.trim().length < 2 || !(Number(price) > 0))) ||
+    (step === 3 && (validSlots.length === 0 || !startOk || sessionCount < 1)) ||
+    (step === 4 && !fromClassId && shownPicks.length === 0);
 
   const err = (field: string) => {
     const key = state.fieldErrors?.[field];
@@ -133,9 +180,11 @@ export function ClassForm({
             when: `${formatDate(new Date(state.clash.startsAt), locale, { year: false })} ${formatTime(new Date(state.clash.startsAt), locale)}`,
           })
         : t("errors.clashGeneric")
-      : state.error
-        ? t(`errors.${state.error as "past"}`)
-        : null;
+      : state.error?.startsWith("path_")
+        ? tp(`errors.${state.error.slice(5) as "locked"}`)
+        : state.error
+          ? t(`errors.${state.error as "past"}`)
+          : null;
 
   return (
     <form action={action} noValidate className="space-y-5">
@@ -149,376 +198,456 @@ export function ClassForm({
       {fromClassId && <input type="hidden" name="fromClassId" value={fromClassId} />}
       {formError && <ErrorAlert>{formError}</ErrorAlert>}
 
-      <section aria-labelledby="sec-class" className={section}>
-        <h2 id="sec-class" className={heading}>
-          {t("form.sectionClass")}
-        </h2>
-        <div className="grid items-start gap-5 sm:grid-cols-2">
-          <Field
-            label={t("form.nameFa")}
-            name="nameFa"
-            lang="fa"
-            dir="rtl"
-            value={nameFa}
-            onChange={(e) => setNameFa(e.target.value)}
-            autoComplete="off"
-            error={err("nameFa")}
-          />
-          <Field
-            label={t("form.nameEn")}
-            name="nameEn"
-            lang="en"
-            dir="ltr"
-            value={nameEn}
-            onChange={(e) => setNameEn(e.target.value)}
-            autoComplete="off"
-            hint={t("form.nameEnHint")}
-            error={err("nameEn")}
-          />
-        </div>
-        <LevelPicker value={level} onChange={setLevel} error={err("level")} />
-        <fieldset>
-          <legend className="mb-1.5 text-sm font-bold text-ocean">{t("form.type")}</legend>
-          <div className="grid grid-cols-2 gap-1 rounded-2xl bg-mist p-1">
-            {(["private", "group"] as const).map((v) => (
+      <ol aria-label={t("form.steps")} className="grid grid-cols-4 gap-2">
+        {STEPS.map((key, i) => {
+          const k = i + 1;
+          const reached = k <= maxStep;
+          return (
+            <li key={key}>
               <button
-                key={v}
                 type="button"
-                aria-pressed={type === v}
-                onClick={() => setType(v)}
-                className={segment}
+                disabled={!reached}
+                aria-current={step === k ? "step" : undefined}
+                onClick={() => setStep(k)}
+                className="flex w-full items-center gap-2 text-start disabled:opacity-60"
               >
-                {t(`type.${v}`)}
-                <span className="block text-xs font-medium">{t(`type.${v}Hint`)}</span>
+                <span
+                  className={`grid size-8 shrink-0 place-items-center rounded-full text-sm font-extrabold ${step === k ? "bg-ocean text-white" : k < maxStep || (reached && step > k) ? "bg-brand text-white" : "bg-mist text-brand"}`}
+                >
+                  {n(k)}
+                </span>
+                <span className="min-w-0 leading-tight">
+                  <b className="block truncate text-sm text-ocean">{t(`form.step.${key}`)}</b>
+                  <span className="text-xs">
+                    {key === "path" ? t("form.optional") : t("form.required")}
+                  </span>
+                </span>
               </button>
-            ))}
+              <span
+                aria-hidden="true"
+                className={`mt-1.5 block h-1 rounded-pill ${step === k ? "bg-ocean" : k < step ? "bg-brand" : "bg-mist"}`}
+              />
+            </li>
+          );
+        })}
+      </ol>
+      <div hidden={step !== 1} className="space-y-5">
+        <section aria-labelledby="sec-class" className={section}>
+          <h2 id="sec-class" className={heading}>
+            {t("form.sectionClass")}
+          </h2>
+          <div className="grid items-start gap-5 sm:grid-cols-2">
+            <Field
+              label={t("form.nameFa")}
+              name="nameFa"
+              lang="fa"
+              dir="rtl"
+              value={nameFa}
+              onChange={(e) => setNameFa(e.target.value)}
+              autoComplete="off"
+              error={err("nameFa")}
+            />
+            <Field
+              label={t("form.nameEn")}
+              name="nameEn"
+              lang="en"
+              dir="ltr"
+              value={nameEn}
+              onChange={(e) => setNameEn(e.target.value)}
+              autoComplete="off"
+              hint={t("form.nameEnHint")}
+              error={err("nameEn")}
+            />
           </div>
-        </fieldset>
-        {type === "group" && (
+          <LevelPicker value={level} onChange={setLevel} error={err("level")} />
           <fieldset>
-            <legend className="mb-1.5 text-sm font-bold text-ocean">{t("form.capacity")}</legend>
-            <div className="grid grid-cols-3 gap-1 rounded-2xl bg-mist p-1">
-              {[2, 3, 4].map((c) => (
+            <legend className="mb-1.5 text-sm font-bold text-ocean">{t("form.type")}</legend>
+            <div className="grid grid-cols-2 gap-1 rounded-2xl bg-mist p-1">
+              {(["private", "group"] as const).map((v) => (
                 <button
-                  key={c}
+                  key={v}
                   type="button"
-                  aria-pressed={capacity === c}
-                  onClick={() => setCapacity(c)}
+                  aria-pressed={type === v}
+                  onClick={() => setType(v)}
                   className={segment}
                 >
-                  {t("form.capacityOption", { count: n(c) })}
+                  {t(`type.${v}`)}
+                  <span className="block text-xs font-medium">{t(`type.${v}Hint`)}</span>
                 </button>
               ))}
             </div>
-            {err("capacity") && (
-              <p className="mt-1.5 text-sm font-medium text-red-700">{err("capacity")}</p>
-            )}
           </fieldset>
-        )}
-      </section>
+          {type === "group" && (
+            <fieldset>
+              <legend className="mb-1.5 text-sm font-bold text-ocean">{t("form.capacity")}</legend>
+              <div className="grid grid-cols-3 gap-1 rounded-2xl bg-mist p-1">
+                {[2, 3, 4].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    aria-pressed={capacity === c}
+                    onClick={() => setCapacity(c)}
+                    className={segment}
+                  >
+                    {t("form.capacityOption", { count: n(c) })}
+                  </button>
+                ))}
+              </div>
+              {err("capacity") && (
+                <p className="mt-1.5 text-sm font-medium text-red-700">{err("capacity")}</p>
+              )}
+            </fieldset>
+          )}
+        </section>
 
-      <section aria-labelledby="sec-schedule" className={section}>
-        <h2 id="sec-schedule" className={heading}>
-          {t("form.sectionSchedule")}
-        </h2>
-        <div className="grid items-start gap-5 sm:grid-cols-2">
+        <section aria-labelledby="sec-price" className={section}>
+          <h2 id="sec-price" className={heading}>
+            {t("form.sectionPrice")}
+          </h2>
           <div className="space-y-1.5">
-            <label htmlFor="session-count" className="block text-sm font-bold text-ocean">
-              {t("form.sessionCount")}
+            <label htmlFor="price" className="block text-sm font-bold text-ocean">
+              {type === "private" ? t("form.pricePrivate") : t("form.priceGroup")}
             </label>
             <div className="flex h-12 items-center overflow-hidden rounded-2xl border-[1.5px] border-line bg-white focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15">
-              <button
-                type="button"
-                aria-label={t("form.less")}
-                onClick={() => setCount(String(Math.max(1, sessionCount - 1)))}
-                className="grid h-full w-13 place-items-center text-brand hover:bg-surface"
-              >
-                <Minus aria-hidden size={18} weight="bold" />
-              </button>
               <input
-                id="session-count"
+                id="price"
                 inputMode="numeric"
                 dir="ltr"
-                maxLength={2}
-                value={localDigits(count, locale)}
-                onChange={(e) => setCount(toLatinDigits(e.target.value).replace(/\D/g, ""))}
-                aria-invalid={err("sessionCount") ? true : undefined}
-                className="h-full min-w-0 flex-1 border-x border-mist text-center text-lg font-extrabold text-ocean outline-none"
+                value={price ? formatNumber(Number(price), locale) : ""}
+                onChange={(e) =>
+                  setPrice(toLatinDigits(e.target.value).replace(/\D/g, "").slice(0, 10))
+                }
+                aria-invalid={err("price") ? true : undefined}
+                className="h-full min-w-0 flex-1 px-4 text-end text-lg font-bold text-ocean outline-none"
               />
-              <button
-                type="button"
-                aria-label={t("form.more")}
-                onClick={() => setCount(String(Math.min(60, sessionCount + 1)))}
-                className="grid h-full w-13 place-items-center text-brand hover:bg-surface"
-              >
-                <Plus aria-hidden size={18} weight="bold" />
-              </button>
+              <span className="flex h-full items-center border-s border-mist bg-surface px-4 font-semibold">
+                {t("form.toman")}
+              </span>
             </div>
-            <p
-              className={`text-sm ${err("sessionCount") ? "font-medium text-red-700" : "text-body/80"}`}
-            >
-              {err("sessionCount") ?? t("form.sessionCountHint")}
+            <p className={`text-sm ${err("price") ? "font-medium text-red-700" : "text-body/80"}`}>
+              {err("price") ??
+                (priceValue > 0 &&
+                  (type === "private"
+                    ? t("form.priceHintPrivate", {
+                        count: n(sessionCount),
+                        total: formatToman(priceValue * sessionCount, locale),
+                      })
+                    : t("form.priceHintGroup", { count: n(sessionCount) })))}
             </p>
           </div>
-          <SelectMenu
-            label={t("form.sessionMinutes")}
-            name="sessionMinutes"
-            value={minutes}
-            onChange={setMinutes}
-            error={err("sessionMinutes")}
-            options={LENGTHS.map((m) => ({
-              value: String(m),
-              label: t("form.minutesOption", { count: n(m) }),
-            }))}
-          />
-        </div>
+        </section>
 
-        <fieldset className="space-y-2.5">
-          <legend className="text-sm font-bold text-ocean">{t("form.slots")}</legend>
-          <p className="text-sm">{t("form.slotsHint")}</p>
-          {slots.length > 0 && (
-            <div
-              aria-hidden="true"
-              className={`${slotGrid} px-2.5 pt-1 text-sm font-bold text-ocean`}
-            >
-              <span>{t("form.colDay")}</span>
-              <span>{t("form.colTime")}</span>
-              <span className="hidden sm:block">{t("form.colEnds")}</span>
-            </div>
+        <section aria-labelledby="sec-display" className={section}>
+          <h2 id="sec-display" className={heading}>
+            {t("form.sectionDisplay")}
+          </h2>
+          <TextareaField
+            label={t("form.description")}
+            name="description"
+            defaultValue={defaults.description ?? ""}
+            hint={t("form.descriptionHint")}
+            error={err("description")}
+          />
+          {type === "group" && (
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                name="isPublic"
+                checked={isPublic}
+                onChange={(e) => setIsPublic(e.target.checked)}
+                className="mt-1 size-4.5 accent-brand"
+              />
+              <span className="leading-snug">
+                <span className="block font-bold text-ocean">{t("form.isPublic")}</span>
+                <span className="text-sm">{t("form.isPublicHint")}</span>
+              </span>
+            </label>
           )}
-          {slots.map((slot, i) => {
-            const m = parseClock(slot.time);
-            const bad = slot.time.trim() !== "" && m === null;
-            return (
-              <div
-                key={slot.weekday}
-                className={`${slotGrid} rounded-2xl border border-mist bg-surface/60 p-2.5`}
-              >
-                <SelectMenu
-                  label={t("form.dayLabel", { n: n(i + 1) })}
-                  labelHidden
-                  value={String(slot.weekday)}
-                  onChange={(v) =>
-                    setSlots(
-                      slots.map((s, j) => (j === i ? { ...s, weekday: Number(v) as Weekday } : s)),
-                    )
-                  }
-                  options={WEEKDAYS.map((d) => ({
-                    value: String(d),
-                    label: days[d],
-                    disabled: d !== slot.weekday && slots.some((s) => s.weekday === d),
-                    hint:
-                      d !== slot.weekday && slots.some((s) => s.weekday === d)
-                        ? t("form.dayTaken")
-                        : undefined,
-                  }))}
-                />
-                <div
-                  className={`flex h-12 items-center gap-2 rounded-2xl border-[1.5px] bg-white px-3 focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15 ${bad ? "border-red-600" : "border-line"}`}
-                >
-                  <label htmlFor={`slot-time-${i}`} className="sr-only">
-                    {t("form.timeLabel", { day: days[slot.weekday] })}
-                  </label>
-                  <Clock aria-hidden size={18} className="shrink-0 text-body" />
-                  <input
-                    id={`slot-time-${i}`}
-                    inputMode="numeric"
-                    dir="ltr"
-                    maxLength={5}
-                    placeholder={t("form.timePlaceholder")}
-                    value={slot.time}
-                    aria-invalid={bad || undefined}
-                    onChange={(e) =>
-                      setSlots(slots.map((s, j) => (j === i ? { ...s, time: e.target.value } : s)))
-                    }
-                    className="min-w-0 flex-1 bg-transparent text-center font-bold text-ocean outline-none placeholder:font-medium placeholder:text-body/50"
-                  />
-                </div>
-                <p className="hidden text-sm sm:block">
-                  {m !== null ? localDigits(formatClock(m + Number(minutes)), locale) : "—"}
-                </p>
+        </section>
+      </div>
+      <div hidden={step !== 2} className="space-y-5">
+        <section aria-labelledby="sec-path" className={section}>
+          <h2 id="sec-path" className={heading}>
+            {tp("title")}{" "}
+            <span className="text-sm font-medium text-body">{t("form.optional")}</span>
+          </h2>
+          <PathEditor
+            level={level}
+            sources={sources}
+            sessionCount={sessionCount}
+            start={null}
+            optional
+          />
+        </section>
+      </div>
+      <div hidden={step !== 3} className="space-y-5">
+        <section aria-labelledby="sec-schedule" className={section}>
+          <h2 id="sec-schedule" className={heading}>
+            {t("form.sectionSchedule")}
+          </h2>
+          <div className="grid items-start gap-5 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <label htmlFor="session-count" className="block text-sm font-bold text-ocean">
+                {t("form.sessionCount")}
+              </label>
+              <div className="flex h-12 items-center overflow-hidden rounded-2xl border-[1.5px] border-line bg-white focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15">
                 <button
                   type="button"
-                  aria-label={t("form.removeSlot", { day: days[slot.weekday] })}
-                  onClick={() => setSlots(slots.filter((_, j) => j !== i))}
-                  className="grid size-11 place-items-center rounded-xl text-red-700 hover:bg-red-50"
+                  aria-label={t("form.less")}
+                  onClick={() => setCount(String(Math.max(1, sessionCount - 1)))}
+                  className="grid h-full w-13 place-items-center text-brand hover:bg-surface"
                 >
-                  <Trash aria-hidden size={20} />
+                  <Minus aria-hidden size={18} weight="bold" />
+                </button>
+                <input
+                  id="session-count"
+                  inputMode="numeric"
+                  dir="ltr"
+                  maxLength={2}
+                  value={localDigits(count, locale)}
+                  onChange={(e) => setCount(toLatinDigits(e.target.value).replace(/\D/g, ""))}
+                  aria-invalid={err("sessionCount") ? true : undefined}
+                  className="h-full min-w-0 flex-1 border-x border-mist text-center text-lg font-extrabold text-ocean outline-none"
+                />
+                <button
+                  type="button"
+                  aria-label={t("form.more")}
+                  onClick={() => setCount(String(Math.min(60, sessionCount + 1)))}
+                  className="grid h-full w-13 place-items-center text-brand hover:bg-surface"
+                >
+                  <Plus aria-hidden size={18} weight="bold" />
                 </button>
               </div>
-            );
-          })}
-          {freeDay !== undefined && (
-            <button
-              type="button"
-              onClick={() => setSlots([...slots, { weekday: freeDay, time: "" }])}
-              className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-whale bg-white font-extrabold text-brand hover:border-brand hover:bg-surface"
-            >
-              <Plus aria-hidden size={18} weight="bold" />
-              {t("form.addSlot")}
-            </button>
-          )}
-          {err("slots") && <p className="text-sm font-medium text-red-700">{err("slots")}</p>}
-        </fieldset>
-
-        <div className="grid items-start gap-5 sm:grid-cols-2">
-          <DatePicker
-            label={t("form.startsOn")}
-            name="startsOn"
-            value={startsOn}
-            onChange={setStartsOn}
-            placeholder={t("form.startsOnPlaceholder")}
-            disabled={slots.length === 0}
-            allowed={(key) => key >= today && slots.some((s) => s.weekday === weekdayOf(key))}
-            hint={slots.length ? t("form.startsOnHint") : t("form.lastSessionNoSlots")}
-            error={err("startsOn")}
-          />
-          <div className="space-y-1.5">
-            <span className="block text-sm font-bold text-ocean">{t("form.lastSession")}</span>
-            <p className="flex h-12 items-center rounded-2xl border border-dashed border-line/60 bg-surface px-4 font-bold text-ocean">
-              {last
-                ? formatDate(last.startsAt, locale)
-                : slots.length === 0
-                  ? t("form.lastSessionNoSlots")
-                  : validSlots.length < slots.length
-                    ? t("form.lastSessionNoTime")
-                    : t("form.lastSessionNoStart")}
-            </p>
-            <p className="text-sm text-body/80">{t("form.lastSessionHint")}</p>
-          </div>
-        </div>
-      </section>
-
-      <section aria-labelledby="sec-price" className={section}>
-        <h2 id="sec-price" className={heading}>
-          {t("form.sectionPrice")}
-        </h2>
-        <div className="space-y-1.5">
-          <label htmlFor="price" className="block text-sm font-bold text-ocean">
-            {type === "private" ? t("form.pricePrivate") : t("form.priceGroup")}
-          </label>
-          <div className="flex h-12 items-center overflow-hidden rounded-2xl border-[1.5px] border-line bg-white focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15">
-            <input
-              id="price"
-              inputMode="numeric"
-              dir="ltr"
-              value={price ? formatNumber(Number(price), locale) : ""}
-              onChange={(e) =>
-                setPrice(toLatinDigits(e.target.value).replace(/\D/g, "").slice(0, 10))
-              }
-              aria-invalid={err("price") ? true : undefined}
-              className="h-full min-w-0 flex-1 px-4 text-end text-lg font-bold text-ocean outline-none"
+              <p
+                className={`text-sm ${err("sessionCount") ? "font-medium text-red-700" : "text-body/80"}`}
+              >
+                {err("sessionCount") ?? t("form.sessionCountHint")}
+              </p>
+            </div>
+            <SelectMenu
+              label={t("form.sessionMinutes")}
+              name="sessionMinutes"
+              value={minutes}
+              onChange={setMinutes}
+              error={err("sessionMinutes")}
+              options={LENGTHS.map((m) => ({
+                value: String(m),
+                label: t("form.minutesOption", { count: n(m) }),
+              }))}
             />
-            <span className="flex h-full items-center border-s border-mist bg-surface px-4 font-semibold">
-              {t("form.toman")}
-            </span>
           </div>
-          <p className={`text-sm ${err("price") ? "font-medium text-red-700" : "text-body/80"}`}>
-            {err("price") ??
-              (priceValue > 0 &&
-                (type === "private"
-                  ? t("form.priceHintPrivate", {
-                      count: n(sessionCount),
-                      total: formatToman(priceValue * sessionCount, locale),
-                    })
-                  : t("form.priceHintGroup", { count: n(sessionCount) })))}
-          </p>
-        </div>
-      </section>
 
-      <section aria-labelledby="sec-learners" className={section}>
-        <div className="flex items-baseline justify-between gap-2">
-          <h2 id="sec-learners" className={heading}>
-            {t("form.sectionLearners")}{" "}
-            <span className="text-base font-medium text-body">
-              {t("form.sectionLearnersOptional")}
-            </span>
-          </h2>
-          <strong className="text-ocean">
-            {t("form.learnersCount", { count: n(shownPicks.length), capacity: n(seats) })}
-          </strong>
-        </div>
-        {shownPicks.length > 0 && (
-          <ul className="flex flex-wrap gap-2">
-            {shownPicks.map((id) => {
-              const person = candidates.find((c) => c.id === id);
-              if (!person) return null;
-              const { primary } = learnerNames(person, locale);
+          <fieldset className="space-y-2.5">
+            <legend className="text-sm font-bold text-ocean">{t("form.slots")}</legend>
+            <p className="text-sm">{t("form.slotsHint")}</p>
+            {slots.length > 0 && (
+              <div
+                aria-hidden="true"
+                className={`${slotGrid} px-2.5 pt-1 text-sm font-bold text-ocean`}
+              >
+                <span>{t("form.colDay")}</span>
+                <span>{t("form.colTime")}</span>
+                <span className="hidden sm:block">{t("form.colEnds")}</span>
+              </div>
+            )}
+            {slots.map((slot, i) => {
+              const m = parseClock(slot.time);
+              const bad = slot.time.trim() !== "" && m === null;
               return (
-                <li
-                  key={id}
-                  className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-mist ps-4 pe-1.5 font-bold text-ocean"
+                <div
+                  key={slot.weekday}
+                  className={`${slotGrid} rounded-2xl border border-mist bg-surface/60 p-2.5`}
                 >
-                  {primary}
+                  <SelectMenu
+                    label={t("form.dayLabel", { n: n(i + 1) })}
+                    labelHidden
+                    value={String(slot.weekday)}
+                    onChange={(v) =>
+                      setSlots(
+                        slots.map((s, j) =>
+                          j === i ? { ...s, weekday: Number(v) as Weekday } : s,
+                        ),
+                      )
+                    }
+                    options={WEEKDAYS.map((d) => ({
+                      value: String(d),
+                      label: days[d],
+                      disabled: d !== slot.weekday && slots.some((s) => s.weekday === d),
+                      hint:
+                        d !== slot.weekday && slots.some((s) => s.weekday === d)
+                          ? t("form.dayTaken")
+                          : undefined,
+                    }))}
+                  />
+                  <div
+                    className={`flex h-12 items-center gap-2 rounded-2xl border-[1.5px] bg-white px-3 focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15 ${bad ? "border-red-600" : "border-line"}`}
+                  >
+                    <label htmlFor={`slot-time-${i}`} className="sr-only">
+                      {t("form.timeLabel", { day: days[slot.weekday] })}
+                    </label>
+                    <Clock aria-hidden size={18} className="shrink-0 text-body" />
+                    <input
+                      id={`slot-time-${i}`}
+                      inputMode="numeric"
+                      dir="ltr"
+                      maxLength={5}
+                      placeholder={t("form.timePlaceholder")}
+                      value={slot.time}
+                      aria-invalid={bad || undefined}
+                      onChange={(e) =>
+                        setSlots(
+                          slots.map((s, j) => (j === i ? { ...s, time: e.target.value } : s)),
+                        )
+                      }
+                      className="min-w-0 flex-1 bg-transparent text-center font-bold text-ocean outline-none placeholder:font-medium placeholder:text-body/50"
+                    />
+                  </div>
+                  <p className="hidden text-sm sm:block">
+                    {m !== null ? localDigits(formatClock(m + Number(minutes)), locale) : "—"}
+                  </p>
                   <button
                     type="button"
-                    aria-label={t("form.removeLearner", { name: primary })}
-                    onClick={() => setPicks(picks.filter((p) => p !== id))}
-                    className="grid size-7 place-items-center rounded-full bg-white text-body"
+                    aria-label={t("form.removeSlot", { day: days[slot.weekday] })}
+                    onClick={() => setSlots(slots.filter((_, j) => j !== i))}
+                    className="grid size-11 place-items-center rounded-xl text-red-700 hover:bg-red-50"
                   >
-                    <X aria-hidden size={14} weight="bold" />
+                    <Trash aria-hidden size={20} />
                   </button>
-                </li>
+                </div>
               );
             })}
-          </ul>
-        )}
-        {shownPicks.length < seats ? (
-          <Combobox
-            label={t("form.learnersSearch")}
-            labelHidden
-            placeholder={t("form.learnersPlaceholder")}
-            clearLabel={t("form.clear")}
-            items={learnerItems(
-              candidates.filter((c) => !picks.includes(c.id)),
-              locale,
-              (s) => ts(s),
+            {freeDay !== undefined && (
+              <button
+                type="button"
+                onClick={() => setSlots([...slots, { weekday: freeDay, time: "" }])}
+                className="flex min-h-13 w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-whale bg-white font-extrabold text-brand hover:border-brand hover:bg-surface"
+              >
+                <Plus aria-hidden size={18} weight="bold" />
+                {t("form.addSlot")}
+              </button>
             )}
-            onPick={(item) => setPicks([...shownPicks, item.id])}
-            empty={(query) => t("form.noMatch", { query })}
-          />
-        ) : null}
-        <p className={`text-sm ${err("studentIds") ? "font-medium text-red-700" : "text-body/80"}`}>
-          {err("studentIds") ??
-            (shownPicks.length < seats ? t("form.learnersHint") : t("form.learnersFull"))}
-        </p>
-      </section>
+            {err("slots") && <p className="text-sm font-medium text-red-700">{err("slots")}</p>}
+          </fieldset>
 
-      <section aria-labelledby="sec-display" className={section}>
-        <h2 id="sec-display" className={heading}>
-          {t("form.sectionDisplay")}
-        </h2>
-        <TextareaField
-          label={t("form.description")}
-          name="description"
-          defaultValue={defaults.description ?? ""}
-          hint={t("form.descriptionHint")}
-          error={err("description")}
-        />
-        {type === "group" && (
-          <label className="flex cursor-pointer items-start gap-3">
-            <input
-              type="checkbox"
-              name="isPublic"
-              checked={isPublic}
-              onChange={(e) => setIsPublic(e.target.checked)}
-              className="mt-1 size-4.5 accent-brand"
+          <div className="grid items-start gap-5 sm:grid-cols-2">
+            <DatePicker
+              label={t("form.startsOn")}
+              name="startsOn"
+              value={startsOn}
+              onChange={setStartsOn}
+              placeholder={t("form.startsOnPlaceholder")}
+              disabled={slots.length === 0}
+              allowed={(key) => key >= today && slots.some((s) => s.weekday === weekdayOf(key))}
+              hint={slots.length ? t("form.startsOnHint") : t("form.lastSessionNoSlots")}
+              error={err("startsOn")}
             />
-            <span className="leading-snug">
-              <span className="block font-bold text-ocean">{t("form.isPublic")}</span>
-              <span className="text-sm">{t("form.isPublicHint")}</span>
-            </span>
-          </label>
-        )}
-      </section>
+            <div className="space-y-1.5">
+              <span className="block text-sm font-bold text-ocean">{t("form.lastSession")}</span>
+              <p className="flex h-12 items-center rounded-2xl border border-dashed border-line/60 bg-surface px-4 font-bold text-ocean">
+                {last
+                  ? formatDate(last.startsAt, locale)
+                  : slots.length === 0
+                    ? t("form.lastSessionNoSlots")
+                    : validSlots.length < slots.length
+                      ? t("form.lastSessionNoTime")
+                      : t("form.lastSessionNoStart")}
+              </p>
+              <p className="text-sm text-body/80">{t("form.lastSessionHint")}</p>
+            </div>
+          </div>
+        </section>
+      </div>
+      <div hidden={step !== 4} className="space-y-5">
+        <section aria-labelledby="sec-learners" className={section}>
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 id="sec-learners" className={heading}>
+              {t("form.sectionLearners")}
+            </h2>
+            <strong className="text-ocean">
+              {t("form.learnersCount", { count: n(shownPicks.length), capacity: n(seats) })}
+            </strong>
+          </div>
+          {shownPicks.length > 0 && (
+            <ul className="flex flex-wrap gap-2">
+              {shownPicks.map((id) => {
+                const person = candidates.find((c) => c.id === id);
+                if (!person) return null;
+                const { primary } = learnerNames(person, locale);
+                return (
+                  <li
+                    key={id}
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-pill bg-mist ps-4 pe-1.5 font-bold text-ocean"
+                  >
+                    {primary}
+                    <button
+                      type="button"
+                      aria-label={t("form.removeLearner", { name: primary })}
+                      onClick={() => setPicks(picks.filter((p) => p !== id))}
+                      className="grid size-7 place-items-center rounded-full bg-white text-body"
+                    >
+                      <X aria-hidden size={14} weight="bold" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {shownPicks.length < seats ? (
+            <Combobox
+              label={t("form.learnersSearch")}
+              labelHidden
+              placeholder={t("form.learnersPlaceholder")}
+              clearLabel={t("form.clear")}
+              items={learnerItems(
+                candidates.filter((c) => !picks.includes(c.id)),
+                locale,
+                (s) => ts(s),
+              )}
+              onPick={(item) => setPicks([...shownPicks, item.id])}
+              empty={(query) => t("form.noMatch", { query })}
+            />
+          ) : null}
+          <p
+            className={`text-sm ${err("studentIds") ? "font-medium text-red-700" : "text-body/80"}`}
+          >
+            {err("studentIds") ??
+              (shownPicks.length < seats ? t("form.learnersHint") : t("form.learnersFull"))}
+          </p>
+        </section>
+      </div>
 
-      <div className="flex flex-wrap justify-end gap-3">
-        <Link href="/admin/classes" className={buttonClass("ghost")}>
-          {t("form.cancel")}
-        </Link>
-        <SubmitButton pendingLabel={t("form.creating")} className="w-full sm:w-auto">
-          {t("form.create")}
-        </SubmitButton>
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        {stepBlocked && (
+          <p className="me-auto text-sm font-medium text-cinnamon-ink">
+            {t(`form.need.${STEPS[step - 1]}`)}
+          </p>
+        )}
+        {step === 1 ? (
+          <Link href="/admin/classes" className={buttonClass("ghost")}>
+            {t("form.cancel")}
+          </Link>
+        ) : (
+          <button type="button" onClick={() => setStep(step - 1)} className={buttonClass("ghost")}>
+            {t("form.back")}
+          </button>
+        )}
+        {step < STEPS.length ? (
+          <button
+            type="button"
+            disabled={stepBlocked}
+            onClick={() => {
+              setStep(step + 1);
+              setMaxStep(Math.max(maxStep, step + 1));
+            }}
+            className={buttonClass("primary", "w-full sm:w-auto")}
+          >
+            {t(`form.next.${STEPS[step]}`)}
+          </button>
+        ) : (
+          <SubmitButton pendingLabel={t("form.creating")} className="w-full sm:w-auto">
+            {t("form.create")}
+          </SubmitButton>
+        )}
       </div>
     </form>
   );

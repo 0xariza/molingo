@@ -11,6 +11,7 @@ import {
   createClass,
   createLearner,
   createLevelCheckSlot,
+  createSource,
   createTeacher,
   createUser,
   resetDb,
@@ -45,6 +46,8 @@ type Fixtures = {
     overrides?: Parameters<typeof createLearner>[1],
   ) => ReturnType<typeof createLearner>;
   createClass: (input: Parameters<typeof createClass>[1]) => ReturnType<typeof createClass>;
+  /** A source with a complete map (three skills per station). */
+  createSource: (input: Parameters<typeof createSource>[1]) => ReturnType<typeof createSource>;
   /**
    * The schedule plan's week, all in next week: "Morning A2" on Saturday and Monday 10:30–12:00
    * with Sara, an open level-check time Monday 18:00, Tuesday 18:00 booked online by Nika
@@ -92,6 +95,9 @@ export const test = base.extend<Fixtures, { workerDb: TestDb }>({
   },
   createClass: async ({ db }, use) => {
     await use((input) => createClass(db, input));
+  },
+  createSource: async ({ db }, use) => {
+    await use((input) => createSource(db, input));
   },
   seedTeaching: async ({ db, seedAccounts }, use) => {
     await use(async () => {

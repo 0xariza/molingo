@@ -25,6 +25,7 @@ import {
   sessionStatusEnum,
 } from "./enums";
 import { students, teachers } from "./identity";
+import { classPathStations } from "./paths";
 
 /**
  * A class runs a fixed number of sessions from `startsOn` on its weekly slots. Private classes
@@ -115,6 +116,10 @@ export const sessions = pgTable(
     topics: text(),
     summary: text(),
     privateNote: text(),
+    /** The path station this session teaches; set by the app from the class path. */
+    pathStationId: uuid().references((): AnyPgColumn => classPathStations.id, {
+      onDelete: "set null",
+    }),
     ...timestamps,
   },
   (t) => [

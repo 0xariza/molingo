@@ -14,7 +14,11 @@ test.describe("Classes", () => {
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(t.newTitle);
     await expect(page.locator("html")).toHaveAttribute("dir", "rtl");
 
-    // 2. Add a day and open "تاریخ شروع"
+    // 2. Fill the name and tuition, go to the schedule step, add a day and open "تاریخ شروع"
+    await page.getByRole("textbox", { name: t.nameFa }).fill("گروه عصر");
+    await page.getByRole("textbox", { name: t.priceGroup }).fill("6500000");
+    await page.getByRole("button", { name: t.next.path }).click();
+    await page.getByRole("button", { name: t.next.schedule }).click();
     await page.getByRole("button", { name: t.addSlot }).click();
     await page.getByRole("button", { name: new RegExp(`^${t.startsOn}`) }).click();
     await expect(page.getByRole("grid")).toHaveAccessibleName(

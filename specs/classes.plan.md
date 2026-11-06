@@ -2,12 +2,16 @@
 
 ## Application Overview
 
-Mona creates classes on `/admin/classes/new`: Persian and English names (English optional), level
+Mona creates classes on `/admin/classes/new`, a four-step wizard (class and tuition, class path
+(optional), schedule, learners (at least one)): Persian and English names (English optional), level
 (six buttons), private (1 learner, priced per session) or
 group (2–4 learners, priced per learner for the whole course), total sessions, session length, weekly
 rows of day + typed start time, and a start date picked from a calendar that only allows those days
-(Persian calendar in Persian, Gregorian in English). Learners can be added while creating. The app
-generates every session and shows the last one.
+(Persian calendar in Persian, Gregorian in English). The path step picks one of her complete sources
+at the class's level and lets her untick stations, change their sessions or add class-only stations.
+The app generates every session, shows the last one, and links sessions to stations in order.
+A class page shows a "Class path" card; `/admin/classes/[id]/path` adds or edits the path (stations
+with held sessions are locked; upcoming sessions move on their own).
 
 `/admin/classes` opens with stat tiles, two charts and class cards (the whole card opens the class; a
 quiet "Add learner" button opens a searchable picker). The class page lists sessions (cancel before a
@@ -32,12 +36,14 @@ left to run. There is no waitlist: a full class takes nobody. Students never rea
 1. Log in as Mona, open `/en/admin/classes`, press "New class" - expect: the "New class" heading
 2. Fill "Class name in Persian" with "صبح A2" and "Class name in English" with "Morning A2", press
    the "A2" level button - expect: it is pressed
-3. Press "Add day and time" twice; set the second row's day to "Monday"; type "08:00" in both start
+3. Type the tuition "6500000" - expect: it shows "6,500,000"; press "Next: class path" - expect: "No
+   path for now" is chosen; press "Next: schedule"
+4. Press "Add day and time" twice; set the second row's day to "Monday"; type "08:00" in both start
    times (the end time per row only shows on wider screens)
-4. Open "Start date", pick next week's Saturday - expect: days that aren't Saturday or Monday are
+5. Open "Start date", pick next week's Saturday - expect: days that aren't Saturday or Monday are
    disabled - expect: "Last session" shows the sixth Monday
-5. Type the tuition "6500000" - expect: it shows "6,500,000"; press "Create class" - expect: the class
-   page with the heading "Morning A2" and "0 of 12 held"
+6. Press "Next: learners" - expect: "Add at least one learner."; search "Sara", pick her, press
+   "Create class" - expect: the class page with the heading "Morning A2" and "0 of 12 held"
 
 #### 1.2. class-needs-a-valid-schedule
 
@@ -45,10 +51,11 @@ left to run. There is no waitlist: a full class takes nobody. Students never rea
 
 **Steps:**
 
-1. Open `/en/admin/classes/new`, press "Create class" with nothing filled - expect: errors for the
-   Persian name, the days and times ("Add at least one day and time."), the start date and the
-   tuition - expect: still on the form
-2. Add a row with the time "25:00" - expect: the time field is marked invalid
+1. Open `/en/admin/classes/new` - expect: "Next: class path" is disabled with "Write the class name
+   and tuition."
+2. Fill the Persian name and tuition, press "Next: class path" then "Next: schedule" - expect: "Next:
+   learners" is disabled with "Add at least one day and time and a start date."
+3. Add a row with the time "25:00" - expect: the time field is marked invalid
 
 #### 1.3. clash-with-another-class-is-refused
 
@@ -56,8 +63,9 @@ left to run. There is no waitlist: a full class takes nobody. Students never rea
 
 **Steps:**
 
-1. With a class on Saturdays 08:00–09:30, create another on Saturdays at 09:00 starting the same day -
-   expect: the alert "Clashes with Morning A2 on …"
+1. With a class on Saturdays 08:00–09:30, create another on Saturdays at 09:00 starting the same day
+   (with Sara as learner) - expect: the alert "Clashes with Morning A2 on …" - expect: the schedule
+   step is open again
 
 #### 1.4. add-learner-from-card
 
@@ -133,7 +141,7 @@ left to run. There is no waitlist: a full class takes nobody. Students never rea
 **Steps:**
 
 1. Open `/fa/admin/classes/new` - expect: the heading "کلاس جدید" - expect: the page is right-to-left
-2. Add a day and open "تاریخ شروع" - expect: a Persian calendar (Jalali month name, Persian digits)
+2. Fill the name and tuition, go to the schedule step, add a day and open "تاریخ شروع" - expect: a Persian calendar (Jalali month name, Persian digits)
 
 #### 1.11. student-cannot-open-classes
 
@@ -142,3 +150,18 @@ left to run. There is no waitlist: a full class takes nobody. Students never rea
 **Steps:**
 
 1. Log in as Sara (student), open `/en/admin/classes` - expect: the URL is `/en/app`
+
+#### 1.12. add-class-path
+
+**File:** `e2e/classes/add-class-path.spec.ts`
+
+**Steps:**
+
+1. With a 12-session class and a complete A2 source "English File A2" (Daily life, Shopping, My last
+   weekend; two sessions each), open the class page - expect: the empty "Class path" card
+2. Press "Add a path" - expect: the "Add a path" heading - expect: the source is chosen - expect:
+   "Sessions 5–6" for the third station
+3. Untick "Shopping", press "One session more" on "My last weekend" - expect: "Sessions 3–5"; press
+   "Create path" - expect: "Saved; upcoming sessions moved."
+4. Open the class page - expect: the card lists "Daily life" (Sessions 1–2) and "My last weekend"
+   (Sessions 3–5), not "Shopping"

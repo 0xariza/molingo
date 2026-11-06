@@ -9,6 +9,7 @@ import {
   messages,
   PASSWORD,
   pickDate,
+  STUDENT,
   test,
 } from "../fixtures";
 
@@ -31,7 +32,17 @@ test.describe("Classes", () => {
     await a2.click();
     await expect(a2).toHaveAttribute("aria-pressed", "true");
 
-    // 3. Add two days, set the second to Monday, type 08:00 in both
+    // 3. Type the tuition, press "Next: class path", leave "No path for now", press "Next: schedule"
+    const price = page.getByRole("textbox", { name: t.form.priceGroup });
+    await price.fill("6500000");
+    await expect(price).toHaveValue("6,500,000");
+    await page.getByRole("button", { name: t.form.next.path }).click();
+    await expect(
+      page.getByRole("radio", { name: new RegExp(messages.en.Admin.paths.none) }),
+    ).toBeChecked();
+    await page.getByRole("button", { name: t.form.next.schedule }).click();
+
+    // 4. Add two days, set the second to Monday, type 08:00 in both
     await page.getByRole("button", { name: t.form.addSlot }).click();
     await page.getByRole("button", { name: t.form.addSlot }).click();
     await page.getByRole("combobox", { name: /Day of weekly session 2/ }).click();
@@ -39,7 +50,7 @@ test.describe("Classes", () => {
     await page.getByRole("textbox", { name: "Start time on Saturday" }).fill("08:00");
     await page.getByRole("textbox", { name: "Start time on Monday" }).fill("08:00");
 
-    // 4. Open "Start date", pick next Saturday
+    // 5. Open "Start date", pick next Saturday
     const saturday = dayOfWeek(0, 1);
     await page.getByRole("button", { name: new RegExp(`^${t.form.startsOn}`) }).click();
     await expect(page.getByRole("button", { name: /Sunday, / }).first()).toBeDisabled();
@@ -50,10 +61,11 @@ test.describe("Classes", () => {
       page.getByText(`${dateLabel(dayOfWeek(2, 6))} ${dayOfWeek(2, 6).slice(0, 4)}`),
     ).toBeVisible();
 
-    // 5. Type the tuition, press "Create class"
-    const price = page.getByRole("textbox", { name: t.form.priceGroup });
-    await price.fill("6500000");
-    await expect(price).toHaveValue("6,500,000");
+    // 6. Press "Next: learners"; "Create class" waits for a learner. Add Sara, press "Create class"
+    await page.getByRole("button", { name: t.form.next.learners }).click();
+    await expect(page.getByText(t.form.need.learners)).toBeVisible();
+    await page.getByRole("combobox", { name: t.form.learnersSearch }).fill("Sara");
+    await page.getByRole("option", { name: new RegExp(STUDENT.name) }).click();
     await page.getByRole("button", { name: t.form.create }).click();
     await expect(page).toHaveURL(/\/en\/admin\/classes\/[0-9a-f-]{36}$/);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Morning A2");

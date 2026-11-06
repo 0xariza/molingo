@@ -37,7 +37,9 @@ test.describe("Sources", () => {
       "Says what they did",
       "Asks about the past",
     ].entries())
-      await page.getByLabel(fill(t.station.skillLabel, { n: String(i + 1) })).fill(skill);
+      await page
+        .getByLabel(fill(t.station.skillLabel, { n: String(i + 1) }), { exact: true })
+        .fill(skill);
     await page.getByRole("button", { name: t.station.save }).click();
     await expect(page.getByRole("status")).toHaveText(t.station.saved);
     await expect(page.getByText(fill(t.map.done, { done: "1", total: "2" }))).toBeVisible();

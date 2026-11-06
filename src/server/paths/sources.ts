@@ -1,7 +1,13 @@
 import { and, asc, eq, gt, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
-import { cefrLevelEnum, learningSources, stationSkills, stations } from "@/db/schema";
+import {
+  cefrLevelEnum,
+  classPathStations,
+  learningSources,
+  stationSkills,
+  stations,
+} from "@/db/schema";
 import { toLatinDigits } from "@/lib/format";
 
 export const MIN_SKILLS = 3;
@@ -164,7 +170,7 @@ async function ownedStation(tx: Tx | typeof db, teacherId: string, stationId: st
     .from(stations)
     .innerJoin(learningSources, eq(learningSources.id, stations.sourceId))
     .where(and(eq(stations.id, stationId), eq(learningSources.teacherId, teacherId)));
-  return row ?? null;
+  return row ? { ...row, sourceId: row.sourceId! } : null;
 }
 
 export async function saveStation(teacherId: string, stationId: string, input: StationInput) {
@@ -233,6 +239,12 @@ export async function deleteStation(teacherId: string, stationId: string) {
       .from(stations)
       .where(eq(stations.sourceId, at.sourceId));
     if (n <= 1) return "lastStation" as const;
+    const [used] = await tx
+      .select({ id: classPathStations.id })
+      .from(classPathStations)
+      .where(eq(classPathStations.stationId, stationId))
+      .limit(1);
+    if (used) return "inUse" as const;
     await tx.delete(stations).where(eq(stations.id, stationId));
     await tx
       .update(stations)

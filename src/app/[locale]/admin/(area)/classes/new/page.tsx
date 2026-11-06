@@ -11,6 +11,7 @@ import { classTitle } from "@/lib/names";
 import { requireTeacher } from "@/server/auth/current";
 import { listCandidates, nextCourseDefaults } from "@/server/classes/classes";
 import { getClassDetail } from "@/server/classes/sessions";
+import { pathSources } from "@/server/paths/class-paths";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Admin.classes");
@@ -50,11 +51,12 @@ async function NewClass({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { teacherId } = await requireTeacher();
-  const [t, locale, { from }, candidates] = await Promise.all([
+  const [t, locale, { from }, candidates, sources] = await Promise.all([
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
     searchParams,
     listCandidates(teacherId),
+    pathSources(teacherId),
   ]);
   const today = tehranDateKey(new Date());
   const fromId = z.uuid().safeParse(from);
@@ -76,6 +78,7 @@ async function NewClass({
       <ClassForm
         defaults={next ?? blank}
         candidates={candidates}
+        sources={sources}
         today={today}
         fromClassId={next?.fromClassId}
       />

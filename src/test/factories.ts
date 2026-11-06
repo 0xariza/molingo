@@ -5,8 +5,11 @@ import {
   classes,
   enrollments,
   leads,
+  learningSources,
   levelCheckSlots,
   sessions,
+  stationSkills,
+  stations,
   students,
   teacherLearners,
   teachers,
@@ -182,4 +185,36 @@ export async function createClass(db: TestDb, { slots, studentIds = [], ...input
       .values(studentIds.map((studentId) => ({ classId: cls.id, studentId })));
   }
   return { ...cls, sessions: rows };
+}
+
+/** A source with a complete map: one station per entry, each with three skills. */
+export async function createSource(
+  db: TestDb,
+  {
+    teacherId,
+    title = "English File A2",
+    level = "A2",
+    stations: list,
+  }: {
+    teacherId: string;
+    title?: string;
+    level?: "A1" | "A2" | "B1" | "B2" | "C1" | "C2";
+    stations: { title: string; plannedSessions: number }[];
+  },
+) {
+  const [source] = await db.insert(learningSources).values({ teacherId, title, level }).returning();
+  const ids: string[] = [];
+  for (const [position, st] of list.entries()) {
+    const [row] = await db
+      .insert(stations)
+      .values({ sourceId: source.id, position, ...st })
+      .returning();
+    await db
+      .insert(stationSkills)
+      .values(
+        [1, 2, 3].map((n, i) => ({ stationId: row.id, position: i, text: `${st.title} ${n}` })),
+      );
+    ids.push(row.id);
+  }
+  return { ...source, stationIds: ids };
 }
