@@ -1138,6 +1138,71 @@
           "not_last": "A later session still belongs to this station.",
           "max_sessions": "A station can have at most 4 sessions."
         }
+      },
+      "examStage": "Build the station assessment →",
+      "examFinal": "Build the final assessment →"
+    },
+    "assessment": {
+      "title": "Assessment",
+      "metaTitle": "Assessment",
+      "back": "After class",
+      "kindStage": "Station check",
+      "kindFinal": "Final assessment",
+      "notAllowed": "An assessment can be set only on a station’s last session or the class’s last session.",
+      "build": "1. Build",
+      "buildHint": "Add questions. Multiple choice and short answers are marked automatically; essays are marked by you.",
+      "minutes": "Answer time (minutes)",
+      "addQuestion": "Add question",
+      "remove": "Remove",
+      "section": "Section",
+      "kind": "Question type",
+      "prompt": "Question",
+      "points": "Points",
+      "options": "Options (one per line)",
+      "correct": "Correct option (number)",
+      "accepted": "Accepted answers (one per line)",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "sections": {
+        "reading": "Reading",
+        "grammar": "Grammar & vocabulary",
+        "writing": "Writing"
+      },
+      "kinds": {
+        "mc": "Multiple choice",
+        "short": "Short answer",
+        "essay": "Essay"
+      },
+      "open": "2. Open for the class",
+      "openHint": "Learners can start only after you open it.",
+      "opened": "Open",
+      "closed": "Closed",
+      "openNow": "Open for the class",
+      "closeNow": "Close",
+      "review": "3. Answers and marks",
+      "noAnswers": "Nobody has started yet.",
+      "submittedState": "Handed in",
+      "startedState": "Writing now",
+      "unmarked": "{n, number} to mark",
+      "sent": "Result sent",
+      "answerOf": "{name} · {score, number} of {max, number}",
+      "given": "Answer",
+      "none": "No answer",
+      "scoreLabel": "Score (0–{max, number})",
+      "mark": "Mark",
+      "feedback": "Feedback",
+      "sendResult": "Send result",
+      "sendHint": "Unlocks when every answer is marked.",
+      "errors": {
+        "invalid": "Check the questions and try again.",
+        "not_found": "Not found.",
+        "not_eligible": "This session can’t have an assessment.",
+        "started": "A learner has already started, so the questions are locked.",
+        "closed": "Closed.",
+        "submitted": "Already handed in.",
+        "unmarked": "Mark every answer first.",
+        "score": "The score is out of range."
       }
     }
   },
@@ -1319,6 +1384,37 @@
       "next": "Next",
       "ready": "Ready",
       "again": "Practise again"
+    },
+    "assessment": {
+      "title": "Assessment",
+      "metaTitle": "Assessment",
+      "kindStage": "Station check",
+      "kindFinal": "Final assessment",
+      "minutes": "{n, number} minutes",
+      "start": "Start",
+      "continue": "Continue",
+      "handedIn": "Handed in. Your teacher will send the result.",
+      "resultReady": "Result",
+      "intro": "Answers are saved when you hand in. You have {n, number} minutes from the moment you start.",
+      "question": "Question {n, number} · {points, number} points",
+      "shortPlaceholder": "Type your answer",
+      "essayPlaceholder": "Write here…",
+      "submit": "Hand in",
+      "submitting": "Sending…",
+      "total": "{score, number} of {max, number}",
+      "feedback": "Teacher’s feedback",
+      "sections": {
+        "reading": "Reading",
+        "grammar": "Grammar & vocabulary",
+        "writing": "Writing"
+      },
+      "errors": {
+        "invalid": "Something is wrong with your answers.",
+        "not_found": "This assessment isn’t open.",
+        "closed": "Time is up.",
+        "submitted": "You already handed this in."
+      },
+      "onPath": "Assessments"
     }
   },
   "Error": {

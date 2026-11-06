@@ -7,11 +7,13 @@ import { CoveredForm } from "@/components/admin/after-class/covered-form";
 import { StationCheck } from "@/components/admin/after-class/station-check";
 import { HomeworkList } from "@/components/admin/after-class/homework-list";
 import { BackLink } from "@/components/admin/learners/back-link";
+import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatTime } from "@/lib/format";
 import { classTitle } from "@/lib/names";
 import { requireTeacher } from "@/server/auth/current";
 import { getAfterClass } from "@/server/homework/after-class";
+import { getAssessment } from "@/server/assessments/assessments";
 import { getStationCheck } from "@/server/paths/station-check";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,10 +42,11 @@ async function AfterClassView({ params }: { params: Promise<{ id: string }> }) {
   const valid = z.uuid().safeParse(id);
   const page = valid.success ? await getAfterClass(teacherId, valid.data) : null;
   if (!page) notFound();
-  const [t, locale, check] = await Promise.all([
+  const [t, locale, check, exam] = await Promise.all([
     getTranslations("Admin.afterClass"),
     getLocale() as Promise<Locale>,
     getStationCheck(teacherId, page.sessionId),
+    getAssessment(teacherId, page.sessionId),
   ]);
   const name = classTitle(page, locale);
   const date = formatDate(page.startsAt, locale);
@@ -97,6 +100,14 @@ async function AfterClassView({ params }: { params: Promise<{ id: string }> }) {
           </div>
           <StationCheck sessionId={page.sessionId} check={check} />
         </section>
+      )}
+
+      {exam && (
+        <p>
+          <Link href={`/admin/sessions/${page.sessionId}/assessment`} className="font-bold">
+            {t(exam.kind === "stage" ? "examStage" : "examFinal")}
+          </Link>
+        </p>
       )}
 
       <section aria-labelledby="homework-title" className="space-y-3">

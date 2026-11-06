@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { requireStudent } from "@/server/auth/current";
+import { Link } from "@/i18n/navigation";
+import { learnerAssessments } from "@/server/assessments/assessments";
 import { learnerPaths } from "@/server/paths/station-check";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -21,11 +23,32 @@ export default function LearnerPathPage() {
 
 async function Path() {
   const user = await requireStudent();
-  const [t, paths] = await Promise.all([getTranslations("Student.path"), learnerPaths(user.id)]);
+  const [t, ta, paths, exams] = await Promise.all([
+    getTranslations("Student.path"),
+    getTranslations("Student.assessment"),
+    learnerPaths(user.id),
+    learnerAssessments(user.id),
+  ]);
 
   return (
     <div className="space-y-5">
       <h1 className="text-4xl sm:text-5xl">{t("title")}</h1>
+      {exams.length > 0 && (
+        <section aria-label={ta("onPath")} className="space-y-2">
+          {exams.map((e) => (
+            <Link
+              key={e.id}
+              href={`/app/assessment/${e.id}`}
+              className="flex min-h-12 items-center justify-between rounded-card border border-brand bg-white px-5 font-bold text-ocean"
+            >
+              <span>{ta(e.kind === "stage" ? "kindStage" : "kindFinal")}</span>
+              <span>
+                {e.publishedAt ? ta("resultReady") : e.submittedAt ? ta("handedIn") : ta("start")}
+              </span>
+            </Link>
+          ))}
+        </section>
+      )}
       {paths.length === 0 && <p>{t("empty")}</p>}
       {paths.map((p) => (
         <ol key={p.classId} className="space-y-3">
