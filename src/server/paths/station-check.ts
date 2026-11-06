@@ -2,6 +2,8 @@ import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import {
+  assignmentRecipients,
+  assignments,
   classPaths,
   classPathStations,
   enrollments,
@@ -10,6 +12,7 @@ import {
   stations,
   studentSkills,
   students,
+  submissions,
 } from "@/db/schema";
 import { reassignSessions } from "./class-paths";
 
@@ -163,6 +166,7 @@ export async function saveStationCheck(
             checkedAt: sql`now()`,
           },
         });
+    await addReinforcements(tx, teacherId, input.sessionId, rows);
     if (input.action === "close")
       await tx
         .update(classPathStations)
@@ -177,6 +181,57 @@ export async function saveStationCheck(
     }
     return { ok: true } as const;
   });
+}
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * An "again" makes the learner a reinforcement homework on that skill, unless they already have
+ * one open (not yet reviewed): one open per learner. It closes when the teacher reviews it.
+ */
+async function addReinforcements(
+  tx: Tx,
+  teacherId: string,
+  sessionId: string,
+  rows: { studentId: string; skillId: string; result: "ready" | "again" }[],
+) {
+  for (const studentId of new Set(rows.map((r) => r.studentId))) {
+    const again = rows.find((r) => r.studentId === studentId && r.result === "again");
+    if (!again) continue;
+    const [open] = await tx
+      .select({ id: assignments.id })
+      .from(assignments)
+      .innerJoin(assignmentRecipients, eq(assignmentRecipients.assignmentId, assignments.id))
+      .leftJoin(
+        submissions,
+        and(eq(submissions.assignmentId, assignments.id), eq(submissions.studentId, studentId)),
+      )
+      .where(
+        and(
+          eq(assignments.reinforcement, true),
+          eq(assignmentRecipients.studentId, studentId),
+          sql`${submissions.status} is distinct from 'reviewed'`,
+        ),
+      )
+      .limit(1);
+    if (open) continue;
+    const [skill] = await tx
+      .select({ text: stationSkills.text })
+      .from(stationSkills)
+      .where(eq(stationSkills.id, again.skillId));
+    const [made] = await tx
+      .insert(assignments)
+      .values({
+        teacherId,
+        sessionId,
+        type: "speaking",
+        title: skill.text,
+        stationSkillId: again.skillId,
+        reinforcement: true,
+      })
+      .returning({ id: assignments.id });
+    await tx.insert(assignmentRecipients).values({ assignmentId: made.id, studentId });
+  }
 }
 
 export type LearnerStation = {

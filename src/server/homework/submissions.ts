@@ -9,6 +9,7 @@ import {
   files,
   sessions,
   students,
+  studentSkills,
   submissionFiles,
   submissions,
   teachers,
@@ -217,7 +218,13 @@ export async function reviewSubmission(
   if (input.decision === "needs_revision" && !input.feedback)
     return { ok: false, error: "feedback_required" };
   const [target] = await db
-    .select({ id: submissions.id, submittedAt: submissions.submittedAt })
+    .select({
+      id: submissions.id,
+      submittedAt: submissions.submittedAt,
+      studentId: submissions.studentId,
+      reinforcement: assignments.reinforcement,
+      skillId: assignments.stationSkillId,
+    })
     .from(submissions)
     .innerJoin(assignments, eq(assignments.id, submissions.assignmentId))
     .where(and(eq(submissions.id, input.id), eq(assignments.teacherId, teacherId)));
@@ -230,6 +237,15 @@ export async function reviewSubmission(
       reviewedAt: input.decision === "reviewed" ? now : null,
     })
     .where(eq(submissions.id, input.id));
+  // A reviewed reinforcement closes the skill for this learner.
+  if (input.decision === "reviewed" && target.reinforcement && target.skillId)
+    await db
+      .insert(studentSkills)
+      .values({ studentId: target.studentId, stationSkillId: target.skillId, result: "ready" })
+      .onConflictDoUpdate({
+        target: [studentSkills.studentId, studentSkills.stationSkillId],
+        set: { result: "ready", checkedAt: now },
+      });
 
   const [next] = await db
     .select({ id: submissions.id })

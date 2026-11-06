@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { asc, eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { sessions, students, teacherLearners } from "@/db/schema";
+import { assignments, sessions, students, teacherLearners } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
 import { createTeacher, createUser, resetDb } from "@/test/factories";
 import { createClass, enroll, newClassSchema } from "@/server/classes/classes";
@@ -226,5 +226,17 @@ describe("station check", () => {
     const [path] = await learnerPaths(user);
     expect(path.stations[0].skills.map((k) => k.result)).toEqual(["ready", "again", null]);
     expect(path.stations.map((s) => s.state)).toEqual(["current", "next"]);
+  });
+
+  it('an "again" makes one open reinforcement; reviewing it makes the skill ready', async () => {
+    const { classId, saraId } = await setup();
+    const last = await holdSecond(classId, saraId);
+    const [a] = (await getStationCheck(teacher.teacherId, last))!.skills;
+    const again = [{ studentId: saraId, skillId: a.id, result: "again" as const }];
+    await saveStationCheck(teacher.teacherId, { sessionId: last, results: again, action: "hold" });
+    await saveStationCheck(teacher.teacherId, { sessionId: last, results: again, action: "hold" });
+    const made = await db.select().from(assignments).where(eq(assignments.reinforcement, true));
+    expect(made).toHaveLength(1); // not a second while the first is open
+    expect(made[0]).toMatchObject({ title: a.text, stationSkillId: a.id });
   });
 });

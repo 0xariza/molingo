@@ -1,0 +1,1 @@
+ALTER TABLE "assignments" ADD COLUMN "reinforcement" boolean DEFAULT false NOT NULL;

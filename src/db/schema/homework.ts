@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   integer,
   pgTable,
@@ -47,6 +48,8 @@ export const assignments = pgTable(
     body: text(),
     /** The station skill it practises, when the class has a path. */
     stationSkillId: uuid().references(() => stationSkills.id, { onDelete: "set null" }),
+    /** Made by the app from a station check's "again"; one open per learner. */
+    reinforcement: boolean().notNull().default(false),
     dueAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
