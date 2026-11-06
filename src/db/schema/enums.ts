@@ -40,3 +40,5 @@ export const submissionStatusEnum = pgEnum("submission_status", [
   "needs_revision",
   "reviewed",
 ]);
+
+export const skillResultEnum = pgEnum("skill_result", ["ready", "again"]);

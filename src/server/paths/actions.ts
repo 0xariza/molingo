@@ -5,6 +5,7 @@ import { redirect } from "@/i18n/navigation";
 import { requireTeacher } from "../auth/current";
 import { fieldErrors, formLocale, text } from "../forms";
 import { pathField, saveClassPath } from "./class-paths";
+import { checkSchema, saveStationCheck } from "./station-check";
 import {
   addStationAfter,
   createSource,
@@ -88,6 +89,31 @@ export async function savePathAction(_: SourceFormState, form: FormData): Promis
   if (!parsed.success) return { status: "error", error: parsed.error.issues[0]?.message ?? "path" };
   const error = await saveClassPath(teacherId, text(form, "classId"), parsed.data);
   if (error) return { status: "error", error };
+  refresh();
+  return { status: "success" };
+}
+
+/** Error keys map to messages under `Admin.afterClass.check.errors`. */
+export type CheckFormState = { status: "idle" | "error" | "success"; error?: string };
+
+/** Radio names are `r:<studentId>:<skillId>`; the clicked button says close or hold. */
+export async function saveStationCheckAction(
+  _: CheckFormState,
+  form: FormData,
+): Promise<CheckFormState> {
+  const { teacherId } = await requireTeacher();
+  const results = [...form.entries()].flatMap(([key, value]) => {
+    const [tag, studentId, skillId] = key.split(":");
+    return tag === "r" ? [{ studentId, skillId, result: String(value) }] : [];
+  });
+  const parsed = checkSchema.safeParse({
+    sessionId: text(form, "sessionId"),
+    action: text(form, "action"),
+    results,
+  });
+  if (!parsed.success) return { status: "error", error: "invalid" };
+  const saved = await saveStationCheck(teacherId, parsed.data);
+  if (!saved.ok) return { status: "error", error: saved.error };
   refresh();
   return { status: "success" };
 }

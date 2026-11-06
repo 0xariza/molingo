@@ -134,6 +134,13 @@
       "when": 1793984450775,
       "tag": "0018_homework_types",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793986996383,
+      "tag": "0019_station_check",
+      "breakpoints": true
     }
   ]
 }

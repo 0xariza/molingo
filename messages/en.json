@@ -1122,6 +1122,22 @@
         "title": "Assign homework",
         "lead": "Homework is given on a held session’s after-class page. Pick the class and session.",
         "go": "Open after class"
+      },
+      "check": {
+        "title": "3. Station check",
+        "hint": "This is the station’s last session. Mark each skill per learner, then close the station or keep it one more session.",
+        "ready": "Ready",
+        "again": "Again",
+        "close": "Station done",
+        "hold": "One more session",
+        "closed": "This station is closed.",
+        "saved": "Saved.",
+        "errors": {
+          "invalid": "Check the marks and try again.",
+          "not_found": "This session has no station.",
+          "not_last": "A later session still belongs to this station.",
+          "max_sessions": "A station can have at most 4 sessions."
+        }
       }
     }
   },
@@ -1132,7 +1148,8 @@
       "home": "Home",
       "schedule": "My schedule",
       "classes": "My classes",
-      "homework": "Homework"
+      "homework": "Homework",
+      "path": "My path"
     },
     "home": {
       "greeting": "Hi {name}, welcome.",
@@ -1292,6 +1309,16 @@
         "mismatch": "The two new passwords don't match.",
         "rate_limited": "Too many attempts. Try again in 15 minutes."
       }
+    },
+    "path": {
+      "title": "My path",
+      "empty": "Your class has no learning path yet.",
+      "station": "Station {n, number}",
+      "done": "Done",
+      "current": "Now",
+      "next": "Next",
+      "ready": "Ready",
+      "again": "Practise again"
     }
   },
   "Error": {

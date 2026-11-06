@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
 import { CoveredForm } from "@/components/admin/after-class/covered-form";
+import { StationCheck } from "@/components/admin/after-class/station-check";
 import { HomeworkList } from "@/components/admin/after-class/homework-list";
 import { BackLink } from "@/components/admin/learners/back-link";
 import type { Locale } from "@/i18n/routing";
@@ -11,6 +12,7 @@ import { formatDate, formatTime } from "@/lib/format";
 import { classTitle } from "@/lib/names";
 import { requireTeacher } from "@/server/auth/current";
 import { getAfterClass } from "@/server/homework/after-class";
+import { getStationCheck } from "@/server/paths/station-check";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Admin.afterClass");
@@ -38,9 +40,10 @@ async function AfterClassView({ params }: { params: Promise<{ id: string }> }) {
   const valid = z.uuid().safeParse(id);
   const page = valid.success ? await getAfterClass(teacherId, valid.data) : null;
   if (!page) notFound();
-  const [t, locale] = await Promise.all([
+  const [t, locale, check] = await Promise.all([
     getTranslations("Admin.afterClass"),
     getLocale() as Promise<Locale>,
+    getStationCheck(teacherId, page.sessionId),
   ]);
   const name = classTitle(page, locale);
   const date = formatDate(page.startsAt, locale);
@@ -83,6 +86,18 @@ async function AfterClassView({ params }: { params: Promise<{ id: string }> }) {
         </div>
         <CoveredForm page={page} />
       </section>
+
+      {check && (
+        <section aria-labelledby="check-title" className={card}>
+          <div>
+            <h2 id="check-title" className={heading}>
+              {t("check.title")}
+            </h2>
+            <p className="text-sm">{t("check.hint")}</p>
+          </div>
+          <StationCheck sessionId={page.sessionId} check={check} />
+        </section>
+      )}
 
       <section aria-labelledby="homework-title" className="space-y-3">
         <div>

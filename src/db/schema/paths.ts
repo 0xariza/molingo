@@ -12,9 +12,9 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { id, timestamps } from "./_shared";
-import { cefrLevelEnum } from "./enums";
+import { cefrLevelEnum, skillResultEnum } from "./enums";
 import { classes, sessions } from "./classes";
-import { teachers } from "./identity";
+import { students, teachers } from "./identity";
 
 /**
  * A book or course a teacher teaches from, at one level. Its station map is built once and reused
@@ -104,6 +104,8 @@ export const classPathStations = pgTable(
     position: smallint().notNull(),
     included: boolean().notNull().default(true),
     plannedSessions: smallint().notNull(),
+    /** Set by the teacher in the station check ("station done"); never by holding a session. */
+    closedAt: timestamp({ withTimezone: true }),
   },
   (t) => [
     uniqueIndex().on(t.pathId, t.stationId),
@@ -124,4 +126,21 @@ export const sessionSkills = pgTable(
       .references(() => stationSkills.id, { onDelete: "cascade" }),
   },
   (t) => [primaryKey({ columns: [t.sessionId, t.stationSkillId] })],
+);
+
+/** A learner's result for one station skill, from the station check. Skills travel with the learner. */
+export const studentSkills = pgTable(
+  "student_skills",
+  {
+    studentId: uuid()
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    stationSkillId: uuid()
+      .notNull()
+      .references(() => stationSkills.id, { onDelete: "cascade" }),
+    result: skillResultEnum().notNull(),
+    sessionId: uuid().references(() => sessions.id, { onDelete: "set null" }),
+    checkedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.studentId, t.stationSkillId] })],
 );

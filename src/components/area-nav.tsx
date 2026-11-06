@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  MapTrifold,
   CalendarDots,
   ChalkboardTeacher,
   ClipboardText,
@@ -23,6 +24,7 @@ const ICONS = {
   teachers: GraduationCap,
   homework: ClipboardText,
   sources: BookOpen,
+  path: MapTrifold,
 } satisfies Record<string, Icon>;
 
 export type AreaNavItem = {
@@ -38,6 +40,7 @@ export type AreaNavItem = {
     | "/app/classes"
     | "/app/schedule"
     | "/app/homework"
+    | "/app/path"
     | "/owner";
   label: string;
   icon: keyof typeof ICONS;

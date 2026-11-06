@@ -29,6 +29,7 @@ async function StudentGate({ children }: { children: React.ReactNode }) {
       account={{ phone: formatPhone(user.phone) }}
       items={[
         { href: "/app", label: t("nav.home"), icon: "home" },
+        { href: "/app/path", label: t("nav.path"), icon: "path" },
         { href: "/app/classes", label: t("nav.classes"), icon: "classes" },
         { href: "/app/schedule", label: t("nav.schedule"), icon: "schedule" },
         {

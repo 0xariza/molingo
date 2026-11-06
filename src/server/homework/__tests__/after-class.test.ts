@@ -10,6 +10,7 @@ import { createTeacher, createUser, resetDb } from "@/test/factories";
 import { createClass, enroll, newClassSchema } from "@/server/classes/classes";
 import { markHeld } from "@/server/classes/sessions";
 import { saveClassPath } from "@/server/paths/class-paths";
+import { getStationCheck, learnerPaths, saveStationCheck } from "@/server/paths/station-check";
 import {
   createSource,
   getSource,
@@ -179,5 +180,51 @@ describe("after class", () => {
   it("works without a path", async () => {
     const { sessionId } = await setup({ withPath: false });
     expect((await getAfterClass(teacher.teacherId, sessionId, after))!.station).toBeNull();
+  });
+});
+
+describe("station check", () => {
+  async function holdSecond(classId: string, saraId: string) {
+    const [, second] = await db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.classId, classId))
+      .orderBy(asc(sessions.startsAt));
+    await markHeld(
+      teacher.teacherId,
+      second.id,
+      { [saraId]: "present" },
+      fromTehranTime("2026-10-31", "10:00"),
+    );
+    return second.id;
+  }
+
+  it("only the station's last session has a check", async () => {
+    const { classId, sessionId, saraId } = await setup();
+    expect(await getStationCheck(teacher.teacherId, sessionId)).toBeNull();
+    const last = await holdSecond(classId, saraId);
+    expect(await getStationCheck(teacher.teacherId, last)).toMatchObject({ canHold: true });
+    expect(
+      await saveStationCheck(teacher.teacherId, { sessionId, results: [], action: "close" }),
+    ).toEqual({ ok: false, error: "not_last" });
+  });
+
+  it("closing marks results and the station done; holding adds a session", async () => {
+    const { classId, saraId } = await setup();
+    const last = await holdSecond(classId, saraId);
+    const check = (await getStationCheck(teacher.teacherId, last))!;
+    const [a, b] = check.skills;
+    const results = [
+      { studentId: saraId, skillId: a.id, result: "ready" as const },
+      { studentId: saraId, skillId: b.id, result: "again" as const },
+    ];
+    expect(
+      await saveStationCheck(teacher.teacherId, { sessionId: last, results, action: "hold" }),
+    ).toEqual({ ok: true });
+    expect((await getStationCheck(teacher.teacherId, last)) ?? null).toBeNull(); // a later session joined the station
+    const user = (await db.select().from(students).where(eq(students.id, saraId)))[0].userId!;
+    const [path] = await learnerPaths(user);
+    expect(path.stations[0].skills.map((k) => k.result)).toEqual(["ready", "again", null]);
+    expect(path.stations.map((s) => s.state)).toEqual(["current", "next"]);
   });
 });
