@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { useActionState } from "react";
 import { ErrorAlert } from "@/components/ui/alert";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { saveStationCheckAction, type CheckFormState } from "@/server/paths/actions";
 import type { getStationCheck } from "@/server/paths/station-check";
 
@@ -63,21 +64,19 @@ export function StationCheck({
         ))}
       </div>
       <div className="flex flex-wrap gap-3">
-        <button
-          name="action"
-          value="close"
-          className="min-h-11 rounded-pill bg-brand px-6 font-bold text-white"
-        >
+        <SubmitButton name="action" value="close" pendingLabel={t("saving")} className="">
           {t("close")}
-        </button>
+        </SubmitButton>
         {check.canHold && (
-          <button
+          <SubmitButton
             name="action"
             value="hold"
-            className="min-h-11 rounded-pill border-[1.5px] border-line px-6 font-bold text-ocean"
+            pendingLabel={t("saving")}
+            variant="ghost"
+            className=""
           >
             {t("hold")}
-          </button>
+          </SubmitButton>
         )}
       </div>
     </form>

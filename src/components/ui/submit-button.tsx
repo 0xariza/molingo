@@ -16,6 +16,8 @@ export function SubmitButton({
   className = "w-full",
   variant = "primary",
   blocked = false,
+  name,
+  value,
 }: {
   children: ReactNode;
   pendingLabel: string;
@@ -23,6 +25,9 @@ export function SubmitButton({
   variant?: ButtonVariant;
   /** The form isn't ready to send yet. */
   blocked?: boolean;
+  /** For forms with several submit buttons: which one was pressed. */
+  name?: string;
+  value?: string;
 }) {
   const { pending } = useFormStatus();
   const hydrated = useSyncExternalStore(
@@ -34,6 +39,8 @@ export function SubmitButton({
   return (
     <button
       type="submit"
+      name={name}
+      value={value}
       disabled={disabled}
       aria-disabled={disabled}
       className={buttonClass(variant, className)}

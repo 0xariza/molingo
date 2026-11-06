@@ -90,6 +90,16 @@ async function AfterClassView({ params }: { params: Promise<{ id: string }> }) {
         <CoveredForm page={page} />
       </section>
 
+      <section aria-labelledby="homework-title" className="space-y-3">
+        <div>
+          <h2 id="homework-title" className={heading}>
+            {t("homework")}
+          </h2>
+          <p className="text-sm">{t("homeworkHint")}</p>
+        </div>
+        <HomeworkList page={page} />
+      </section>
+
       {check && (
         <section aria-labelledby="check-title" className={card}>
           <div>
@@ -109,16 +119,6 @@ async function AfterClassView({ params }: { params: Promise<{ id: string }> }) {
           </Link>
         </p>
       )}
-
-      <section aria-labelledby="homework-title" className="space-y-3">
-        <div>
-          <h2 id="homework-title" className={heading}>
-            {t("homework")}
-          </h2>
-          <p className="text-sm">{t("homeworkHint")}</p>
-        </div>
-        <HomeworkList page={page} />
-      </section>
     </>
   );
 }

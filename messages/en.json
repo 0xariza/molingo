@@ -1137,7 +1137,8 @@
           "not_found": "This session has no station.",
           "not_last": "A later session still belongs to this station.",
           "max_sessions": "A station can have at most 4 sessions."
-        }
+        },
+        "saving": "Saving…"
       },
       "examStage": "Build the station assessment →",
       "examFinal": "Build the final assessment →"
