@@ -90,10 +90,10 @@ describe("visitorLevelCheck", () => {
 });
 
 describe("teacherLevelCheck", () => {
-  it("lets Mona in an hour early and half an hour after the end", async () => {
+  it("lets Mona in ten minutes early and half an hour after the end", async () => {
     const { slot } = await booked();
-    expect((await teacherLevelCheck(teacherId, slot.id, plus(-61))).ok).toBe(false);
-    expect(await teacherLevelCheck(teacherId, slot.id, plus(-60))).toMatchObject({
+    expect((await teacherLevelCheck(teacherId, slot.id, plus(-11))).ok).toBe(false);
+    expect(await teacherLevelCheck(teacherId, slot.id, plus(-10))).toMatchObject({
       ok: true,
       room: { role: "teacher" },
     });

@@ -94,7 +94,7 @@ describe("roomFor", () => {
 
   it("lets Mona into any session with her own name", async () => {
     const { mona, first } = await setup();
-    expect(await roomFor(mona, first.id, at("07:10"))).toMatchObject({
+    expect(await roomFor(mona, first.id, at("07:50"))).toMatchObject({
       ok: true,
       room: { role: "teacher", name: "Mona", capacity: 3 },
     });
