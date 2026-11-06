@@ -10,6 +10,7 @@ import { createTeacher, createUser, resetDb } from "@/test/factories";
 import { createClass, enroll, newClassSchema } from "@/server/classes/classes";
 import { markHeld } from "@/server/classes/sessions";
 import { saveClassPath } from "@/server/paths/class-paths";
+import { learnerProgress, saveRecording } from "@/server/paths/progress";
 import { getStationCheck, learnerPaths, saveStationCheck } from "@/server/paths/station-check";
 import {
   createSource,
@@ -238,5 +239,28 @@ describe("station check", () => {
     const made = await db.select().from(assignments).where(eq(assignments.reinforcement, true));
     expect(made).toHaveLength(1); // not a second while the first is open
     expect(made[0]).toMatchObject({ title: a.text, stationSkillId: a.id });
+  });
+
+  it("counts ready and again skills and keeps one audio recording", async () => {
+    const { classId, saraId } = await setup();
+    const last = await holdSecond(classId, saraId);
+    const [a, b] = (await getStationCheck(teacher.teacherId, last))!.skills;
+    await saveStationCheck(teacher.teacherId, {
+      sessionId: last,
+      results: [
+        { studentId: saraId, skillId: a.id, result: "ready" },
+        { studentId: saraId, skillId: b.id, result: "again" },
+      ],
+      action: "close",
+    });
+    const user = (await db.select().from(students).where(eq(students.id, saraId)))[0].userId!;
+    expect(
+      await saveRecording(user, "before", [new File(["x"], "a.txt", { type: "text/plain" })]),
+    ).toEqual({ ok: false, error: "not_audio" });
+    expect(
+      await saveRecording(user, "before", [new File(["x"], "a.webm", { type: "audio/webm" })]),
+    ).toEqual({ ok: true });
+    expect(await learnerProgress(user)).toMatchObject({ stationsDone: 1, ready: 1, again: 1 });
+    expect((await learnerProgress(user))!.recordings).toHaveLength(1);
   });
 });

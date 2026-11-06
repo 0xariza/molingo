@@ -8,7 +8,9 @@ import {
   students,
   submissionFiles,
   submissions,
+  teacherLearners,
   teachers,
+  voiceRecordings,
 } from "@/db/schema";
 
 type StoredFile = typeof files.$inferSelect;
@@ -18,6 +20,21 @@ type StoredFile = typeof files.$inferSelect;
  * answer to it), a learner it was given to (its files), or a learner (their own answer's files).
  */
 export async function readableFile(userId: string, fileId: string): Promise<StoredFile | null> {
+  const [rec] = await db
+    .select({ file: files, studentId: students.id, studentUserId: students.userId })
+    .from(voiceRecordings)
+    .innerJoin(files, eq(files.id, voiceRecordings.fileId))
+    .innerJoin(students, eq(students.id, voiceRecordings.studentId))
+    .where(eq(voiceRecordings.fileId, fileId));
+  if (rec) {
+    if (rec.studentUserId === userId) return rec.file;
+    const [mine] = await db
+      .select({ id: teachers.id })
+      .from(teachers)
+      .innerJoin(teacherLearners, eq(teacherLearners.teacherId, teachers.id))
+      .where(and(eq(teachers.userId, userId), eq(teacherLearners.studentId, rec.studentId)));
+    return mine ? rec.file : null;
+  }
   const [onAssignment, onAnswer] = await Promise.all([
     db
       .select({ file: files, teacherUserId: teachers.userId, assignmentId: assignments.id })

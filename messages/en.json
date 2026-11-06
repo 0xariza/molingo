@@ -1223,7 +1223,9 @@
       "aiTag": "Always-on tutor · Coming soon",
       "aiTitle": "Practise speaking, any time",
       "aiBody": "Soon you'll practise between classes with an AI tutor that knows your roadmap.",
-      "seeAll": "Full schedule"
+      "seeAll": "Full schedule",
+      "station": "Station {n, number}",
+      "skillsReady": "{n, number} of {total, number} skills ready"
     },
     "schedule": {
       "title": "My schedule",
@@ -1383,7 +1385,8 @@
       "current": "Now",
       "next": "Next",
       "ready": "Ready",
-      "again": "Practise again"
+      "again": "Practise again",
+      "progress": "My progress"
     },
     "assessment": {
       "title": "Assessment",
@@ -1415,6 +1418,28 @@
         "submitted": "You already handed this in."
       },
       "onPath": "Assessments"
+    },
+    "progress": {
+      "title": "My progress",
+      "stations": "stations done",
+      "of": "{n, number} of {total, number}",
+      "ready": "skills ready",
+      "again": "to practise again",
+      "beforeAfter": "Before and after",
+      "beforeAfterHint": "Record yourself speaking now, and again at the end of a station. Only you and your teacher can hear these.",
+      "before": "Before",
+      "after": "After",
+      "saveBefore": "Save my “before”",
+      "saveAfter": "Save my “after”",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "errors": {
+        "empty": "Record something first.",
+        "not_audio": "Only audio can be saved here.",
+        "file_type": "This file type isn’t allowed.",
+        "file_size": "The recording is too large.",
+        "file_count": "Only one recording at a time."
+      }
     }
   },
   "Error": {

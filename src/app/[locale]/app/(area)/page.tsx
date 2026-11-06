@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/format";
 import { NextSessionCard, nextSession } from "@/components/student/schedule";
 import { Link } from "@/i18n/navigation";
 import { requireStudent } from "@/server/auth/current";
+import { learnerPaths } from "@/server/paths/station-check";
 import { learnerSchedule } from "@/server/scheduling/learner";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -31,11 +32,14 @@ export default function StudentHome() {
 async function Home() {
   const user = await requireStudent();
   const now = new Date();
-  const [t, locale, sessions] = await Promise.all([
+  const [t, locale, sessions, paths] = await Promise.all([
     getTranslations("Student.home"),
     getLocale() as Promise<Locale>,
     learnerSchedule(user.id, now),
+    learnerPaths(user.id),
   ]);
+  const stations = paths.flatMap((p) => p.stations);
+  const current = stations.find((s) => s.state === "current");
   const next = nextSession(sessions);
 
   return (
@@ -75,6 +79,26 @@ async function Home() {
             <p className="mt-1">{t("nextEmpty")}</p>
           </div>
         </section>
+      )}
+
+      {current && (
+        <Link
+          href="/app/path"
+          className="block space-y-1 rounded-card border border-hairline bg-white p-6"
+        >
+          <p className="text-sm font-bold text-cinnamon-ink">
+            {t("station", { n: stations.indexOf(current) + 1 })}
+          </p>
+          <h2 className="font-sans text-lg font-extrabold normal-case tracking-normal" dir="auto">
+            {current.title}
+          </h2>
+          <p>
+            {t("skillsReady", {
+              n: current.skills.filter((k) => k.result === "ready").length,
+              total: current.skills.length,
+            })}
+          </p>
+        </Link>
       )}
 
       <section className="space-y-2 rounded-card bg-whale p-6 text-ocean">

@@ -12,9 +12,10 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { id, timestamps } from "./_shared";
-import { cefrLevelEnum, skillResultEnum } from "./enums";
+import { cefrLevelEnum, recordingKindEnum, skillResultEnum } from "./enums";
 import { classes, sessions } from "./classes";
 import { students, teachers } from "./identity";
+import { files } from "./homework";
 
 /**
  * A book or course a teacher teaches from, at one level. Its station map is built once and reused
@@ -143,4 +144,21 @@ export const studentSkills = pgTable(
     checkedAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.studentId, t.stationSkillId] })],
+);
+
+/** The learner's own voice: the first-day "before" and a later "after". Private to learner and teacher. */
+export const voiceRecordings = pgTable(
+  "voice_recordings",
+  {
+    id: id(),
+    studentId: uuid()
+      .notNull()
+      .references(() => students.id, { onDelete: "cascade" }),
+    kind: recordingKindEnum().notNull(),
+    fileId: uuid()
+      .notNull()
+      .references(() => files.id, { onDelete: "cascade" }),
+    createdAt: timestamp({ withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index().on(t.studentId, t.createdAt)],
 );

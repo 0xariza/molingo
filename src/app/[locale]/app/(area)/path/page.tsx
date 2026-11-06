@@ -33,6 +33,12 @@ async function Path() {
   return (
     <div className="space-y-5">
       <h1 className="text-4xl sm:text-5xl">{t("title")}</h1>
+      <Link
+        href="/app/path/progress"
+        className="inline-flex min-h-touch items-center font-bold text-brand hover:underline"
+      >
+        {t("progress")}
+      </Link>
       {exams.length > 0 && (
         <section aria-label={ta("onPath")} className="space-y-2">
           {exams.map((e) => (

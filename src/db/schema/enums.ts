@@ -42,3 +42,5 @@ export const submissionStatusEnum = pgEnum("submission_status", [
 ]);
 
 export const skillResultEnum = pgEnum("skill_result", ["ready", "again"]);
+
+export const recordingKindEnum = pgEnum("recording_kind", ["before", "after"]);

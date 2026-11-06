@@ -2,9 +2,11 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "@/i18n/navigation";
-import { requireTeacher } from "../auth/current";
+import { requireStudent, requireTeacher } from "../auth/current";
+import { uploadedFiles } from "../files/storage";
 import { fieldErrors, formLocale, text } from "../forms";
 import { pathField, saveClassPath } from "./class-paths";
+import { recordingSchema, saveRecording } from "./progress";
 import { checkSchema, saveStationCheck } from "./station-check";
 import {
   addStationAfter,
@@ -113,6 +115,20 @@ export async function saveStationCheckAction(
   });
   if (!parsed.success) return { status: "error", error: "invalid" };
   const saved = await saveStationCheck(teacherId, parsed.data);
+  if (!saved.ok) return { status: "error", error: saved.error };
+  refresh();
+  return { status: "success" };
+}
+
+/** Error keys map to messages under `Student.progress.errors`. */
+export async function saveRecordingAction(
+  _: CheckFormState,
+  form: FormData,
+): Promise<CheckFormState> {
+  const user = await requireStudent();
+  const parsed = recordingSchema.safeParse({ kind: text(form, "kind") });
+  if (!parsed.success) return { status: "error", error: "empty" };
+  const saved = await saveRecording(user.id, parsed.data.kind, uploadedFiles(form, "files"));
   if (!saved.ok) return { status: "error", error: saved.error };
   refresh();
   return { status: "success" };
