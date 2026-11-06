@@ -48,7 +48,7 @@ export function ReactionTray({ onReact }: { onReact: (key: ReactionKey) => void 
     <div
       role="group"
       aria-label={t("label")}
-      className="mx-auto flex w-fit max-w-full gap-1 rounded-pill bg-room-raised p-1.5 shadow-[0_8px_24px_rgba(0,0,0,.4)]"
+      className="mx-auto flex w-fit gap-1 rounded-pill bg-room-raised p-1.5 shadow-[0_8px_24px_rgba(0,0,0,.4)]"
     >
       {(Object.keys(REACTIONS) as ReactionKey[]).map((key) => (
         <button

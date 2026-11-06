@@ -2,10 +2,20 @@
 
 import { useTrackToggle, type TrackReferenceOrPlaceholder } from "@livekit/components-react";
 import { Track } from "livekit-client";
-import { Maximize2, Mic, MicOff, Minimize2, PhoneOff, Video, VideoOff } from "lucide-react";
+import {
+  Maximize2,
+  Mic,
+  MicOff,
+  Minimize2,
+  MonitorUp,
+  PhoneOff,
+  Video,
+  VideoOff,
+} from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ComponentProps } from "react";
 import { createPortal } from "react-dom";
+import { ReactionStream, ReactionTray } from "./reactions";
 import { Tile } from "./tile";
 
 declare global {
@@ -16,7 +26,7 @@ declare global {
   }
 }
 
-const BIG = { width: 340, height: 340 };
+const BIG = { width: 360, height: 480 };
 const SMALL = { width: 176, height: 100 };
 
 /** Chrome and Edge on desktop only; elsewhere the class simply stays in its tab. */
@@ -54,29 +64,42 @@ export function useFloatWindow(sharing: boolean, auto: boolean) {
   return [win, open] as const;
 }
 
-/** The class in the floating window: the speaker big, a few others, the controls, and a bubble mode. */
+/**
+ * The floating window while you present (as in Meet): what you're sharing on top with your own
+ * video in its corner, then the class, reactions and the controls. It has a bubble mode too.
+ */
 export function FloatWindow({
   win,
+  preview,
   tracks,
+  reactions,
+  onReact,
+  onStopShare,
   onBack,
   onLeave,
 }: {
   win: Window;
+  /** Your own shared screen. */
+  preview: TrackReferenceOrPlaceholder;
   /** The speaker first, then everyone else, you last. */
   tracks: TrackReferenceOrPlaceholder[];
+  reactions: ComponentProps<typeof ReactionStream>["shown"];
+  onReact: ComponentProps<typeof ReactionTray>["onReact"];
+  onStopShare: () => void;
   onBack: () => void;
   onLeave: () => void;
 }) {
   const t = useTranslations("Classroom");
   const [small, setSmall] = useState(false);
-  const [first, ...others] = tracks;
+  const [first] = tracks;
+  const self = tracks.find((tr) => tr.participant.isLocal);
+  const others = tracks.filter((tr) => !tr.participant.isLocal);
   const resize = (to: boolean) => {
     setSmall(to);
     const size = to ? SMALL : BIG;
     win.resizeTo(size.width, size.height);
   };
 
-  if (!first) return null;
   return createPortal(
     small ? (
       <button
@@ -85,38 +108,61 @@ export function FloatWindow({
         onClick={() => resize(false)}
         className="block size-full cursor-pointer bg-room p-0"
       >
-        <Tile trackRef={first} size="small" />
+        {first && <Tile trackRef={first} size="small" />}
       </button>
     ) : (
       <div
         role="region"
         aria-label={t("float.label")}
-        className="flex h-dvh flex-col gap-2 bg-room p-2 text-room-ink"
+        className="flex h-dvh min-w-0 flex-col gap-2 overflow-hidden bg-room p-2 text-room-ink"
       >
-        <div className="relative min-h-0 flex-1">
-          <Tile trackRef={first} />
+        <p className="flex shrink-0 items-center gap-2 px-1 text-sm font-bold">
+          <MonitorUp aria-hidden size={16} className="shrink-0 text-room-teal" />
+          <span className="min-w-0 flex-1 truncate">{t("float.presenting")}</span>
           <button
             type="button"
             aria-label={t("float.minimise")}
             title={t("float.minimise")}
             onClick={() => resize(true)}
-            className="absolute end-2 top-2 grid size-8 place-items-center rounded-[10px] bg-room/70 text-room-ink hover:bg-room"
+            className="grid size-8 shrink-0 place-items-center rounded-[10px] text-room-muted hover:bg-room-line hover:text-room-ink"
           >
             <Minimize2 aria-hidden size={16} />
           </button>
+        </p>
+        <div className="relative min-h-0 flex-1">
+          <Tile trackRef={preview} />
+          {self && (
+            <div className="absolute end-2 bottom-2 aspect-video w-[34%] overflow-hidden rounded-[10px] shadow-[0_4px_16px_rgba(0,0,0,.5)]">
+              <Tile trackRef={self} size="small" self />
+            </div>
+          )}
+          <ReactionStream shown={reactions} className="start-2 bottom-12" />
         </div>
         {others.length > 0 && (
-          <ul className="grid h-16 shrink-0 grid-cols-3 gap-2">
+          <ul className="grid shrink-0 grid-cols-3 gap-2">
             {others.slice(0, 3).map((tr) => (
-              <li key={`${tr.participant.identity}-${tr.source}`}>
-                <Tile trackRef={tr} size="small" self={tr.participant.isLocal} />
+              <li key={`${tr.participant.identity}-${tr.source}`} className="aspect-video">
+                <Tile trackRef={tr} size="small" />
               </li>
             ))}
           </ul>
         )}
-        <div className="flex items-center justify-center gap-2 pb-1">
+        <div className="shrink-0 overflow-x-auto">
+          <ReactionTray onReact={onReact} />
+        </div>
+        <div className="flex shrink-0 items-center justify-center gap-2 pb-1">
           <FloatToggle source={Track.Source.Microphone} />
           <FloatToggle source={Track.Source.Camera} />
+          <button
+            type="button"
+            aria-label={t("controls.stopShare")}
+            aria-pressed
+            title={t("controls.stopShare")}
+            onClick={onStopShare}
+            className="grid size-11 place-items-center rounded-full bg-room-teal-soft text-room-teal hover:bg-room-line"
+          >
+            <MonitorUp aria-hidden size={18} />
+          </button>
           <button
             type="button"
             aria-label={t("float.back")}
@@ -131,10 +177,9 @@ export function FloatWindow({
             aria-label={t("controls.leave")}
             title={t("controls.leave")}
             onClick={onLeave}
-            className="flex h-11 items-center gap-1.5 rounded-pill bg-room-leave px-4 text-sm font-bold text-white"
+            className="grid h-11 w-14 place-items-center rounded-pill bg-room-leave text-white"
           >
             <PhoneOff aria-hidden size={18} />
-            {t("controls.leaveLabel")}
           </button>
         </div>
       </div>

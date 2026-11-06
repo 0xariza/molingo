@@ -8,9 +8,9 @@ import { ErrorAlert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Field, TextareaField } from "@/components/ui/field";
-import { Modal } from "@/components/ui/modal";
 import { SelectMenu } from "@/components/ui/select-menu";
 import { SubmitButton } from "@/components/ui/submit-button";
+import { Link, useRouter } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, tehranClock, tehranDateKey } from "@/lib/format";
 import { classTitle } from "@/lib/names";
@@ -32,18 +32,17 @@ const defaultDue = (target: AssignTarget | undefined) => {
  * Homework for a held session. With `sessionId` (from a session's row on the class page) the
  * session is fixed; otherwise the teacher picks the class, then one of its held sessions.
  */
-export function AssignDialog({
+export function AssignForm({
   targets,
   sessionId,
-  onClose,
 }: {
   targets: AssignTarget[];
   sessionId?: string;
-  onClose: () => void;
 }) {
   const t = useTranslations("Admin.homework.assignDialog");
   const te = useTranslations("Admin.homework.errors");
   const locale = useLocale() as Locale;
+  const router = useRouter();
   const [state, action] = useActionState(assignHomeworkAction, initial);
   const fixed = sessionId
     ? targets.find((c) => c.sessions.some((s) => s.id === sessionId))
@@ -53,25 +52,55 @@ export function AssignDialog({
   const [picked, setPicked] = useState(sessionId ?? target?.sessions[0]?.id ?? "");
   const session = target?.sessions.find((s) => s.id === picked);
   const [due, setDue] = useState(() => defaultDue(target));
+  const [draft, setDraft] = useState({ title: "", body: "", request: "", error: "" });
+  const [drafting, setDrafting] = useState(false);
+  const writeDraft = async () => {
+    setDrafting(true);
+    setDraft((d) => ({ ...d, error: "" }));
+    try {
+      const res = await fetch("/api/homework/draft", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sessionId: picked, request: draft.request }),
+      });
+      if (!res.ok || !res.body) {
+        const { error } = await res.json().catch(() => ({ error: "ai_failed" }));
+        throw new Error(error);
+      }
+      // The first line is the title, the rest (after the blank line) the instructions.
+      const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+      let text = "";
+      for (let part = await reader.read(); !part.done; part = await reader.read()) {
+        text += part.value;
+        const [title, ...rest] = text.split("\n");
+        setDraft((d) => ({ ...d, title, body: rest.join("\n").trimStart() }));
+      }
+    } catch (e) {
+      setDraft((d) => ({ ...d, error: e instanceof Error ? e.message : "ai_failed" }));
+    } finally {
+      setDrafting(false);
+    }
+  };
   const err = (k: string) => state.fieldErrors?.[k] && te(state.fieldErrors[k] as "title");
 
   useEffect(() => {
-    if (state.status === "success") onClose();
-  }, [state.status, onClose]);
+    if (state.status === "success") router.push("/admin/homework");
+  }, [state.status, router]);
 
   const name = target ? classTitle(target, locale) : "";
   const count = target?.learnerCount ?? 0;
   const when = (s: { startsAt: Date }) => formatDate(s.startsAt, locale, { year: false });
 
   return (
-    <Modal
-      title={session && fixed ? t("sessionTitle", { n: session.number }) : t("title")}
-      description={
-        session && fixed ? t("sessionSub", { class: name, date: when(session), count }) : undefined
-      }
-      closeLabel={t("close")}
-      onClose={onClose}
-    >
+    <div className="max-w-2xl space-y-4">
+      <div>
+        <h1 className="text-4xl sm:text-5xl">
+          {session && fixed ? t("sessionTitle", { n: session.number }) : t("title")}
+        </h1>
+        {session && fixed && (
+          <p className="mt-1">{t("sessionSub", { class: name, date: when(session), count })}</p>
+        )}
+      </div>
       {targets.length === 0 ? (
         <p>{t("noTargets")}</p>
       ) : (
@@ -118,14 +147,42 @@ export function AssignDialog({
               <p className="text-sm">{t("onlyHeld")}</p>
             </div>
           )}
+          <div className="space-y-2 rounded-2xl bg-surface p-4">
+            <Field
+              label={t("aiRequest")}
+              name="aiRequest"
+              value={draft.request}
+              maxLength={500}
+              onChange={(e) => setDraft((d) => ({ ...d, request: e.target.value }))}
+              hint={t("aiHint")}
+            />
+            {draft.error && <ErrorAlert>{te(draft.error as "ai_failed")}</ErrorAlert>}
+            <button
+              type="button"
+              onClick={writeDraft}
+              disabled={drafting || !draft.request.trim() || !picked}
+              className={buttonClass("ghost")}
+            >
+              {drafting ? t("aiWorking") : t("aiButton")}
+            </button>
+          </div>
           <Field
             label={t("titleLabel")}
             name="title"
             error={err("title")}
             maxLength={120}
             required
+            value={draft.title}
+            onChange={(e) => setDraft((d) => ({ ...d, title: e.target.value }))}
           />
-          <TextareaField label={t("body")} name="body" rows={4} error={err("body")} />
+          <TextareaField
+            label={t("body")}
+            name="body"
+            rows={4}
+            error={err("body")}
+            value={draft.body}
+            onChange={(e) => setDraft((d) => ({ ...d, body: e.target.value }))}
+          />
           <div className="grid items-start gap-3 sm:grid-cols-2">
             <DatePicker
               label={`${t("due")} ${t("optional")}`}
@@ -170,15 +227,15 @@ export function AssignDialog({
           </div>
           <AttachmentPicker />
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className={buttonClass("ghost")}>
+            <Link href="/admin/homework" className={buttonClass("ghost")}>
               {t("cancel")}
-            </button>
+            </Link>
             <SubmitButton pendingLabel={t("sending")} className="">
               {t("submit", { count })}
             </SubmitButton>
           </div>
         </form>
       )}
-    </Modal>
+    </div>
   );
 }

@@ -55,7 +55,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Locale } from "@/i18n/routing";
 import { formatNumber } from "@/lib/format";
 import { canAutoFloat } from "@/lib/float-window";
-import { bestTileWidth } from "@/lib/video-grid";
+import { gridTileSize } from "@/lib/video-grid";
 import {
   useAudioOnly,
   useBoxSize,
@@ -218,6 +218,11 @@ export function Room({
     setAudioOnly(true);
     localParticipant.setCameraEnabled(false);
   };
+  // The way back is as short as the way out: one tap brings your camera and everyone's video back.
+  const goVideo = () => {
+    setAudioOnly(false);
+    localParticipant.setCameraEnabled(true);
+  };
 
   const notice: NoticeProps | null =
     state === ConnectionState.Connecting
@@ -256,7 +261,11 @@ export function Room({
                   : !teacherHere
                     ? { text: t("notice.noTeacher"), tone: "info" }
                     : audioOnly
-                      ? { text: t("notice.audioOnly"), tone: "info" }
+                      ? {
+                          text: t("notice.audioOnly"),
+                          tone: "info",
+                          action: { label: t("controls.showVideo"), onClick: goVideo },
+                        }
                       : null;
 
   // Pinned beats a shared screen, which beats the grid. Pins and where your own video sits are
@@ -265,7 +274,9 @@ export function Room({
   const pinnedTrack = pinned ? tracks.find((tr) => keyOf(tr) === pinned) : undefined;
   const speaker = others.find((tr) => speaking.includes(tr.participant)) ?? others[0];
   const spotlight = pinnedTrack ?? share ?? (narrow || view === "speaker" ? speaker : undefined);
-  const selfMode = selfPick !== "auto" ? selfPick : spotlight && !narrow ? "grid" : "float";
+  // While you present, the big spot holds the "you're presenting" card (see PresentingCard).
+  const big = !!spotlight || presenting;
+  const selfMode = selfPick !== "auto" ? selfPick : big && !narrow ? "grid" : "float";
   const pinAction = (tr: TrackReferenceOrPlaceholder): TileAction =>
     pinned === keyOf(tr)
       ? { label: t("tile.unpin"), icon: PinOff, onClick: () => setPinned(null) }
@@ -303,7 +314,7 @@ export function Room({
   const rest = [selfMode === "grid" ? self : undefined, ...others, share].filter(
     (tr): tr is TrackReferenceOrPlaceholder => !!tr && tr !== spotlight,
   );
-  const alone = others.length === 0 && !spotlight;
+  const alone = others.length === 0 && !big;
   const floating = self && spotlight !== self && selfMode !== "grid" && (narrow || !alone) && (
     <FloatingSelf
       narrow={narrow}
@@ -341,11 +352,21 @@ export function Room({
     </>
   );
 
+  const presentingCard = (
+    <PresentingCard
+      wholeScreen={wholeScreen}
+      canFloat={!narrow && !wholeScreen && !floatWin && floatSupported()}
+      onFloat={() => openFloat().catch(() => {})}
+      onStop={() => localParticipant.setScreenShareEnabled(false)}
+    />
+  );
   const stage = narrow ? (
     <div className="flex min-h-0 flex-1 flex-col gap-2.5">
       <div className="relative min-h-0 flex-1">
         {spotlight ? (
           tile(spotlight)
+        ) : presenting ? (
+          presentingCard
         ) : (
           <Alone text={teacher ? t("stage.aloneTeacher") : t("stage.aloneLearner")} />
         )}
@@ -354,8 +375,15 @@ export function Room({
       {rest.length > 0 && (
         <ul aria-label={t("stage.label")} className="flex gap-2 overflow-x-auto">
           {rest.map((tr) => (
-            <li key={keyOf(tr)} className="h-26 w-21 shrink-0">
+            <li key={keyOf(tr)} className="relative h-26 w-21 shrink-0">
               {tile(tr, "small")}
+              {/* A tap on a thumbnail puts that person on the big screen (a ⋮ menu is too small a target). */}
+              <button
+                type="button"
+                aria-label={t("tile.pin")}
+                onClick={() => setPinned(keyOf(tr))}
+                className="absolute inset-0 rounded-[14px]"
+              />
             </li>
           ))}
         </ul>
@@ -366,11 +394,13 @@ export function Room({
       aria-label={t("stage.label")}
       // With a big tile, the people stand in a column beside it (on the right, like the panel), so
       // a shared screen keeps the full height.
-      className={`flex min-h-0 min-w-0 flex-[999_1_640px] gap-3 ${spotlight ? "rtl:flex-row-reverse" : "flex-col"}`}
+      className={`flex min-h-0 min-w-0 flex-[999_1_640px] gap-3 ${big ? "rtl:flex-row-reverse" : "flex-col"}`}
     >
       <div className="relative min-h-0 min-w-0 flex-1">
         {spotlight ? (
           tile(spotlight)
+        ) : presenting ? (
+          presentingCard
         ) : alone ? (
           <Alone text={teacher ? t("stage.aloneTeacher") : t("stage.aloneLearner")}>
             {self && (
@@ -382,11 +412,7 @@ export function Room({
         ) : (
           <ul ref={grid} className="flex size-full flex-wrap content-center justify-center gap-3">
             {rest.map((tr) => (
-              <li
-                key={keyOf(tr)}
-                className="aspect-video"
-                style={{ width: bestTileWidth(gridSize, rest.length, 12) }}
-              >
+              <li key={keyOf(tr)} style={gridTileSize(gridSize, rest.length, 12)}>
                 {tile(tr)}
               </li>
             ))}
@@ -394,10 +420,10 @@ export function Room({
         )}
         {overlays}
       </div>
-      {spotlight && rest.length > 0 && (
-        <ul className="flex w-60 shrink-0 flex-col gap-3 overflow-y-auto">
+      {big && rest.length > 0 && (
+        <ul className="flex w-62.5 shrink-0 flex-col gap-3 overflow-y-auto">
           {rest.map((tr) => (
-            <li key={keyOf(tr)} className="aspect-video w-full shrink-0 overflow-hidden">
+            <li key={keyOf(tr)} className="min-h-32 flex-1 basis-0 overflow-hidden rounded-[20px]">
               {tile(tr, "small")}
             </li>
           ))}
@@ -438,6 +464,7 @@ export function Room({
       label={t("visitor.button")}
       action={t("visitor.button")}
       pressed={panel === "visitor"}
+      side={!narrow}
       onClick={() => toggle("visitor")}
     />
   ) : (
@@ -446,6 +473,7 @@ export function Room({
       label={t("controls.people")}
       action={hands ? t("controls.peopleHands", { count: hands }) : t("controls.people")}
       pressed={panel === "people"}
+      side={!narrow}
       badge={hands ? { text: n(hands), tone: "hand" } : undefined}
       onClick={() => toggle("people")}
     />
@@ -456,6 +484,7 @@ export function Room({
       label={t("controls.chat")}
       action={unread ? t("controls.chatUnread", { count: unread }) : t("controls.chat")}
       pressed={panel === "chat"}
+      side={!narrow}
       badge={unread ? { text: n(unread), tone: "plain" } : undefined}
       onClick={() => toggle("chat")}
     />
@@ -485,7 +514,7 @@ export function Room({
       onToggle={() => setMore(!more)}
       audioOnly={audioOnly}
       onAudioOnly={() => {
-        if (audioOnly) setAudioOnly(false);
+        if (audioOnly) goVideo();
         else goAudioOnly();
         setMore(false);
       }}
@@ -522,37 +551,6 @@ export function Room({
         onView={setView}
       />
 
-      {presenting && (
-        <div
-          role="status"
-          className={`flex flex-wrap items-center gap-3 rounded-[14px] bg-room-teal-soft py-2 ps-4 pe-2 text-room-teal ${narrow ? "mx-3 mb-2" : "mx-6 mt-4"}`}
-        >
-          <MonitorUp aria-hidden size={20} className="shrink-0" />
-          <span className="min-w-0 flex-1 font-medium">
-            {t("stage.presenting")}
-            {wholeScreen && floatSupported() && (
-              <span className="block text-sm font-normal">{t("float.wholeScreen")}</span>
-            )}
-          </span>
-          {!narrow && !wholeScreen && !floatWin && floatSupported() && (
-            <button
-              type="button"
-              onClick={() => openFloat().catch(() => {})}
-              className="min-h-10 rounded-pill border border-room-teal px-4 font-bold"
-            >
-              {t("float.open")}
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={() => localParticipant.setScreenShareEnabled(false)}
-            className="min-h-10 rounded-pill bg-room-teal px-4 font-bold text-room"
-          >
-            {t("controls.stopShare")}
-          </button>
-        </div>
-      )}
-
       <main
         id="main"
         // The chat and people panel sits on the right in both languages, as in Meet.
@@ -570,39 +568,55 @@ export function Room({
 
       <footer
         aria-label={t("controls.bar")}
-        className={`flex items-start gap-x-6 gap-y-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] ${
+        className={`flex gap-x-6 gap-y-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] ${
           narrow
-            ? "justify-between px-3 pt-2"
-            : "flex-wrap justify-between px-6 pt-3 rtl:flex-row-reverse"
+            ? "items-start justify-between px-3 pt-2"
+            : "flex-wrap items-center justify-between px-6 pt-3 rtl:flex-row-reverse"
         }`}
       >
         {!narrow && (
-          <p className="flex min-w-40 flex-1 items-center gap-2 self-center rtl:justify-end text-sm text-room-muted">
-            {info.title}
+          <p className="flex min-w-40 flex-1 items-center gap-2 self-center text-sm whitespace-nowrap text-room-muted rtl:justify-end">
+            <b className="font-semibold tabular-nums text-room-ink">
+              {elapsedText(now, info.startsAt, locale)}
+            </b>
+            <span aria-hidden="true" className="h-4 w-px bg-room-line" />
+            <span className="truncate">{info.title}</span>
           </p>
         )}
-        <div className={`flex items-start ${narrow ? "w-full justify-between" : "gap-2.5"}`}>
+        <div
+          className={`flex ${narrow ? "w-full items-start justify-between" : "items-center gap-2.5"}`}
+        >
           <MediaButton source={Track.Source.Microphone} />
-          <MediaButton source={Track.Source.Camera} disabled={audioOnly} />
+          <MediaButton
+            source={Track.Source.Camera}
+            onExitAudioOnly={audioOnly ? goVideo : undefined}
+          />
           {teacher && !narrow && <MediaButton source={Track.Source.ScreenShare} />}
           {reactButton}
           {!teacher && handButton}
           {narrow && (teacher ? peopleButton : chatButton)}
           {narrow && teacher && chatButton}
           {!narrow && moreMenu}
+          {!narrow && (
+            <span aria-hidden="true" className="mx-1 h-9.5 w-px self-center bg-room-line" />
+          )}
           {leaveButton}
         </div>
         {!narrow && (
-          <div className="flex min-w-40 flex-1 items-start justify-end gap-2.5 rtl:justify-start">
+          <div className="flex min-w-40 flex-1 items-center justify-end gap-1.5 rtl:justify-start">
             {peopleButton}
             {chatButton}
           </div>
         )}
       </footer>
 
-      {floatWin && (
+      {floatWin && anyShare && (
         <FloatWindow
           win={floatWin}
+          preview={anyShare}
+          reactions={reactions.shown}
+          onReact={reactions.react}
+          onStopShare={() => localParticipant.setScreenShareEnabled(false)}
           tracks={[speaker, ...others.filter((tr) => tr !== speaker), self].filter(
             (tr): tr is TrackReferenceOrPlaceholder => !!tr,
           )}
@@ -631,6 +645,12 @@ export function Room({
   );
 }
 
+/** Hours:minutes since the class started. */
+function elapsedText(now: Date, startsAt: Date, locale: Locale) {
+  const minutes = Math.max(0, Math.floor((now.getTime() - startsAt.getTime()) / 60_000));
+  return `${formatNumber(Math.floor(minutes / 60), locale)}:${formatNumber(minutes % 60, locale).padStart(2, formatNumber(0, locale))}`;
+}
+
 function TopBar({
   info,
   count,
@@ -651,8 +671,7 @@ function TopBar({
   const now = useNow();
   const { localParticipant } = useLocalParticipant();
   const { quality } = useConnectionQualityIndicator({ participant: localParticipant });
-  const minutes = Math.max(0, Math.floor((now.getTime() - info.startsAt.getTime()) / 60_000));
-  const elapsed = `${formatNumber(Math.floor(minutes / 60), locale)}:${formatNumber(minutes % 60, locale).padStart(2, formatNumber(0, locale))}`;
+  const elapsed = elapsedText(now, info.startsAt, locale);
   const level =
     quality === ConnectionQuality.Excellent
       ? 4
@@ -812,9 +831,56 @@ function Notice({ text, tone, action, onDismiss }: NoticeProps) {
   );
 }
 
+/** What you see in the big spot while you present: the shared screen itself would mirror forever. */
+function PresentingCard({
+  wholeScreen,
+  canFloat,
+  onFloat,
+  onStop,
+}: {
+  wholeScreen: boolean;
+  canFloat: boolean;
+  onFloat: () => void;
+  onStop: () => void;
+}) {
+  const t = useTranslations("Classroom");
+  return (
+    <div
+      role="status"
+      className="flex size-full min-h-60 flex-col items-center justify-center gap-4 rounded-[20px] border border-room-line bg-room-card p-6 text-center"
+    >
+      <span className="grid size-16 place-items-center rounded-full bg-room-teal-soft text-room-teal">
+        <MonitorUp aria-hidden size={30} />
+      </span>
+      <p className="text-lg font-bold">{t("stage.presenting")}</p>
+      {wholeScreen && floatSupported() && (
+        <p className="max-w-sm text-sm text-room-muted">{t("float.wholeScreen")}</p>
+      )}
+      <div className="flex flex-wrap justify-center gap-2">
+        {canFloat && (
+          <button
+            type="button"
+            onClick={onFloat}
+            className="min-h-11 rounded-pill border border-room-teal px-5 font-bold text-room-teal"
+          >
+            {t("float.open")}
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onStop}
+          className="min-h-11 rounded-pill bg-room-teal px-5 font-bold text-room"
+        >
+          {t("controls.stopShare")}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Alone({ text, children }: { text: string; children?: ReactNode }) {
   return (
-    <div className="flex size-full min-h-60 flex-col items-center justify-center gap-4 rounded-[22px] border border-dashed border-room-line p-6 text-center text-room-muted">
+    <div className="flex size-full min-h-60 flex-col items-center justify-center gap-4 rounded-[20px] border border-dashed border-room-line p-6 text-center text-room-muted">
       {children}
       <p className="max-w-sm">{text}</p>
     </div>
@@ -830,6 +896,7 @@ function ControlButton({
   pressed,
   badge,
   wide = false,
+  side = false,
   disabled = false,
   onClick,
 }: {
@@ -841,6 +908,8 @@ function ControlButton({
   pressed?: boolean;
   badge?: { text: string; tone: "hand" | "plain" };
   wide?: boolean;
+  /** Chat and people: a quiet round button at the edge of the bar (desktop). */
+  side?: boolean;
   disabled?: boolean;
   onClick: () => void;
 }) {
@@ -853,7 +922,9 @@ function ControlButton({
           ? "bg-room-leave text-white"
           : pressed
             ? "bg-room-teal-soft text-room-teal"
-            : "bg-room-raised text-room-ink group-hover:bg-room-line";
+            : side
+              ? "bg-transparent text-room-ink group-hover:bg-room-line"
+              : "bg-room-raised text-room-ink group-hover:bg-room-line";
   return (
     <button
       type="button"
@@ -862,17 +933,22 @@ function ControlButton({
       aria-label={action}
       aria-pressed={pressed}
       title={action}
-      className="group relative flex min-w-14 flex-col items-center gap-1.5 rounded-[18px] disabled:opacity-50"
+      className="group relative flex min-w-14 flex-col items-center gap-1.5 rounded-[18px] disabled:opacity-50 md:min-w-0"
     >
       <span
-        className={`flex h-14 items-center justify-center gap-2 rounded-[18px] transition-colors ${wide ? "px-5" : "w-14"} ${square}`}
+        // From md up the bar is icon-only round buttons (the label stays for screen readers).
+        className={`flex h-14 items-center justify-center gap-2 rounded-[18px] transition-colors md:h-12.5 ${
+          wide
+            ? "px-5 md:rounded-[25px] md:px-5.5"
+            : `w-14 md:rounded-full ${side ? "md:size-12" : "md:w-12.5"}`
+        } ${square}`}
       >
         <Icon aria-hidden size={24} strokeWidth={tone === "on" ? 2.25 : 2} />
         {wide && <span className="font-bold">{label}</span>}
       </span>
       {!wide && (
         <span
-          className={`text-xs ${tone === "off" ? "text-room-danger" : tone === "on" ? "font-bold text-room-cinnamon-ink" : "text-room-muted"}`}
+          className={`text-xs md:sr-only ${tone === "off" ? "text-room-danger" : tone === "on" ? "font-bold text-room-cinnamon-ink" : "text-room-muted"}`}
         >
           {label}
         </span>
@@ -894,10 +970,11 @@ function ControlButton({
 /** Microphone, camera or screen-share toggle. Off is red with a slash, never colour alone. */
 function MediaButton({
   source,
-  disabled = false,
+  onExitAudioOnly,
 }: {
   source: Track.Source.Microphone | Track.Source.Camera | Track.Source.ScreenShare;
-  disabled?: boolean;
+  /** Audio-only mode: the camera button brings video back instead of toggling. */
+  onExitAudioOnly?: () => void;
 }) {
   const t = useTranslations("Classroom.controls");
   const { enabled, pending, toggle } = useTrackToggle({
@@ -918,13 +995,23 @@ function MediaButton({
       />
     );
   const mic = source === Track.Source.Microphone;
+  if (onExitAudioOnly)
+    return (
+      <ControlButton
+        icon={VideoOff}
+        label={t("cameraOff")}
+        action={t("showVideo")}
+        tone="off"
+        onClick={onExitAudioOnly}
+      />
+    );
   return (
     <ControlButton
       icon={mic ? (enabled ? Mic : MicOff) : enabled ? Video : VideoOff}
       label={mic ? (enabled ? t("mic") : t("muted")) : enabled ? t("camera") : t("cameraOff")}
       action={mic ? (enabled ? t("micOff") : t("micOn")) : enabled ? t("camOff") : t("camOn")}
       tone={enabled ? "default" : "off"}
-      disabled={pending || disabled}
+      disabled={pending}
       onClick={() => toggle()}
     />
   );

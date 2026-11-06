@@ -56,9 +56,9 @@ describe("windowError", () => {
     expect(windowError("student", s, at("09:31"))).toBe("ended");
   });
 
-  it("lets Mona in an hour early and half an hour late", () => {
-    expect(windowError("teacher", s, at("06:59"))).toBe("tooEarly");
-    expect(windowError("teacher", s, at("07:00"))).toBeNull();
+  it("lets Mona in ten minutes early and half an hour late", () => {
+    expect(windowError("teacher", s, at("07:49"))).toBe("tooEarly");
+    expect(windowError("teacher", s, at("07:50"))).toBeNull();
     expect(windowError("teacher", s, at("10:00"))).toBeNull();
     expect(windowError("teacher", s, at("10:01"))).toBe("ended");
     expect(roomWindow("teacher", s).closesAt).toEqual(at("10:00"));

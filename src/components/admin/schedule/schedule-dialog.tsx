@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState, type ReactNode } from "react";
 import { LinkPanel } from "@/components/admin/learners/link-panel";
 import { ErrorAlert } from "@/components/ui/alert";
+import { JoinLink } from "@/components/classroom/join-link";
 import { buttonClass } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -151,11 +152,18 @@ function Details({ item, data, onClose, onSelect }: Props & { item: CalendarItem
     const toConfirm = s.phase === "live" || s.phase === "ended";
     actions = (
       <>
-        {s.phase === "live" && (
-          <Link href={`/admin/classroom/${s.id}`} className={buttonClass("primary")}>
+        {(s.phase === "upcoming" || s.phase === "live" || s.phase === "ended") && (
+          <JoinLink
+            href={`/admin/classroom/${s.id}`}
+            role="teacher"
+            startsAt={s.startsAt}
+            endsAt={s.endsAt}
+            open={s.phase === "live"}
+            className={buttonClass("primary")}
+          >
             <VideoCamera aria-hidden size={20} weight="fill" />
             {tc("enter")}
-          </Link>
+          </JoinLink>
         )}
         <Link href={`/admin/classes/${s.classId}`} className={buttonClass("ocean")}>
           {toConfirm ? t("markHeld") : t("goClass")}

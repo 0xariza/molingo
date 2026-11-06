@@ -1,23 +1,15 @@
-"use client";
-
-import { Plus } from "@phosphor-icons/react";
-import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
+import { getTranslations } from "next-intl/server";
 import { buttonClass } from "@/components/ui/button";
-import type { AssignTarget } from "@/server/homework/assignments";
-import { AssignDialog } from "./assign-dialog";
+import { Link } from "@/i18n/navigation";
 
-/** "Assign homework" on the Homework page: pick a class, then one of its held sessions. */
-export function AssignButton({ targets }: { targets: AssignTarget[] }) {
-  const t = useTranslations("Admin.homework");
-  const [open, setOpen] = useState(false);
+/** "Assign homework" on the Homework page: opens the form page. */
+export async function AssignButton() {
+  const t = await getTranslations("Admin.homework");
   return (
-    <>
-      <button type="button" onClick={() => setOpen(true)} className={buttonClass("primary")}>
-        <Plus aria-hidden size={18} weight="bold" />
-        {t("assign")}
-      </button>
-      {open && <AssignDialog targets={targets} onClose={() => setOpen(false)} />}
-    </>
+    <Link href="/admin/homework/new" className={buttonClass("primary")}>
+      <Plus aria-hidden size={18} weight="bold" />
+      {t("assign")}
+    </Link>
   );
 }

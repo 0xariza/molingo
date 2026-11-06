@@ -12,8 +12,8 @@ const ACCEPT = ".pdf,.docx,image/jpeg,image/png,image/webp,audio/*";
 type Kept = { id: string; name: string };
 
 /**
- * Files for a form, sent as the `files` field. Learners can also record their voice, which is
- * added like any other file. `kept` are files already stored: removing one drops its `keep` id.
+ * Files for a form, sent as the `files` field. Anyone can also record their voice, which is
+ * added like any other file. `recorder` only picks the learner's wording. `kept` are files already stored: removing one drops its `keep` id.
  */
 export function AttachmentPicker({
   recorder = false,
@@ -128,27 +128,26 @@ export function AttachmentPicker({
           <Paperclip aria-hidden size={18} />
           {attachLabel}
         </button>
-        {recorder &&
-          (seconds === null ? (
-            <button
-              type="button"
-              disabled={disabled || full}
-              onClick={start}
-              className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line px-4 font-bold text-brand hover:border-brand disabled:opacity-60"
-            >
-              <Microphone aria-hidden size={18} />
-              {t("record")}
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => media.current?.recorder.stop()}
-              className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-2xl bg-red-700 px-4 font-bold text-white"
-            >
-              <Stop aria-hidden size={18} weight="fill" />
-              {t("stop")} · {clock(seconds)}
-            </button>
-          ))}
+        {seconds === null ? (
+          <button
+            type="button"
+            disabled={disabled || full}
+            onClick={start}
+            className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-line px-4 font-bold text-brand hover:border-brand disabled:opacity-60"
+          >
+            <Microphone aria-hidden size={18} />
+            {t("record")}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => media.current?.recorder.stop()}
+            className="inline-flex min-h-touch flex-1 items-center justify-center gap-2 rounded-2xl bg-red-700 px-4 font-bold text-white"
+          >
+            <Stop aria-hidden size={18} weight="fill" />
+            {t("stop")} · {clock(seconds)}
+          </button>
+        )}
       </div>
       {!recorder && <p className="text-sm">{t("attachHint")}</p>}
       {micDenied && (

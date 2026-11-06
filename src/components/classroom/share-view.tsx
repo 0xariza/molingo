@@ -43,7 +43,7 @@ export function ShareView({ trackRef }: { trackRef: TrackReferenceOrPlaceholder 
   return (
     <div
       ref={box}
-      className={`relative size-full touch-none overflow-hidden rounded-[22px] bg-room ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`relative size-full touch-none overflow-hidden rounded-[20px] bg-room ${zoom > 1 ? "cursor-grab active:cursor-grabbing" : ""}`}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });

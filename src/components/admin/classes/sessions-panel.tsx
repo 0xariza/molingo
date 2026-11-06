@@ -4,11 +4,11 @@ import { VideoCamera } from "@phosphor-icons/react";
 import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { ErrorAlert } from "@/components/ui/alert";
+import { JoinLink } from "@/components/classroom/join-link";
 import { buttonClass } from "@/components/ui/button";
 import { Field, TextareaField } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { SubmitButton } from "@/components/ui/submit-button";
-import { AssignDialog } from "@/components/admin/homework/assign-dialog";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatNumber, formatTime } from "@/lib/format";
@@ -20,7 +20,6 @@ import {
   type ClassFormState,
 } from "@/server/classes/actions";
 import type { AttendanceStatus, SessionRow } from "@/server/classes/sessions";
-import type { AssignTarget } from "@/server/homework/assignments";
 
 type Person = { id: string; fullNameFa: string; fullNameEn: string | null };
 
@@ -43,14 +42,11 @@ export function SessionsPanel({
   sessions,
   learners,
   sessionCount,
-  homeworkTargets,
 }: {
   classId: string;
   sessions: SessionRow[];
   learners: Person[];
   sessionCount: number;
-  /** This class as a homework target (it has a held session), or nothing. */
-  homeworkTargets: AssignTarget[];
 }) {
   const t = useTranslations("Admin.classes");
   const tc = useTranslations("Classroom");
@@ -60,7 +56,6 @@ export function SessionsPanel({
   const [cancelling, setCancelling] = useState<SessionRow | null>(null);
   const [marking, setMarking] = useState<SessionRow | null>(null);
   const [logging, setLogging] = useState<SessionRow | null>(null);
-  const [assigning, setAssigning] = useState<SessionRow | null>(null);
   const when = (s: SessionRow) =>
     `${formatDate(s.startsAt, locale, { year: false })} · ${formatTime(s.startsAt, locale)}–${formatTime(s.endsAt, locale)}`;
   const nameOf = (p: Person) => learnerNames(p, locale).primary;
@@ -135,10 +130,17 @@ export function SessionsPanel({
               {t("detail.liveSub", { time: when(live), count: peopleOf(live).length })}
             </p>
           </div>
-          <Link href={`/admin/classroom/${live.id}`} className={buttonClass("sand", "min-h-11")}>
+          <JoinLink
+            href={`/admin/classroom/${live.id}`}
+            role="teacher"
+            startsAt={live.startsAt}
+            endsAt={live.endsAt}
+            open
+            className={buttonClass("sand", "min-h-11")}
+          >
             <VideoCamera aria-hidden size={20} weight="fill" />
             {tc("enter")}
-          </Link>
+          </JoinLink>
           <button
             type="button"
             onClick={() => setMarking(live)}
@@ -189,15 +191,14 @@ export function SessionsPanel({
               </button>
             )}
             {s.phase === "held" && (
-              <button
-                type="button"
-                onClick={() => setAssigning(s)}
+              <Link
+                href={`/admin/homework/new?session=${s.id}`}
                 className={buttonClass("ghost", "min-h-10 px-4 text-sm")}
               >
                 {s.homework
                   ? t("detail.homeworkCount", { count: s.homework })
                   : t("detail.homework")}
-              </button>
+              </Link>
             )}
             {s.phase === "upcoming" && (
               <button
@@ -237,13 +238,6 @@ export function SessionsPanel({
         />
       )}
       {logging && <LogDialog session={logging} onClose={() => setLogging(null)} />}
-      {assigning && (
-        <AssignDialog
-          targets={homeworkTargets}
-          sessionId={assigning.id}
-          onClose={() => setAssigning(null)}
-        />
-      )}
       {marking && (
         <AttendanceDialog
           session={marking}

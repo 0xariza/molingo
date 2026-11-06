@@ -1,5 +1,6 @@
-import { ClipboardText, Play } from "@phosphor-icons/react/dist/ssr";
+import { ClipboardText, Play, VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { getLocale, getTranslations } from "next-intl/server";
+import { JoinLink } from "@/components/classroom/join-link";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatNumber, formatTime, tehranDateKey } from "@/lib/format";
@@ -90,6 +91,17 @@ export async function NextClassCard({ next, now }: { next: NextClass | null; now
           )}
         </div>
       )}
+      <JoinLink
+        href={`/admin/classroom/${next.id}`}
+        role="teacher"
+        startsAt={next.startsAt}
+        endsAt={next.endsAt}
+        open={next.phase === "live"}
+        className="inline-flex min-h-13 items-center gap-2 rounded-pill bg-sand px-6 font-extrabold text-ocean hover:bg-whale"
+      >
+        <VideoCamera aria-hidden size={18} weight="fill" />
+        {tc("enter")}
+      </JoinLink>
       <Link
         href={`/admin/classes/${next.classId}`}
         className="inline-flex min-h-13 items-center gap-2 rounded-pill bg-ocean px-6 font-extrabold text-white hover:bg-deep"

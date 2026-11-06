@@ -82,7 +82,7 @@ export function Tile({
     <figure
       ref={box}
       aria-label={name}
-      className={`group/tile relative m-0 size-full overflow-hidden ${small ? "rounded-[14px]" : "rounded-[22px]"} ${
+      className={`group/tile relative m-0 size-full overflow-hidden ${small ? "rounded-[14px]" : "rounded-[20px]"} ${
         showVideo ? "bg-room-raised" : "border border-room-line bg-room-card"
       } ${speaking || turn ? "ring-3 ring-room-teal ring-inset" : ""}`}
     >
@@ -124,8 +124,10 @@ export function Tile({
       )}
 
       <figcaption
-        className={`absolute bottom-2 start-2 inline-flex max-w-[calc(100%-1rem)] items-center gap-1.5 rounded-pill bg-room/80 font-medium text-room-ink ${
-          small ? "px-2 text-xs" : "h-8 px-3 text-sm"
+        className={`absolute inline-flex items-center gap-1.5 bg-room/75 font-semibold text-room-ink ${
+          small
+            ? "bottom-2 start-2 max-w-[calc(100%-1rem)] rounded-[10px] px-2 text-xs"
+            : "bottom-3 start-3 h-8.5 max-w-[calc(100%-1.5rem)] rounded-xl px-3 text-[13px]"
         }`}
       >
         {!isShare &&
@@ -181,8 +183,8 @@ function TileMenu({
         // Keeps a tap on the button from starting a drag of the floating self-view.
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => setAt(at ? null : e.currentTarget.getBoundingClientRect())}
-        className={`absolute end-1.5 top-1.5 grid place-items-center rounded-full bg-room/85 text-room-ink transition-opacity group-hover/tile:opacity-100 focus-visible:opacity-100 ${
-          small ? "size-8" : "size-9"
+        className={`absolute end-1.5 top-1.5 z-10 grid place-items-center rounded-full bg-room/85 text-room-ink transition-opacity group-hover/tile:opacity-100 focus-visible:opacity-100 ${
+          small ? "size-8" : "size-9 [@media(pointer:coarse)]:size-11"
         } ${at ? "" : "[@media(hover:hover)]:opacity-0"}`}
       >
         <EllipsisVertical aria-hidden size={18} />

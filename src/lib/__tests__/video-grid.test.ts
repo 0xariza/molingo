@@ -1,32 +1,34 @@
 import { describe, expect, it } from "vitest";
-import { bestTileWidth, clampPan, clampZoom, videoFit } from "../video-grid";
+import { clampPan, clampZoom, gridTileSize, videoFit } from "../video-grid";
 
-describe("bestTileWidth", () => {
-  it("gives one tile the most a 16:9 box allows", () => {
-    expect(bestTileWidth({ width: 1600, height: 900 }, 1, 12)).toBe(1600);
-    expect(bestTileWidth({ width: 1600, height: 450 }, 1, 12)).toBe(800);
+describe("gridTileSize", () => {
+  it("gives one tile the whole box", () => {
+    expect(gridTileSize({ width: 1600, height: 900 }, 1, 12)).toEqual({ width: 1600, height: 900 });
   });
 
-  it("picks the column count with the biggest tiles", () => {
-    // Four on a wide screen: 2 × 2 beats 4 × 1 and 1 × 4.
-    expect(bestTileWidth({ width: 1200, height: 700 }, 4, 12)).toBe(594);
-    // Two on a wide, short screen sit side by side.
-    expect(bestTileWidth({ width: 1400, height: 400 }, 2, 12)).toBe(694);
+  it("splits the box in half for two: side by side when wide, stacked when tall", () => {
+    expect(gridTileSize({ width: 1112, height: 700 }, 2, 12)).toEqual({ width: 550, height: 700 });
+    expect(gridTileSize({ width: 700, height: 1112 }, 2, 12)).toEqual({ width: 700, height: 550 });
+  });
+
+  it("makes four a 2 x 2 square, and three two on top with one below", () => {
+    expect(gridTileSize({ width: 1212, height: 712 }, 4, 12)).toEqual({ width: 600, height: 350 });
+    expect(gridTileSize({ width: 1212, height: 712 }, 3, 12)).toEqual({ width: 600, height: 350 });
   });
 
   it("is zero before the box is measured", () => {
-    expect(bestTileWidth({ width: 0, height: 0 }, 3, 12)).toBe(0);
+    expect(gridTileSize({ width: 0, height: 0 }, 3, 12)).toEqual({ width: 0, height: 0 });
   });
 });
 
 describe("videoFit", () => {
-  it("fills when the shapes match and shows everything when they don't", () => {
+  it("fills, except an upright video in a wide tile shows whole", () => {
     const wide = { width: 1280, height: 720 };
     const tall = { width: 720, height: 1280 };
     expect(videoFit(wide, wide)).toBe("cover");
     expect(videoFit(tall, tall)).toBe("cover");
     expect(videoFit(wide, tall)).toBe("contain");
-    expect(videoFit(tall, wide)).toBe("contain");
+    expect(videoFit(tall, wide)).toBe("cover");
     expect(videoFit(wide, null)).toBe("cover");
   });
 });

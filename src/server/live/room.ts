@@ -12,15 +12,17 @@ import {
 import type { CefrLevel } from "../classes/classes";
 import type { SessionUser } from "../auth/sessions";
 import { isStudent, isTeacher } from "../auth/policy";
+import {
+  roomWindow,
+  type RoomRole,
+  LEARNER_EARLY_MINUTES,
+  TEACHER_EARLY_MINUTES,
+  TEACHER_LATE_MINUTES,
+} from "@/lib/room-window";
 
-/** How early each side may enter, and how long Mona may stay after the end. */
-export const LEARNER_EARLY_MINUTES = 5;
-export const TEACHER_EARLY_MINUTES = 60;
-export const TEACHER_LATE_MINUTES = 30;
+export { LEARNER_EARLY_MINUTES, TEACHER_EARLY_MINUTES, TEACHER_LATE_MINUTES, roomWindow };
 
-const MINUTE = 60_000;
-
-export type RoomRole = "teacher" | "student";
+export type { RoomRole };
 
 /** Error keys map to messages under `Classroom.errors`. */
 export type RoomError = "notFound" | "closed" | "tooEarly" | "ended" | "removed";
@@ -50,19 +52,6 @@ export const roomName = (sessionId: string) => `s_${sessionId}`;
 /** The session a class room belongs to (level-check rooms and others have none). */
 export const sessionIdOfRoom = (room: string) =>
   /^s_[0-9a-f-]{36}$/i.test(room) ? room.slice(2) : null;
-
-/** When this side may be in the room: learners from 5 min before to the end, Mona wider. */
-export function roomWindow(role: RoomRole, s: { startsAt: Date; endsAt: Date }) {
-  return role === "teacher"
-    ? {
-        opensAt: new Date(s.startsAt.getTime() - TEACHER_EARLY_MINUTES * MINUTE),
-        closesAt: new Date(s.endsAt.getTime() + TEACHER_LATE_MINUTES * MINUTE),
-      }
-    : {
-        opensAt: new Date(s.startsAt.getTime() - LEARNER_EARLY_MINUTES * MINUTE),
-        closesAt: s.endsAt,
-      };
-}
 
 /** The window rule alone: only a scheduled session opens, and only inside the window. */
 export function windowError(

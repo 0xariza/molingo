@@ -2,8 +2,8 @@ import { VideoCamera } from "@phosphor-icons/react/dist/ssr";
 import { useTranslations } from "next-intl";
 import type { CSSProperties } from "react";
 import { ACCENT } from "@/components/admin/schedule/colors";
+import { JoinLink } from "@/components/classroom/join-link";
 import { buttonClass } from "@/components/ui/button";
-import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatTime, tehranDateKey } from "@/lib/format";
 import { classTitle } from "@/lib/names";
@@ -54,12 +54,17 @@ export function NextSessionCard({
         })}
       </p>
       <DeviceTime from={session.startsAt} to={session.endsAt} locale={locale} />
-      {session.canJoin && (
-        <Link href={`/app/classroom/${session.id}`} className={buttonClass("sand", "mt-3")}>
-          <VideoCamera aria-hidden size={20} weight="fill" />
-          {tc("join")}
-        </Link>
-      )}
+      <JoinLink
+        href={`/app/classroom/${session.id}`}
+        role="student"
+        startsAt={session.startsAt}
+        endsAt={session.endsAt}
+        open={session.canJoin}
+        className={buttonClass("sand", "mt-3")}
+      >
+        <VideoCamera aria-hidden size={20} weight="fill" />
+        {tc("join")}
+      </JoinLink>
     </section>
   );
 }
@@ -112,9 +117,13 @@ export function SessionCard({
               ? { text: t("today"), cls: "bg-mist text-brand" }
               : null;
 
-  const join = s.canJoin && (
-    <Link
+  const join = (s.phase === "upcoming" || s.phase === "live") && (
+    <JoinLink
       href={`/app/classroom/${s.id}`}
+      role="student"
+      startsAt={s.startsAt}
+      endsAt={s.endsAt}
+      open={s.canJoin}
       className={
         compact
           ? "mt-1.5 inline-flex min-h-9 items-center justify-center gap-1.5 rounded-[10px] bg-cinnamon text-sm font-bold text-navy hover:bg-[#d56d33]"
@@ -123,7 +132,7 @@ export function SessionCard({
     >
       <VideoCamera aria-hidden size={compact ? 16 : 18} weight="fill" />
       {tc("join")}
-    </Link>
+    </JoinLink>
   );
   const title = s.kind === "makeup" ? t("makeupTitle", { name }) : name;
 

@@ -18,7 +18,6 @@ import { requireTeacher } from "@/server/auth/current";
 import { archiveClassAction } from "@/server/classes/actions";
 import { listCandidates, listClasses } from "@/server/classes/classes";
 import { getClassDetail } from "@/server/classes/sessions";
-import { assignTargets } from "@/server/homework/assignments";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Admin.classes");
@@ -47,12 +46,11 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
   const cls = valid.success ? await getClassDetail(teacherId, valid.data) : null;
   if (!cls) notFound();
 
-  const [t, locale, candidates, cards, homeworkTargets] = await Promise.all([
+  const [t, locale, candidates, cards] = await Promise.all([
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
     listCandidates(teacherId),
     listClasses(teacherId),
-    assignTargets(teacherId),
   ]);
   const n = (v: number) => formatNumber(v, locale);
   const daysShort = t.raw("weekdaysShort") as string[];
@@ -179,7 +177,6 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
         sessions={cls.sessions}
         learners={cls.learners}
         sessionCount={cls.sessionCount}
-        homeworkTargets={homeworkTargets.filter((c) => c.id === cls.id)}
       />
 
       <div className="grid items-start gap-5 lg:grid-cols-2">

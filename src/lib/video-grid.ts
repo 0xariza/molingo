@@ -1,29 +1,34 @@
 type Size = { width: number; height: number };
 
 /**
- * Meet-style grid: the widest 16:9 tile that fits `count` tiles in the box with `gap` between
- * them, trying every column count.
+ * Meet-style grid: the tiles fill the whole box (two people split it in half, side by side on a
+ * wide box and stacked on a tall one). Picks the column count whose tiles are closest to 4:3,
+ * with a small penalty for empty cells in the last row.
  */
-export function bestTileWidth({ width, height }: Size, count: number, gap: number): number {
-  let best = 0;
+export function gridTileSize({ width, height }: Size, count: number, gap: number): Size {
+  let best = { width: 0, height: 0 };
+  let bestScore = Infinity;
   for (let cols = 1; cols <= count; cols++) {
     const rows = Math.ceil(count / cols);
-    const fit = Math.min(
-      (width - gap * (cols - 1)) / cols,
-      ((height - gap * (rows - 1)) / rows) * (16 / 9),
-    );
-    best = Math.max(best, fit);
+    const w = (width - gap * (cols - 1)) / cols;
+    const h = (height - gap * (rows - 1)) / rows;
+    if (w <= 0 || h <= 0) continue;
+    const score = Math.abs(Math.log(w / h / (4 / 3))) + (0.5 * (cols * rows - count)) / count;
+    if (score < bestScore) {
+      bestScore = score;
+      best = { width: Math.floor(w), height: Math.floor(h) };
+    }
   }
-  return Math.max(0, Math.floor(best));
+  return best;
 }
 
 /**
- * Fill the tile (a slight crop) when video and tile are both wide or both tall; show the whole
- * picture when they differ, so an upright phone isn't cut down to a zoomed-in strip.
+ * Fill the tile (a crop, as in Meet) except when an upright phone video sits in a wide tile:
+ * then show the whole picture, so it isn't cut down to a zoomed-in strip.
  */
 export function videoFit(tile: Size, video: Size | null): "cover" | "contain" {
   if (!video || !tile.width || !tile.height) return "cover";
-  return tile.width >= tile.height === video.width >= video.height ? "cover" : "contain";
+  return tile.width > tile.height && video.height > video.width ? "contain" : "cover";
 }
 
 /** A shared screen zooms between its normal size and four times that. */

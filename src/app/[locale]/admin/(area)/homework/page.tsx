@@ -10,7 +10,7 @@ import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatNumber } from "@/lib/format";
 import { requireTeacher } from "@/server/auth/current";
-import { assignTargets, homeworkOverview } from "@/server/homework/assignments";
+import { homeworkOverview } from "@/server/homework/assignments";
 import { reviewQueue } from "@/server/homework/submissions";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -40,11 +40,10 @@ async function Homework({
   const filter = FILTERS.find((f) => f === param) ?? "submitted";
   const now = new Date();
 
-  const [t, locale, stats, targets, rows] = await Promise.all([
+  const [t, locale, stats, rows] = await Promise.all([
     getTranslations("Admin.homework"),
     getLocale() as Promise<Locale>,
     homeworkOverview(teacherId, now),
-    assignTargets(teacherId, now),
     reviewQueue(teacherId, filter),
   ]);
   const n = (v: number) => formatNumber(v, locale);
@@ -63,7 +62,7 @@ async function Homework({
             {t("subtitle", { review: stats.toReview, count: stats.assignedLast30 })}
           </p>
         </div>
-        <AssignButton targets={targets} />
+        <AssignButton />
       </header>
 
       <div className="grid gap-4 md:grid-cols-3">
