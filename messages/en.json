@@ -93,6 +93,7 @@
       "dashboard": "Dashboard",
       "learners": "Learners",
       "classes": "Classes",
+      "sources": "Sources",
       "schedule": "Weekly schedule",
       "myPage": "My page",
       "homework": "Homework"
@@ -868,6 +869,80 @@
         "feedback_required": "Write feedback to ask for a revision.",
         "feedback": "Feedback is too long (up to 2,000 characters).",
         "not_found": "This isn't available any more."
+      }
+    },
+    "sources": {
+      "title": "Sources",
+      "lead": "The books you teach from. Each source has a map: its stations and their skills.",
+      "add": "New source",
+      "empty": "No sources yet. Start with “New source”.",
+      "stations": "{count} stations",
+      "state": {
+        "complete": "Complete",
+        "partial": "{done} of {total} complete"
+      },
+      "form": {
+        "newTitle": "New source",
+        "lead": "Each chapter becomes an empty station. Then you fill each one in.",
+        "title": "Source name",
+        "titlePlaceholder": "e.g. Sample Book 2",
+        "chapters": "Chapters",
+        "plannedSessions": "Suggested sessions",
+        "less": "One less",
+        "more": "One more",
+        "preview": "{stations} stations, about {sessions} sessions for the whole source. “Next level” is always added at the end.",
+        "create": "Create stations",
+        "creating": "Creating…"
+      },
+      "map": {
+        "title": "Source map",
+        "subtitle": "Source map, level {level}, {count} stations",
+        "done": "{done} of {total} complete",
+        "whatTitle": "What is a station?",
+        "whatBody": "A complete chunk of the source after which the learner can do something new and real.",
+        "ruleSize": "Size: usually one chapter. Merge two short ones, split a long one.",
+        "ruleSkills": "Skills: 3–4 sentences you can check at the end.",
+        "ruleSessions": "Time: 1–4 sessions; each class sets its own number.",
+        "ruleEnd": "End: a station check in its last session.",
+        "stations": "Stations",
+        "untitled": "Untitled",
+        "stationMeta": "{skills} skills, {sessions} sessions",
+        "complete": "Complete",
+        "incomplete": "Incomplete",
+        "final": "“Next level” is always the end of the path.",
+        "moveUp": "Move station up",
+        "moveDown": "Move station down",
+        "addAfter": "Add a station after this one",
+        "delete": "Delete station"
+      },
+      "station": {
+        "heading": "Station {n}",
+        "title": "Station name",
+        "titlePlaceholder": "e.g. I can talk about my past",
+        "titleHint": "A real task, not a lesson name: “I can talk about my past”, not “Past simple”.",
+        "sourceUnit": "From the source",
+        "sourceUnitPlaceholder": "e.g. Chapter 3",
+        "skills": "Skills",
+        "skillsDone": "{count} skills, complete",
+        "skillsNeed": "{count} more skills needed",
+        "skillLabel": "Skill {n}",
+        "skillPlaceholder": "e.g. Says what they did yesterday",
+        "removeSkill": "Remove skill {n}",
+        "addSkill": "+ Fourth skill",
+        "good": "Good: “Says what they did yesterday”",
+        "bad": "Not: “Past simple”, “Chapter 3 words”",
+        "save": "Save station",
+        "saving": "Saving…",
+        "saved": "Saved."
+      },
+      "errors": {
+        "title": "Write a name (up to 120 characters).",
+        "level": "Pick a level.",
+        "chapters": "Between 1 and 30 chapters.",
+        "plannedSessions": "Between 1 and 4 sessions.",
+        "sourceUnit": "Up to 60 characters.",
+        "skills": "At most 4 skills, each up to 160 characters.",
+        "notFound": "This station wasn’t found."
       }
     }
   },

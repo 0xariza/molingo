@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  BookOpen,
   CalendarDots,
   ChalkboardTeacher,
   ClipboardText,
@@ -21,6 +22,7 @@ const ICONS = {
   page: IdentificationCard,
   teachers: GraduationCap,
   homework: ClipboardText,
+  sources: BookOpen,
 } satisfies Record<string, Icon>;
 
 export type AreaNavItem = {
@@ -31,6 +33,7 @@ export type AreaNavItem = {
     | "/admin/classes"
     | "/admin/homework"
     | "/admin/my-page"
+    | "/admin/sources"
     | "/app"
     | "/app/classes"
     | "/app/schedule"

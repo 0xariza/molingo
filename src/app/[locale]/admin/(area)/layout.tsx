@@ -41,6 +41,7 @@ async function AdminGate({ children }: { children: React.ReactNode }) {
         },
         { href: "/admin/students", label: t("nav.learners"), icon: "learners" },
         { href: "/admin/classes", label: t("nav.classes"), icon: "classes" },
+        { href: "/admin/sources", label: t("nav.sources"), icon: "sources", sideOnly: true },
         {
           href: "/admin/homework",
           label: t("nav.homework"),
