@@ -3,8 +3,10 @@ import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { z } from "zod";
-import { AssignForm } from "@/components/admin/homework/assign-form";
-import { Link } from "@/i18n/navigation";
+import { SessionPicker } from "@/components/admin/after-class/session-picker";
+import { Link, redirect } from "@/i18n/navigation";
+import { getLocale } from "next-intl/server";
+import type { Locale } from "@/i18n/routing";
 import { requireTeacher } from "@/server/auth/current";
 import { assignTargets } from "@/server/homework/assignments";
 
@@ -25,6 +27,7 @@ export default function NewHomeworkPage({
   );
 }
 
+/** Homework is given on a session's after-class page; this picks the session first. */
 async function NewHomework({
   searchParams,
 }: {
@@ -33,12 +36,13 @@ async function NewHomework({
   const { teacherId } = await requireTeacher();
   const { session } = await searchParams;
   const sessionId = z.uuid().safeParse(session);
-  const [t, targets] = await Promise.all([
+  const [t, locale, targets] = await Promise.all([
     getTranslations("Admin.homework.review"),
+    getLocale() as Promise<Locale>,
     assignTargets(teacherId),
   ]);
-  const fixed =
-    sessionId.success && targets.some((c) => c.sessions.some((s) => s.id === sessionId.data));
+  if (sessionId.success && targets.some((c) => c.sessions.some((s) => s.id === sessionId.data)))
+    redirect({ href: `/admin/sessions/${sessionId.data}`, locale });
 
   return (
     <div className="space-y-5">
@@ -49,7 +53,7 @@ async function NewHomework({
         <ArrowLeft aria-hidden size={18} className="icon-directional" />
         {t("back")}
       </Link>
-      <AssignForm targets={targets} sessionId={fixed ? sessionId.data : undefined} />
+      <SessionPicker targets={targets} />
     </div>
   );
 }

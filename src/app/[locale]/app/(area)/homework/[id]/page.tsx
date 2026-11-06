@@ -58,7 +58,10 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
       </Link>
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-3xl sm:text-4xl">{hw.title}</h1>
+          <p className="text-sm font-bold text-cinnamon-ink">{t(`types.${hw.type}`)}</p>
+          <h1 dir="auto" className="text-3xl sm:text-4xl">
+            {hw.title}
+          </h1>
           <p className="mt-1">
             {hw.dueAt
               ? t("due", {
@@ -142,6 +145,7 @@ async function Detail({ params }: { params: Promise<{ id: string }> }) {
         </details>
       ) : (
         <AnswerForm
+          type={hw.type}
           key={hw.submittedAt?.toISOString() ?? "new"}
           assignmentId={hw.id}
           teacher={teacher}

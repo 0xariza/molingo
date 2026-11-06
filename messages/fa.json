@@ -475,7 +475,6 @@
         "not_cancellable": "فقط جلسه‌هایی که شروع نشده‌اند لغو می‌شوند.",
         "attendance": "حضور همه را مشخص کن.",
         "not_ready": "این جلسه هنوز قابل ثبت نیست.",
-        "log": "موضوعات حداکثر ۵۰۰ و یادداشت‌ها حداکثر ۲٬۰۰۰ نویسه باشند.",
         "reason": "دلیل کمتر از ۲۰۰ نویسه باشد.",
         "date": "یک روز انتخاب کن.",
         "time": "ساعت را مثل ۱۸:۳۰ بنویس.",
@@ -517,7 +516,6 @@
         "replaces": "جبرانی جلسه‌ی {n}",
         "makeupFor": "برای {names}",
         "markHeld": "برگزار شد",
-        "log": "گزارش جلسه",
         "cancel": "لغو",
         "replace": "افزودن جبرانی",
         "learners": "زبان‌آموزها",
@@ -552,8 +550,8 @@
         "pastRange": "{from} تا {to}",
         "share": "کپی لینک کلاس",
         "shareCopied": "لینک کپی شد",
-        "homework": "تکلیف",
-        "homeworkCount": "تکلیف · {count, number}"
+        "afterClass": "بعد از کلاس",
+        "afterClassCount": "بعد از کلاس، {count, number} تکلیف"
       },
       "attendance": {
         "title": "جلسه‌ی {n} برگزار شد",
@@ -571,15 +569,6 @@
         "confirm": "تأیید: جلسه برگزار شد",
         "saving": "در حال ذخیره…",
         "titleMakeup": "جلسه‌ی جبرانی برگزار شد"
-      },
-      "log": {
-        "title": "گزارش جلسه",
-        "lead": "زبان‌آموز موضوعات را می‌بیند. خلاصه و یادداشت خصوصی فقط برای خودت است.",
-        "topics": "موضوعات درس",
-        "summary": "خلاصه",
-        "privateNote": "یادداشت خصوصی",
-        "save": "ذخیره‌ی گزارش",
-        "saving": "در حال ذخیره…"
       },
       "cancel": {
         "title": "جلسه‌ی {n} لغو شود؟",
@@ -763,17 +752,6 @@
       "title": "تکالیف",
       "subtitle": "{review, plural, =0 {چیزی برای بررسی نیست} other {# مورد برای بررسی}} · {count, plural, =0 {بدون تکلیف} other {# تکلیف}} در ۳۰ روز گذشته",
       "assign": "تکلیف بده",
-      "stats": {
-        "toReview": "منتظر بررسی",
-        "oldest": "قدیمی‌ترین: {when}",
-        "oldestNone": "همه بررسی شده",
-        "dueWeek": "مهلت این هفته",
-        "dueWeekSub": "{in} از {of} پاسخ رسیده",
-        "dueWeekNone": "مهلتی در راه نیست",
-        "rate": "نرخ تحویل",
-        "rateSub": "۳۰ روز گذشته",
-        "rateNone": "هنوز تکلیفی نیست"
-      },
       "filterLabel": "فیلتر",
       "filter": {
         "submitted": "منتظر بررسی",
@@ -795,20 +773,6 @@
         "late": "با تأخیر",
         "revision": "تلاش {n, number}",
         "meta": "{title} · {class}"
-      },
-      "open": {
-        "title": "تکلیف‌های باز",
-        "due": "مهلت: {date}",
-        "noDue": "بدون مهلت",
-        "source": "{class} · از جلسه‌ی {n, number}",
-        "progress": "{in} از {of} تحویل داده‌اند",
-        "delete": "حذف",
-        "deleteLabel": "حذف «{title}»",
-        "deleteTitle": "این تکلیف حذف شود؟",
-        "deleteBody": "«{title}» و همه‌ی پاسخ‌ها، بازخوردها و فایل‌هایش پاک می‌شود. این کار برگشت ندارد.",
-        "deleteConfirm": "حذف تکلیف",
-        "empty": "تکلیف بازی نیست.",
-        "cancel": "انصراف"
       },
       "assignDialog": {
         "title": "تکلیف بده",
@@ -846,7 +810,44 @@
         "submit": "برای {count, number} زبان‌آموز بفرست",
         "sending": "در حال ارسال…",
         "sessionTitle": "تکلیف جلسه‌ی {n, number}",
-        "sessionSub": "{class} · {date} · برای {count, plural, one {# زبان‌آموز} other {هر # زبان‌آموز}} می‌رود"
+        "sessionSub": "{class} · {date} · برای {count, plural, one {# زبان‌آموز} other {هر # زبان‌آموز}} می‌رود",
+        "type": "نوع تکلیف",
+        "types": {
+          "listening": "شنیداری",
+          "writing": "نوشتاری",
+          "speaking": "مکالمه",
+          "reading": "خواندن"
+        },
+        "typeHint": {
+          "listening": "یک صوت بگذار. زبان‌آموز گوش می‌دهد و جوابش را می‌نویسد یا ضبط می‌کند.",
+          "writing": "زبان‌آموز جوابش را می‌نویسد یا عکسش را می‌فرستد.",
+          "speaking": "زبان‌آموز صدایش را ضبط می‌کند.",
+          "reading": "یک فایل بگذار یا متن را در توضیح بنویس. زبان‌آموز می‌خواند و جواب می‌دهد."
+        },
+        "defaultTitle": {
+          "listening": "گوش بده و جواب بده",
+          "writing": "بنویس",
+          "speaking": "صحبت کن",
+          "reading": "بخوان و جواب بده"
+        },
+        "attachNeed": {
+          "listening": "(صوت لازم است)",
+          "writing": "(اختیاری)",
+          "speaking": "(اختیاری)",
+          "reading": "(یک فایل یا متن در توضیح)"
+        },
+        "attachLabel": "پیوست",
+        "for": "برای",
+        "everyone": "همه‌ی کلاس ({count, number} نفر)",
+        "chosen": "زبان‌آموزهای انتخابی",
+        "skill": "برای کدام مهارت",
+        "skillOptional": "(اختیاری، از ایستگاه {n, number})",
+        "skillHint": "برای تمرین بیشتر روی یک مهارت، همین را بزن و آن را فقط برای همان زبان‌آموز بفرست.",
+        "noSkill": "مهارت خاصی نه",
+        "save": "ذخیره‌ی تغییرها",
+        "send": "فرستادن برای {count, plural, other {# نفر}}",
+        "newTitle": "تکلیف تازه",
+        "editTitle": "ویرایش تکلیف"
       },
       "review": {
         "back": "تکالیف",
@@ -889,7 +890,41 @@
         "file_count": "حداکثر ۵ فایل بگذار.",
         "feedback_required": "برای درخواست اصلاح، بازخورد بنویس.",
         "feedback": "بازخورد خیلی بلند است (حداکثر ۲٬۰۰۰ نویسه).",
-        "not_found": "این مورد دیگر در دسترس نیست."
+        "not_found": "این مورد دیگر در دسترس نیست.",
+        "type": "نوع تکلیف را انتخاب کن.",
+        "learners": "زبان‌آموزها را از همین کلاس انتخاب کن.",
+        "answered": "کسی که جواب داده را نمی‌شود از تکلیف برداشت.",
+        "skill": "یکی از مهارت‌های ایستگاه همین جلسه را انتخاب کن.",
+        "audio_needed": "تکلیف شنیداری یک فایل صوتی لازم دارد.",
+        "reading_needed": "تکلیف خواندن یک فایل یا متنی در توضیح لازم دارد."
+      },
+      "board": {
+        "subtitle": "{waiting, plural, =0 {چیزی منتظر بررسی نیست} other {# پاسخ منتظر بررسی}}، {sessions, plural, other {از # جلسه}}",
+        "group": "{class}، جلسه‌ی {n, number}",
+        "groupMakeup": "{class}، جبرانی",
+        "groupSub": "{date}، {count, plural, other {# تکلیف}}",
+        "cardMeta": "{type}، {sent, number} از {total, number} فرستاده، {waiting, plural, =0 {چیزی منتظر بررسی نیست} other {# منتظر بررسی}}",
+        "sentOn": "فرستاد {date}",
+        "notSent": "هنوز نفرستاده",
+        "tag": {
+          "submitted": "منتظر بررسی",
+          "needs_revision": "منتظر تلاش دوم",
+          "reviewed": "بررسی‌شده"
+        },
+        "late": "با تأخیر",
+        "secondTry": "تلاش {n, number}",
+        "open": "بررسی",
+        "openLabel": "بررسی جواب {name} به «{title}»",
+        "all": "همه",
+        "emptyAll": "هنوز تکلیفی نداده‌ای. از صفحه‌ی «بعد از کلاس» یک جلسه‌ی برگزارشده بده."
+      },
+      "open": {
+        "delete": "حذف",
+        "deleteLabel": "حذف «{title}»",
+        "deleteTitle": "این تکلیف حذف شود؟",
+        "deleteBody": "«{title}» و همه‌ی پاسخ‌ها، بازخوردها و فایل‌هایش پاک می‌شود. این کار برگشت ندارد.",
+        "deleteConfirm": "حذف تکلیف",
+        "cancel": "انصراف"
       }
     },
     "sources": {
@@ -1045,6 +1080,49 @@
         "customSkills": "هر ایستگاه ۳ تا ۴ مهارت.",
         "items": "دست‌کم یک ایستگاه لازم است."
       }
+    },
+    "afterClass": {
+      "title": "بعد از کلاس",
+      "metaTitle": "بعد از کلاس، جلسه‌ی {n, number}",
+      "eyebrow": "{class}، برگزار شد",
+      "eyebrowStation": "{class}، ایستگاه {station, number}، جلسه‌ی {n, number} از {of, number}، برگزار شد",
+      "sub": "جلسه‌ی {n, number} از {total, number}، {date}، {time}، {present, plural, =0 {کسی حاضر نبود} other {# حاضر}}",
+      "subMakeup": "جبرانی، {date}، {time}، {present, plural, =0 {کسی حاضر نبود} other {# حاضر}}",
+      "back": "کلاس",
+      "covered": "۱. در این جلسه چه کار شد",
+      "coveredHint": "زبان‌آموزها این بخش را در صفحه‌ی جلسه می‌بینند.",
+      "skills": "مهارت‌هایی که روی‌شان کار شد",
+      "skillsStation": "(ایستگاه {n, number})",
+      "skillsCount": "{n, number} مهارت از {total, number}، روی نقشه‌ی زبان‌آموزها «در حال کار» می‌شود.",
+      "topics": "موضوع‌ها",
+      "topicPlaceholder": "موضوع تازه، مثلاً: جمله‌ی منفی با didn’t",
+      "addTopic": "افزودن",
+      "removeTopic": "حذف «{topic}»",
+      "summary": "خلاصه",
+      "optional": "(اختیاری)",
+      "privateNote": "یادداشت خصوصی",
+      "privateNoteHint": "فقط خودت می‌بینی.",
+      "save": "ذخیره",
+      "saving": "در حال ذخیره…",
+      "saved": "ذخیره شد.",
+      "homework": "۲. تکالیف",
+      "homeworkHint": "هر چند تکلیف که لازم است؛ هر کدام با فرستادن به زبان‌آموزها می‌رسد.",
+      "add": "افزودن تکلیف",
+      "none": "هنوز تکلیفی برای این جلسه نداده‌ای.",
+      "meta": "{type}، {files, plural, =0 {بدون پیوست} other {# پیوست}}، {who}، {due}",
+      "forAll": "برای همه",
+      "forSome": "برای {names}",
+      "due": "مهلت {date}",
+      "noDue": "بدون مهلت",
+      "handedIn": "{in, number} از {of, number} فرستادند",
+      "edit": "ویرایش",
+      "editLabel": "ویرایش «{title}»",
+      "close": "بستن",
+      "pick": {
+        "title": "دادن تکلیف",
+        "lead": "تکلیف در صفحه‌ی «بعد از کلاس» یک جلسه‌ی برگزارشده داده می‌شود. کلاس و جلسه را انتخاب کن.",
+        "go": "باز کردن بعد از کلاس"
+      }
     }
   },
   "Student": {
@@ -1151,6 +1229,18 @@
         "file_count": "هر پاسخ حداکثر ۵ فایل دارد.",
         "locked": "معلمت این را بررسی کرده، پس ویرایش نمی‌شود.",
         "not_found": "این تکلیف دیگر در دسترس نیست."
+      },
+      "types": {
+        "listening": "شنیداری",
+        "writing": "نوشتاری",
+        "speaking": "مکالمه",
+        "reading": "خواندن"
+      },
+      "answerHint": {
+        "listening": "به فایل گوش بده و جوابت را بنویس یا ضبط کن.",
+        "writing": "جوابت را بنویس یا عکسش را بفرست.",
+        "speaking": "صدایت را ضبط کن.",
+        "reading": "متن یا فایل را بخوان و جواب بده."
       }
     },
     "classes": {

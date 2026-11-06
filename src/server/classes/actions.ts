@@ -22,9 +22,7 @@ import {
   cancelSchema,
   cancelSession,
   makeupSchema,
-  logSchema,
   markHeld,
-  saveLog,
   moveSchema,
   moveSession,
 } from "./sessions";
@@ -180,20 +178,6 @@ export async function markHeldAction(_: ClassFormState, form: FormData): Promise
   const result = await markHeld(teacherId, parsed.data.sessionId, parsed.data.marks);
   refresh();
   return result.ok ? { status: "success" } : { status: "error", error: result.error };
-}
-
-export async function saveLogAction(_: ClassFormState, form: FormData): Promise<ClassFormState> {
-  const { teacherId } = await requireTeacher();
-  const parsed = logSchema.safeParse({
-    sessionId: text(form, "sessionId"),
-    topics: text(form, "topics"),
-    summary: text(form, "summary"),
-    privateNote: text(form, "privateNote"),
-  });
-  if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error.issues) };
-  const saved = await saveLog(teacherId, parsed.data);
-  refresh();
-  return saved ? { status: "success" } : { status: "error", error: "not_ready" };
 }
 
 export async function addMakeupAction(_: ClassFormState, form: FormData): Promise<ClassFormState> {

@@ -4,9 +4,11 @@ import { z } from "zod";
 import { db } from "@/db";
 import { classes, sessions } from "@/db/schema";
 import { consumeRateLimit } from "../rate-limit";
+import { HOMEWORK_TYPES } from "./types";
 
 export const draftSchema = z.object({
   sessionId: z.uuid(),
+  type: z.enum(HOMEWORK_TYPES).optional(),
   request: z.string().trim().min(1, "request").max(500, "request"),
 });
 
@@ -64,6 +66,7 @@ export async function draftHomework(
     "(max 1200 characters). Match the CEFR level. Do not mention scores or grading.";
   const user =
     `CEFR level: ${session.level}\n` +
+    (input.type ? `Homework type: ${input.type}\n` : "") +
     (session.topics ? `Topics covered in the session: ${session.topics}\n` : "") +
     `The teacher wants: ${input.request}`;
   return { ok: true, text: ask(system, user) };

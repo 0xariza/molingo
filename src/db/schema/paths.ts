@@ -4,6 +4,7 @@ import {
   check,
   index,
   pgTable,
+  primaryKey,
   smallint,
   text,
   timestamp,
@@ -12,7 +13,7 @@ import {
 } from "drizzle-orm/pg-core";
 import { id, timestamps } from "./_shared";
 import { cefrLevelEnum } from "./enums";
-import { classes } from "./classes";
+import { classes, sessions } from "./classes";
 import { teachers } from "./identity";
 
 /**
@@ -109,4 +110,18 @@ export const classPathStations = pgTable(
     index().on(t.pathId, t.position),
     check("class_path_stations_planned_check", sql`${t.plannedSessions} between 1 and 4`),
   ],
+);
+
+/** Skills of the session's station that a held session worked on (the after-class page). */
+export const sessionSkills = pgTable(
+  "session_skills",
+  {
+    sessionId: uuid()
+      .notNull()
+      .references(() => sessions.id, { onDelete: "cascade" }),
+    stationSkillId: uuid()
+      .notNull()
+      .references(() => stationSkills.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.sessionId, t.stationSkillId] })],
 );

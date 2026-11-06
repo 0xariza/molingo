@@ -4,7 +4,7 @@
 
 Learners open the room from **Join class** on the next-session card (dashboard and "My schedule"),
 which appears from 5 minutes before a session until it ends. Mona opens it from **Enter the room**
-on the class page's "on now" banner (and the schedule card); she may enter from an hour before
+on the class page's "on now" banner (and the schedule card); she may enter from ten minutes before
 until 30 minutes after the end. `/app/classroom/[id]` and `/admin/classroom/[id]` check the join
 rule (PLAN §4) on the server: a learner needs a place in the class (regular sessions) or an
 invitation (make-ups), the session must be scheduled and inside the window, and Mona must not

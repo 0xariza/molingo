@@ -6,7 +6,8 @@ import { redirect } from "@/i18n/navigation";
 import { requireStudent, requireTeacher } from "../auth/current";
 import { fieldErrors, formLocale, text } from "../forms";
 import { uploadedFiles } from "../files/storage";
-import { assignmentSchema, createAssignment, deleteAssignment } from "./assignments";
+import { coveredSchema, saveCovered } from "./after-class";
+import { assignmentSchema, deleteAssignment, saveAssignment } from "./assignments";
 import { answerSchema, reviewSchema, reviewSubmission, submitAnswer } from "./submissions";
 
 /** Error keys map to messages under `Admin.homework.errors` / `Student.homework.errors`. */
@@ -22,20 +23,45 @@ export async function assignHomeworkAction(
 ): Promise<HomeworkFormState> {
   const teacher = await requireTeacher();
   const parsed = assignmentSchema.safeParse({
+    id: text(form, "id") || undefined,
     sessionId: text(form, "sessionId"),
+    type: text(form, "type"),
     title: text(form, "title"),
     body: text(form, "body"),
     dueDate: text(form, "dueDate"),
     dueTime: text(form, "dueTime"),
+    studentIds: form.getAll("studentIds").map(String),
+    stationSkillId: text(form, "stationSkillId"),
+    keep: form.getAll("keep").map(String),
   });
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error.issues) };
 
-  const result = await createAssignment(
+  const result = await saveAssignment(
     { teacherId: teacher.teacherId, userId: teacher.id },
     parsed.data,
     uploadedFiles(form, "files"),
   );
   if (!result.ok) return { status: "error", error: result.error };
+  refresh();
+  return { status: "success" };
+}
+
+/** The after-class page's first part: what the session covered. */
+export async function saveCoveredAction(
+  _: HomeworkFormState,
+  form: FormData,
+): Promise<HomeworkFormState> {
+  const { teacherId } = await requireTeacher();
+  const parsed = coveredSchema.safeParse({
+    sessionId: text(form, "sessionId"),
+    topics: form.getAll("topics").map(String),
+    summary: text(form, "summary"),
+    privateNote: text(form, "privateNote"),
+    skillIds: form.getAll("skillIds").map(String),
+  });
+  if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error.issues) };
+  const saved = await saveCovered(teacherId, parsed.data);
+  if (!saved) return { status: "error", error: "not_held" };
   refresh();
   return { status: "success" };
 }

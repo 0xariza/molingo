@@ -6,19 +6,14 @@ import { useActionState, useState } from "react";
 import { ErrorAlert } from "@/components/ui/alert";
 import { JoinLink } from "@/components/classroom/join-link";
 import { buttonClass } from "@/components/ui/button";
-import { Field, TextareaField } from "@/components/ui/field";
+import { Field } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatNumber, formatTime } from "@/lib/format";
 import { learnerNames } from "@/lib/names";
-import {
-  cancelSessionAction,
-  markHeldAction,
-  saveLogAction,
-  type ClassFormState,
-} from "@/server/classes/actions";
+import { cancelSessionAction, markHeldAction, type ClassFormState } from "@/server/classes/actions";
 import type { AttendanceStatus, SessionRow } from "@/server/classes/sessions";
 
 type Person = { id: string; fullNameFa: string; fullNameEn: string | null };
@@ -55,7 +50,6 @@ export function SessionsPanel({
   const [showAll, setShowAll] = useState(false);
   const [cancelling, setCancelling] = useState<SessionRow | null>(null);
   const [marking, setMarking] = useState<SessionRow | null>(null);
-  const [logging, setLogging] = useState<SessionRow | null>(null);
   const when = (s: SessionRow) =>
     `${formatDate(s.startsAt, locale, { year: false })} · ${formatTime(s.startsAt, locale)}–${formatTime(s.endsAt, locale)}`;
   const nameOf = (p: Person) => learnerNames(p, locale).primary;
@@ -182,22 +176,13 @@ export function SessionsPanel({
               </button>
             )}
             {s.phase === "held" && (
-              <button
-                type="button"
-                onClick={() => setLogging(s)}
-                className={buttonClass("ghost", "min-h-10 px-4 text-sm")}
-              >
-                {t("detail.log")}
-              </button>
-            )}
-            {s.phase === "held" && (
               <Link
-                href={`/admin/homework/new?session=${s.id}`}
+                href={`/admin/sessions/${s.id}`}
                 className={buttonClass("ghost", "min-h-10 px-4 text-sm")}
               >
                 {s.homework
-                  ? t("detail.homeworkCount", { count: s.homework })
-                  : t("detail.homework")}
+                  ? t("detail.afterClassCount", { count: s.homework })
+                  : t("detail.afterClass")}
               </Link>
             )}
             {s.phase === "upcoming" && (
@@ -237,7 +222,6 @@ export function SessionsPanel({
           onClose={() => setCancelling(null)}
         />
       )}
-      {logging && <LogDialog session={logging} onClose={() => setLogging(null)} />}
       {marking && (
         <AttendanceDialog
           session={marking}
@@ -433,65 +417,6 @@ function AttendanceDialog({
           </button>
           <SubmitButton pendingLabel={t("attendance.saving")} className="w-full sm:w-auto">
             {t("attendance.confirm")}
-          </SubmitButton>
-        </div>
-      </form>
-    </Modal>
-  );
-}
-
-function LogDialog({ session, onClose }: { session: SessionRow; onClose: () => void }) {
-  const t = useTranslations("Admin.classes");
-  const locale = useLocale() as Locale;
-  const [state, action] = useActionState(async (prev: ClassFormState, form: FormData) => {
-    const next = await saveLogAction(prev, form);
-    if (next.status === "success") onClose();
-    return next;
-  }, initial);
-  const tooLong = state.fieldErrors ? t("errors.log") : undefined;
-  return (
-    <Modal
-      title={
-        session.number
-          ? `${t("log.title")} · ${formatNumber(session.number, locale)}`
-          : t("log.title")
-      }
-      description={t("log.lead")}
-      closeLabel={t("close")}
-      onClose={onClose}
-    >
-      <form action={action} className="space-y-4">
-        <input type="hidden" name="sessionId" value={session.id} />
-        {state.error && <ErrorAlert>{t(`errors.${state.error as "not_ready"}`)}</ErrorAlert>}
-        <TextareaField
-          label={t("log.topics")}
-          name="topics"
-          maxLength={500}
-          defaultValue={session.topics ?? ""}
-          error={state.fieldErrors?.topics ? tooLong : undefined}
-        />
-        <TextareaField
-          label={t("log.summary")}
-          name="summary"
-          maxLength={2000}
-          rows={4}
-          defaultValue={session.summary ?? ""}
-          error={state.fieldErrors?.summary ? tooLong : undefined}
-        />
-        <TextareaField
-          label={t("log.privateNote")}
-          name="privateNote"
-          maxLength={2000}
-          rows={4}
-          defaultValue={session.privateNote ?? ""}
-          error={state.fieldErrors?.privateNote ? tooLong : undefined}
-        />
-        <div className="flex flex-wrap justify-end gap-3 border-t border-mist pt-4">
-          <button type="button" onClick={onClose} className={buttonClass("ghost")}>
-            {t("close")}
-          </button>
-          <SubmitButton pendingLabel={t("log.saving")} className="w-full sm:w-auto">
-            {t("log.save")}
           </SubmitButton>
         </div>
       </form>

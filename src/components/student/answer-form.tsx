@@ -7,18 +7,21 @@ import { ErrorAlert } from "@/components/ui/alert";
 import { TextareaField } from "@/components/ui/field";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { submitAnswerAction, type HomeworkFormState } from "@/server/homework/actions";
+import type { HomeworkType } from "@/server/homework/types";
 
 const initial: HomeworkFormState = { status: "idle" };
 
 /** The learner's answer: text, files and a voice recording. Editable until it is reviewed. */
 export function AnswerForm({
   assignmentId,
+  type,
   teacher,
   body,
   kept,
   handedIn,
 }: {
   assignmentId: string;
+  type: HomeworkType;
   teacher: string;
   body: string | null;
   kept: { id: string; name: string }[];
@@ -37,6 +40,7 @@ export function AnswerForm({
       )}
       <TextareaField
         label={t("yourAnswer")}
+        hint={t(`answerHint.${type}`)}
         name="body"
         rows={6}
         dir="auto"

@@ -27,6 +27,14 @@ export const sessionStatusEnum = pgEnum("session_status", ["scheduled", "held", 
 export const enrollmentStatusEnum = pgEnum("enrollment_status", ["active", "ended"]);
 export const attendanceStatusEnum = pgEnum("attendance_status", ["present", "absent", "excused"]);
 export const attendanceEventEnum = pgEnum("attendance_event", ["joined", "left"]);
+/** What kind of work a homework item asks for; it decides what the learner answers with. */
+export const homeworkTypeEnum = pgEnum("homework_type", [
+  "listening",
+  "writing",
+  "speaking",
+  "reading",
+]);
+
 export const submissionStatusEnum = pgEnum("submission_status", [
   "submitted",
   "needs_revision",

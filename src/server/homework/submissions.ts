@@ -13,6 +13,7 @@ import {
   submissions,
   teachers,
 } from "@/db/schema";
+import type { HomeworkType } from "./types";
 import { checkUploads, deleteFiles, MAX_FILES, storeFiles, type FileError } from "../files/storage";
 
 type Status = (typeof submissions.$inferSelect)["status"];
@@ -44,7 +45,7 @@ async function filesOf(
   return out;
 }
 
-const assignmentFilesOf = (ids: string[]) => filesOf(assignmentFiles, ids);
+export const assignmentFilesOf = (ids: string[]) => filesOf(assignmentFiles, ids);
 const submissionFilesOf = (ids: string[]) => filesOf(submissionFiles, ids);
 
 const isLate = (submittedAt: Date, dueAt: Date | null) => Boolean(dueAt && submittedAt > dueAt);
@@ -266,6 +267,7 @@ const studentOf = async (userId: string) =>
 export type LearnerHomework = {
   id: string;
   classId: string;
+  type: HomeworkType;
   title: string;
   dueAt: Date | null;
   classNameFa: string;
@@ -282,6 +284,7 @@ const learnerRows = (studentId: string) =>
   db
     .select({
       id: assignments.id,
+      type: assignments.type,
       title: assignments.title,
       dueAt: assignments.dueAt,
       createdAt: assignments.createdAt,
@@ -313,6 +316,7 @@ const toLearnerHomework = (
 ): LearnerHomework => ({
   id: r.id,
   classId: r.classId,
+  type: r.type,
   title: r.title,
   dueAt: r.dueAt,
   classNameFa: r.classNameFa,

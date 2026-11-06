@@ -15,9 +15,10 @@ type NextClass = NonNullable<Awaited<ReturnType<typeof nextClassSession>>>;
 
 /** The class on now or coming next: when, who, and the way into it. */
 export async function NextClassCard({ next, now }: { next: NextClass | null; now: Date }) {
-  const [t, tc, locale] = await Promise.all([
+  const [t, tc, troom, locale] = await Promise.all([
     getTranslations("Admin.home"),
     getTranslations("Admin.classes"),
+    getTranslations("Classroom"),
     getLocale() as Promise<Locale>,
   ]);
   if (!next) {
@@ -100,7 +101,7 @@ export async function NextClassCard({ next, now }: { next: NextClass | null; now
         className="inline-flex min-h-13 items-center gap-2 rounded-pill bg-sand px-6 font-extrabold text-ocean hover:bg-whale"
       >
         <VideoCamera aria-hidden size={18} weight="fill" />
-        {tc("enter")}
+        {troom("enter")}
       </JoinLink>
       <Link
         href={`/admin/classes/${next.classId}`}

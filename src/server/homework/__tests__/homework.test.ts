@@ -14,7 +14,7 @@ import { readableFile } from "../access";
 import {
   assignmentSchema,
   assignTargets,
-  createAssignment,
+  saveAssignment,
   deleteAssignment,
   homeworkOverview,
 } from "../assignments";
@@ -38,10 +38,14 @@ const pdf = (name = "notes.pdf") => new File(["%PDF"], name, { type: "applicatio
 const input = (sessionId: string, extra: object = {}) =>
   assignmentSchema.parse({
     sessionId,
+    type: "writing",
     title: "Weekend",
     body: "",
     dueDate: "",
     dueTime: "",
+    studentIds: [],
+    stationSkillId: "",
+    keep: [],
     ...extra,
   });
 
@@ -110,13 +114,21 @@ describe("assignmentSchema", () => {
     expect(
       assignmentSchema.safeParse({
         sessionId: crypto.randomUUID(),
+        type: "writing",
         title: " ",
         dueDate: "",
         dueTime: "",
+        studentIds: [],
+        stationSkillId: "",
+        keep: [],
       }).success,
     ).toBe(false);
     const half = {
       sessionId: crypto.randomUUID(),
+      type: "writing",
+      studentIds: [],
+      stationSkillId: "",
+      keep: [],
       title: "x",
       body: "",
       dueDate: "2026-11-06",
@@ -128,10 +140,74 @@ describe("assignmentSchema", () => {
   });
 });
 
-describe("createAssignment", () => {
+describe("saveAssignment", () => {
+  const mp3 = () => new File(["ID3"], "trip.mp3", { type: "audio/mpeg" });
+
+  it("listening needs an audio file; reading a file or a text", async () => {
+    const { sessionId } = await heldClass();
+    expect(await saveAssignment(teacher, input(sessionId, { type: "listening" }), [pdf()])).toEqual(
+      { ok: false, error: "audio_needed" },
+    );
+    expect(
+      (await saveAssignment(teacher, input(sessionId, { type: "listening" }), [mp3()])).ok,
+    ).toBe(true);
+    expect(await saveAssignment(teacher, input(sessionId, { type: "reading" }), [])).toEqual({
+      ok: false,
+      error: "reading_needed",
+    });
+    expect(
+      (await saveAssignment(teacher, input(sessionId, { type: "reading", body: "Read this." }), []))
+        .ok,
+    ).toBe(true);
+  });
+
+  it("can go to some learners only, never to one outside the class", async () => {
+    const { sessionId, a, b } = await heldClass();
+    const made = await saveAssignment(teacher, input(sessionId, { studentIds: [a.studentId] }), []);
+    expect(made.ok).toBe(true);
+    expect(await learnerHomework(a.userId)).toHaveLength(1);
+    expect(await learnerHomework(b.userId)).toEqual([]);
+    const outsider = await learner();
+    expect(
+      await saveAssignment(teacher, input(sessionId, { studentIds: [outsider.studentId] }), []),
+    ).toEqual({ ok: false, error: "learners" });
+  });
+
+  it("edits an item: keeps chosen files, but not away from a learner who answered", async () => {
+    const { sessionId, a, b } = await heldClass();
+    const made = await saveAssignment(teacher, input(sessionId), [pdf("one.pdf"), pdf("two.pdf")]);
+    if (!made.ok) throw new Error(made.error);
+    const [first] = (await learnerAssignment(a.userId, made.id))!.files;
+    const edited = await saveAssignment(
+      teacher,
+      input(sessionId, { id: made.id, title: "Edited", keep: [first.id] }),
+      [],
+    );
+    expect(edited).toEqual({ ok: true, id: made.id });
+    const now = (await learnerAssignment(a.userId, made.id))!;
+    expect(now.title).toBe("Edited");
+    expect(now.files.map((f) => f.name)).toEqual([first.name]);
+
+    await submitAnswer(a.userId, { assignmentId: made.id, body: "Done", keep: [] }, []);
+    expect(
+      await saveAssignment(
+        teacher,
+        input(sessionId, { id: made.id, studentIds: [b.studentId], keep: [first.id] }),
+        [],
+      ),
+    ).toEqual({ ok: false, error: "answered" });
+  });
+
+  it("a skill must be one of the session's station", async () => {
+    const { sessionId } = await heldClass();
+    expect(
+      await saveAssignment(teacher, input(sessionId, { stationSkillId: crypto.randomUUID() }), []),
+    ).toEqual({ ok: false, error: "skill" });
+  });
+
   it("goes to the class's learners as they are now, not to those who join later", async () => {
     const { classId, sessionId, a, b } = await heldClass();
-    const made = await createAssignment(teacher, input(sessionId), [pdf()]);
+    const made = await saveAssignment(teacher, input(sessionId), [pdf()]);
     expect(made.ok).toBe(true);
     const late = await learner();
     await enroll(teacher.teacherId, classId, late.studentId);
@@ -148,14 +224,14 @@ describe("createAssignment", () => {
       .from(sessions)
       .where(eq(sessions.status, "scheduled"))
       .limit(1);
-    expect(await createAssignment(teacher, input(upcoming.id), [])).toEqual({
+    expect(await saveAssignment(teacher, input(upcoming.id), [])).toEqual({
       ok: false,
       error: "not_held",
     });
 
     const other = await createUser(db, { phone: "+989120000002", role: "teacher" });
     const stranger = { teacherId: (await createTeacher(db, other.id)).id, userId: other.id };
-    expect(await createAssignment(stranger, input(sessionId), [])).toEqual({
+    expect(await saveAssignment(stranger, input(sessionId), [])).toEqual({
       ok: false,
       error: "not_held",
     });
@@ -165,7 +241,7 @@ describe("createAssignment", () => {
     const { classId, sessionId, a, b } = await heldClass();
     await endEnrollment(teacher.teacherId, classId, a.studentId);
     await endEnrollment(teacher.teacherId, classId, b.studentId);
-    expect(await createAssignment(teacher, input(sessionId), [])).toEqual({
+    expect(await saveAssignment(teacher, input(sessionId), [])).toEqual({
       ok: false,
       error: "no_learners",
     });
@@ -174,19 +250,19 @@ describe("createAssignment", () => {
   it("refuses files of the wrong type, too big, or too many", async () => {
     const { sessionId } = await heldClass();
     const exe = new File(["x"], "a.exe", { type: "application/x-msdownload" });
-    expect(await createAssignment(teacher, input(sessionId), [exe])).toEqual({
+    expect(await saveAssignment(teacher, input(sessionId), [exe])).toEqual({
       ok: false,
       error: "file_type",
     });
     const huge = new File([new Uint8Array(15 * 1024 * 1024 + 1)], "a.pdf", {
       type: "application/pdf",
     });
-    expect(await createAssignment(teacher, input(sessionId), [huge])).toEqual({
+    expect(await saveAssignment(teacher, input(sessionId), [huge])).toEqual({
       ok: false,
       error: "file_size",
     });
     expect(
-      await createAssignment(
+      await saveAssignment(
         teacher,
         input(sessionId),
         Array.from({ length: 6 }, () => pdf()),
@@ -211,7 +287,7 @@ describe("createAssignment", () => {
 describe("answers and review", () => {
   async function given() {
     const c = await heldClass();
-    const made = await createAssignment(
+    const made = await saveAssignment(
       teacher,
       input(c.sessionId, { dueDate: "2026-10-26", dueTime: "20:00" }),
       [],
@@ -374,7 +450,7 @@ describe("answers and review", () => {
 describe("files and delete", () => {
   it("serves a file only to its teacher, its recipients and (answers) its author", async () => {
     const { sessionId, a, b } = await heldClass();
-    const made = await createAssignment(teacher, input(sessionId), [pdf("task.pdf")]);
+    const made = await saveAssignment(teacher, input(sessionId), [pdf("task.pdf")]);
     if (!made.ok) throw new Error(made.error);
     await submitAnswer(a.userId, { assignmentId: made.id, body: "x", keep: [] }, [pdf("mine.pdf")]);
     const task = (await learnerAssignment(a.userId, made.id))!.files[0];
@@ -397,7 +473,7 @@ describe("files and delete", () => {
 
   it("deleting an assignment removes its answers and every file", async () => {
     const { sessionId, a } = await heldClass();
-    const made = await createAssignment(teacher, input(sessionId), [pdf("task.pdf")]);
+    const made = await saveAssignment(teacher, input(sessionId), [pdf("task.pdf")]);
     if (!made.ok) throw new Error(made.error);
     await submitAnswer(a.userId, { assignmentId: made.id, body: "x", keep: [] }, [pdf("mine.pdf")]);
     const ids = (await db.select({ id: files.id }).from(files)).map((f) => f.id);

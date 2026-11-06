@@ -392,31 +392,6 @@ export async function markHeld(
   });
 }
 
-const logText = (max: number) =>
-  z
-    .string()
-    .trim()
-    .max(max, "log")
-    .transform((v) => v || null);
-
-export const logSchema = z.object({
-  sessionId: z.uuid(),
-  topics: logText(500),
-  summary: logText(2000),
-  privateNote: logText(2000),
-});
-
-/** The teacher writes or edits a held session's log; learners see its topics only. */
-export async function saveLog(teacherId: string, input: z.output<typeof logSchema>) {
-  const { sessionId, ...log } = input;
-  const [saved] = await db
-    .update(sessions)
-    .set(log)
-    .where(and(own(teacherId, sessionId), eq(sessions.status, "held")))
-    .returning({ id: sessions.id });
-  return Boolean(saved);
-}
-
 export const makeupSchema = z.object({
   classId: z.uuid(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "date"),

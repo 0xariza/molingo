@@ -11,7 +11,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { id, timestamps } from "./_shared";
 import { sessions } from "./classes";
-import { submissionStatusEnum } from "./enums";
+import { homeworkTypeEnum, submissionStatusEnum } from "./enums";
+import { stationSkills } from "./paths";
 import { students, teachers, users } from "./identity";
 
 /** An uploaded file; its bytes live on the uploads volume under this row's id. */
@@ -27,8 +28,9 @@ export const files = pgTable("files", {
 });
 
 /**
- * Homework hangs off one held session; the class follows from it. It goes to the class's active
- * learners at that moment (`assignmentRecipients`), so learners who join later don't inherit it.
+ * Homework hangs off one held session; the class follows from it, and a session can have any
+ * number of items. Each goes to the learners chosen at that moment (`assignmentRecipients`: all
+ * active learners, or some of them), so learners who join later don't inherit it.
  */
 export const assignments = pgTable(
   "assignments",
@@ -40,8 +42,11 @@ export const assignments = pgTable(
     sessionId: uuid()
       .notNull()
       .references(() => sessions.id, { onDelete: "cascade" }),
+    type: homeworkTypeEnum().notNull().default("writing"),
     title: text().notNull(),
     body: text(),
+    /** The station skill it practises, when the class has a path. */
+    stationSkillId: uuid().references(() => stationSkills.id, { onDelete: "set null" }),
     dueAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },

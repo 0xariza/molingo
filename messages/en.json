@@ -475,7 +475,6 @@
         "not_cancellable": "Only sessions that haven't started can be cancelled.",
         "attendance": "Mark everyone's attendance.",
         "not_ready": "This session can't be marked yet.",
-        "log": "Keep topics under 500 characters and the notes under 2,000.",
         "reason": "Keep the reason under 200 characters.",
         "date": "Pick a day.",
         "time": "Write the time like 18:30.",
@@ -517,7 +516,6 @@
         "replaces": "Make-up for session {n}",
         "makeupFor": "For {names}",
         "markHeld": "Mark as held",
-        "log": "Session log",
         "cancel": "Cancel",
         "replace": "Add replacement",
         "learners": "Learners",
@@ -552,8 +550,8 @@
         "pastRange": "{from} – {to}",
         "share": "Copy share link",
         "shareCopied": "Link copied",
-        "homework": "Homework",
-        "homeworkCount": "Homework · {count, number}"
+        "afterClass": "After class",
+        "afterClassCount": "After class · {count, plural, one {# homework} other {# homework}}"
       },
       "attendance": {
         "title": "Session {n} was held",
@@ -571,15 +569,6 @@
         "confirm": "Confirm: session held",
         "saving": "Saving…",
         "titleMakeup": "The make-up session was held"
-      },
-      "log": {
-        "title": "Session log",
-        "lead": "Learners see the topics. The summary and your private note are only for you.",
-        "topics": "Topics covered",
-        "summary": "Summary",
-        "privateNote": "Private note",
-        "save": "Save log",
-        "saving": "Saving…"
       },
       "cancel": {
         "title": "Cancel session {n}?",
@@ -763,17 +752,6 @@
       "title": "Homework",
       "subtitle": "{review, plural, =0 {Nothing to review} other {# to review}} · {count, plural, one {# assignment} other {# assignments}} in the last 30 days",
       "assign": "Assign homework",
-      "stats": {
-        "toReview": "To review",
-        "oldest": "Oldest: {when}",
-        "oldestNone": "All caught up",
-        "dueWeek": "Due this week",
-        "dueWeekSub": "{in} of {of} answers in",
-        "dueWeekNone": "Nothing due",
-        "rate": "Hand-in rate",
-        "rateSub": "Last 30 days",
-        "rateNone": "No homework yet"
-      },
       "filterLabel": "Filter",
       "filter": {
         "submitted": "To review",
@@ -795,20 +773,6 @@
         "late": "late",
         "revision": "try {n, number}",
         "meta": "{title} · {class}"
-      },
-      "open": {
-        "title": "Open assignments",
-        "due": "Due {date}",
-        "noDue": "No deadline",
-        "source": "{class} · from session {n, number}",
-        "progress": "{in} of {of} handed in",
-        "delete": "Delete",
-        "deleteLabel": "Delete {title}",
-        "deleteTitle": "Delete this homework?",
-        "deleteBody": "“{title}” and every answer, feedback and file that belongs to it are deleted. This can't be undone.",
-        "deleteConfirm": "Delete homework",
-        "empty": "No open homework.",
-        "cancel": "Cancel"
       },
       "assignDialog": {
         "title": "Assign homework",
@@ -846,7 +810,44 @@
         "submit": "Assign to {count, plural, one {# learner} other {# learners}}",
         "sending": "Assigning…",
         "sessionTitle": "Homework for session {n, number}",
-        "sessionSub": "{class} · {date} · goes to {count, plural, one {# learner} other {all # learners}}"
+        "sessionSub": "{class} · {date} · goes to {count, plural, one {# learner} other {all # learners}}",
+        "type": "Type",
+        "types": {
+          "listening": "Listening",
+          "writing": "Writing",
+          "speaking": "Speaking",
+          "reading": "Reading"
+        },
+        "typeHint": {
+          "listening": "Add audio. The learner listens and writes or records the answer.",
+          "writing": "The learner writes the answer or sends a photo of it.",
+          "speaking": "The learner records their voice.",
+          "reading": "Add a file or put the text in the description. The learner reads and answers."
+        },
+        "defaultTitle": {
+          "listening": "Listen and answer",
+          "writing": "Write",
+          "speaking": "Speak",
+          "reading": "Read and answer"
+        },
+        "attachNeed": {
+          "listening": "(audio needed)",
+          "writing": "(optional)",
+          "speaking": "(optional)",
+          "reading": "(a file or a text in the description)"
+        },
+        "attachLabel": "Attachments",
+        "for": "For",
+        "everyone": "The whole class ({count, number})",
+        "chosen": "Chosen learners",
+        "skill": "For which skill",
+        "skillOptional": "(optional · station {n, number})",
+        "skillHint": "To practise one skill more, pick it and send it to that learner only.",
+        "noSkill": "No particular skill",
+        "save": "Save changes",
+        "send": "Send to {count, plural, one {# learner} other {# learners}}",
+        "newTitle": "New homework",
+        "editTitle": "Edit homework"
       },
       "review": {
         "back": "Homework",
@@ -889,7 +890,41 @@
         "file_count": "Attach up to 5 files.",
         "feedback_required": "Write feedback to ask for a revision.",
         "feedback": "Feedback is too long (up to 2,000 characters).",
-        "not_found": "This isn't available any more."
+        "not_found": "This isn't available any more.",
+        "type": "Pick a type.",
+        "learners": "Pick learners from this class.",
+        "answered": "Someone who already answered can't be taken off.",
+        "skill": "Pick a skill of this session's station.",
+        "audio_needed": "Listening homework needs an audio file.",
+        "reading_needed": "Reading homework needs a file or a text in the description."
+      },
+      "board": {
+        "subtitle": "{waiting, plural, =0 {Nothing to review} one {# answer to review} other {# answers to review}} · {sessions, plural, one {from # session} other {from # sessions}}",
+        "group": "{class} · session {n, number}",
+        "groupMakeup": "{class} · make-up",
+        "groupSub": "{date} · {count, plural, one {# homework} other {# homework}}",
+        "cardMeta": "{type} · {sent, number} of {total, number} sent · {waiting, plural, =0 {none to review} other {# to review}}",
+        "sentOn": "Sent {date}",
+        "notSent": "Not sent yet",
+        "tag": {
+          "submitted": "To review",
+          "needs_revision": "Waiting for a second try",
+          "reviewed": "Reviewed"
+        },
+        "late": "late",
+        "secondTry": "try {n, number}",
+        "open": "Review",
+        "openLabel": "Review {name}’s answer to “{title}”",
+        "all": "All",
+        "emptyAll": "No homework given yet. Give it from a held session’s after-class page."
+      },
+      "open": {
+        "delete": "Delete",
+        "deleteLabel": "Delete {title}",
+        "deleteTitle": "Delete this homework?",
+        "deleteBody": "“{title}” and every answer, feedback and file that belongs to it are deleted. This can't be undone.",
+        "deleteConfirm": "Delete homework",
+        "cancel": "Cancel"
       }
     },
     "sources": {
@@ -1045,6 +1080,49 @@
         "customSkills": "Each station has 3–4 skills.",
         "items": "At least one station is needed."
       }
+    },
+    "afterClass": {
+      "title": "After class",
+      "metaTitle": "After class · session {n, number}",
+      "eyebrow": "{class} · held",
+      "eyebrowStation": "{class} · station {station, number} · session {n, number} of {of, number} · held",
+      "sub": "Session {n, number} of {total, number} · {date} · {time} · {present, plural, =0 {nobody present} other {# present}}",
+      "subMakeup": "Make-up · {date} · {time} · {present, plural, =0 {nobody present} other {# present}}",
+      "back": "Class",
+      "covered": "1. What was covered",
+      "coveredHint": "Learners see this part on the session page.",
+      "skills": "Skills worked on",
+      "skillsStation": "(station {n, number})",
+      "skillsCount": "{n, number} of {total, number} skills · shown as “worked on” on the learners’ map.",
+      "topics": "Topics",
+      "topicPlaceholder": "New topic, e.g. negative with didn’t",
+      "addTopic": "Add",
+      "removeTopic": "Remove “{topic}”",
+      "summary": "Summary",
+      "optional": "(optional)",
+      "privateNote": "Private note",
+      "privateNoteHint": "Only you see this.",
+      "save": "Save",
+      "saving": "Saving…",
+      "saved": "Saved.",
+      "homework": "2. Homework",
+      "homeworkHint": "As many items as needed · each goes out to learners when you send it.",
+      "add": "Add homework",
+      "none": "No homework for this session yet.",
+      "meta": "{type} · {files, plural, =0 {no file} one {# file} other {# files}} · {who} · {due}",
+      "forAll": "for everyone",
+      "forSome": "for {names}",
+      "due": "due {date}",
+      "noDue": "no deadline",
+      "handedIn": "{in, number} of {of, number} handed in",
+      "edit": "Edit",
+      "editLabel": "Edit “{title}”",
+      "close": "Close",
+      "pick": {
+        "title": "Assign homework",
+        "lead": "Homework is given on a held session’s after-class page. Pick the class and session.",
+        "go": "Open after class"
+      }
     }
   },
   "Student": {
@@ -1151,6 +1229,18 @@
         "file_count": "An answer can have up to 5 files.",
         "locked": "Your teacher already reviewed this, so it can't be edited.",
         "not_found": "This homework isn't available any more."
+      },
+      "types": {
+        "listening": "Listening",
+        "writing": "Writing",
+        "speaking": "Speaking",
+        "reading": "Reading"
+      },
+      "answerHint": {
+        "listening": "Listen to the file, then write or record your answer.",
+        "writing": "Write your answer, or send a photo of it.",
+        "speaking": "Record your voice.",
+        "reading": "Read the text or the file, then answer."
       }
     },
     "classes": {

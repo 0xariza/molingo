@@ -5,15 +5,19 @@ import {
   assignmentFiles,
   assignmentRecipients,
   assignments,
+  classPathStations,
   classes,
   enrollments,
   sessions,
+  stationSkills,
   submissionFiles,
   submissions,
 } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
 import { formatClock, parseClock } from "@/lib/schedule";
-import { checkUploads, deleteFiles, storeFiles, type FileError } from "../files/storage";
+import { checkUploads, deleteFiles, MAX_FILES, storeFiles, type FileError } from "../files/storage";
+import { HOMEWORK_TYPES, type HomeworkType } from "./types";
+import { assignmentFilesOf, type StoredFile } from "./submissions";
 
 const clean = (max: number, error: string) =>
   z
@@ -24,7 +28,10 @@ const clean = (max: number, error: string) =>
 
 export const assignmentSchema = z
   .object({
+    /** Set when editing an existing item. */
+    id: z.uuid().optional(),
     sessionId: z.uuid(),
+    type: z.enum(HOMEWORK_TYPES, "type"),
     title: z.string().trim().min(1, "title").max(120, "title"),
     body: clean(4000, "body"),
     /** Tehran calendar date and time of the deadline; both empty means no deadline. */
@@ -35,6 +42,14 @@ export const assignmentSchema = z
       if (minutes === null) ctx.addIssue({ code: "custom", message: "due" });
       return minutes;
     }),
+    /** Empty: every active learner of the class. */
+    studentIds: z.array(z.uuid()).max(8),
+    stationSkillId: z
+      .string()
+      .transform((v) => v || null)
+      .pipe(z.uuid().nullable()),
+    /** Files of the item to keep when editing. */
+    keep: z.array(z.uuid()).max(MAX_FILES),
   })
   .refine((v) => Boolean(v.dueDate) === (v.dueTime !== null), {
     message: "due",
@@ -46,19 +61,45 @@ export const assignmentSchema = z
   }));
 export type AssignmentInput = z.output<typeof assignmentSchema>;
 
-export type AssignResult =
-  { ok: true; id: string } | { ok: false; error: "not_held" | "no_learners" | FileError };
+export type AssignError =
+  | "not_held"
+  | "not_found"
+  | "no_learners"
+  | "learners"
+  | "answered"
+  | "skill"
+  | "audio_needed"
+  | "reading_needed"
+  | FileError;
+export type AssignResult = { ok: true; id: string } | { ok: false; error: AssignError };
 
-/** Gives homework for a held session to the class's active learners as they are right now. */
-export async function createAssignment(
+const isAudio = (mime: string) => mime.split(";")[0].trim().toLowerCase().startsWith("audio/");
+
+/**
+ * What each type needs: listening an audio file to listen to; reading a file or a text in the
+ * description to read. Writing and speaking need only the task.
+ */
+export function typeError(
+  type: HomeworkType,
+  body: string | null,
+  mimes: string[],
+): "audio_needed" | "reading_needed" | null {
+  if (type === "listening" && !mimes.some(isAudio)) return "audio_needed";
+  if (type === "reading" && !mimes.length && !body) return "reading_needed";
+  return null;
+}
+
+/**
+ * Gives (or edits) one homework item of a held session. It goes to the chosen learners, or to
+ * every active learner of the class; an optional skill must belong to the session's station.
+ */
+export async function saveAssignment(
   teacher: { teacherId: string; userId: string },
   input: AssignmentInput,
   uploads: File[],
 ): Promise<AssignResult> {
-  const fileError = checkUploads(uploads);
-  if (fileError) return { ok: false, error: fileError };
   const [session] = await db
-    .select({ classId: sessions.classId })
+    .select({ classId: sessions.classId, pathStationId: sessions.pathStationId })
     .from(sessions)
     .where(
       and(
@@ -68,37 +109,103 @@ export async function createAssignment(
       ),
     );
   if (!session) return { ok: false, error: "not_held" };
-  const recipients = await db
-    .select({ studentId: enrollments.studentId })
-    .from(enrollments)
-    .where(and(eq(enrollments.classId, session.classId), eq(enrollments.status, "active")));
-  if (!recipients.length) return { ok: false, error: "no_learners" };
 
-  const fileIds = await storeFiles(teacher.userId, uploads);
+  let before: StoredFile[] = [];
+  let answeredBy: string[] = [];
+  if (input.id) {
+    const [own] = await db
+      .select({ id: assignments.id })
+      .from(assignments)
+      .where(
+        and(
+          eq(assignments.id, input.id),
+          eq(assignments.sessionId, input.sessionId),
+          eq(assignments.teacherId, teacher.teacherId),
+        ),
+      );
+    if (!own) return { ok: false, error: "not_found" };
+    before = (await assignmentFilesOf([input.id])).get(input.id) ?? [];
+    answeredBy = (
+      await db
+        .select({ studentId: submissions.studentId })
+        .from(submissions)
+        .where(eq(submissions.assignmentId, input.id))
+    ).map((r) => r.studentId);
+  }
+  const kept = before.filter((f) => input.keep.includes(f.id));
+  const fileError = checkUploads(uploads, kept.length);
+  if (fileError) return { ok: false, error: fileError };
+  const wrongType = typeError(input.type, input.body, [
+    ...kept.map((f) => f.mime),
+    ...uploads.map((f) => f.type),
+  ]);
+  if (wrongType) return { ok: false, error: wrongType };
+
+  const active = (
+    await db
+      .select({ studentId: enrollments.studentId })
+      .from(enrollments)
+      .where(and(eq(enrollments.classId, session.classId), eq(enrollments.status, "active")))
+  ).map((r) => r.studentId);
+  if (!active.length) return { ok: false, error: "no_learners" };
+  const chosen = input.studentIds.length ? [...new Set(input.studentIds)] : active;
+  if (chosen.some((id) => !active.includes(id))) return { ok: false, error: "learners" };
+  // Someone who already answered keeps the item.
+  if (answeredBy.some((id) => !chosen.includes(id))) return { ok: false, error: "answered" };
+
+  if (input.stationSkillId) {
+    const [skill] = session.pathStationId
+      ? await db
+          .select({ id: stationSkills.id })
+          .from(stationSkills)
+          .innerJoin(classPathStations, eq(classPathStations.stationId, stationSkills.stationId))
+          .where(
+            and(
+              eq(stationSkills.id, input.stationSkillId),
+              eq(classPathStations.id, session.pathStationId),
+            ),
+          )
+      : [];
+    if (!skill) return { ok: false, error: "skill" };
+  }
+
+  const added = await storeFiles(teacher.userId, uploads);
+  const dropped = before.filter((f) => !kept.includes(f)).map((f) => f.id);
+  const values = {
+    type: input.type,
+    title: input.title,
+    body: input.body,
+    dueAt: input.dueAt,
+    stationSkillId: input.stationSkillId,
+  };
   try {
     const id = await db.transaction(async (tx) => {
-      const [row] = await tx
-        .insert(assignments)
-        .values({
-          teacherId: teacher.teacherId,
-          sessionId: input.sessionId,
-          title: input.title,
-          body: input.body,
-          dueAt: input.dueAt,
-        })
-        .returning({ id: assignments.id });
+      const [row] = input.id
+        ? await tx
+            .update(assignments)
+            .set(values)
+            .where(eq(assignments.id, input.id))
+            .returning({ id: assignments.id })
+        : await tx
+            .insert(assignments)
+            .values({ ...values, teacherId: teacher.teacherId, sessionId: input.sessionId })
+            .returning({ id: assignments.id });
+      await tx.delete(assignmentRecipients).where(eq(assignmentRecipients.assignmentId, row.id));
       await tx
         .insert(assignmentRecipients)
-        .values(recipients.map((r) => ({ assignmentId: row.id, studentId: r.studentId })));
-      if (fileIds.length)
+        .values(chosen.map((studentId) => ({ assignmentId: row.id, studentId })));
+      if (dropped.length)
+        await tx.delete(assignmentFiles).where(inArray(assignmentFiles.fileId, dropped));
+      if (added.length)
         await tx
           .insert(assignmentFiles)
-          .values(fileIds.map((fileId) => ({ assignmentId: row.id, fileId })));
+          .values(added.map((fileId) => ({ assignmentId: row.id, fileId })));
       return row.id;
     });
+    await deleteFiles(dropped);
     return { ok: true, id };
   } catch (error) {
-    await deleteFiles(fileIds);
+    await deleteFiles(added);
     throw error;
   }
 }

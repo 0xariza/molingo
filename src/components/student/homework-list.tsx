@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { formatDate, formatTime, tehranDateKey } from "@/lib/format";
 import { classTitle } from "@/lib/names";
 import type { LearnerHomework } from "@/server/homework/submissions";
+import { TYPE_LOOK } from "@/components/homework/homework-types";
 
 const DAY = 24 * 60 * 60 * 1000;
 const daysBetween = (from: Date, to: Date) =>
@@ -45,15 +46,26 @@ export async function HomeworkList({
       {items.map((h, i) => {
         const teacher = locale === "en" ? h.teacherNameEn : h.teacherNameFa;
         const cls = classTitle({ nameFa: h.classNameFa, nameEn: h.classNameEn }, locale);
+        const look = TYPE_LOOK[h.type];
+        const Icon = look.icon;
         return (
           <li key={h.id}>
             <Link
               href={`/app/homework/${h.id}`}
               className="flex items-center gap-3 rounded-card border border-hairline bg-white p-4 hover:border-brand"
             >
+              <span
+                role="img"
+                aria-label={t(`types.${h.type}`)}
+                className={`grid size-10 shrink-0 place-items-center rounded-xl ${look.tone}`}
+              >
+                <Icon aria-hidden size={20} />
+              </span>
               <span className="min-w-0 flex-1 space-y-1">
                 <span className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-extrabold text-ocean">{h.title}</span>
+                  <span className="font-extrabold text-ocean">
+                    <span dir="auto">{h.title}</span>
+                  </span>
                   <span
                     className={`rounded-pill px-2.5 py-0.5 text-sm font-bold ${
                       badges[i].urgent ? "bg-[#fcefd3] text-[#8a520e]" : "bg-mist text-brand"

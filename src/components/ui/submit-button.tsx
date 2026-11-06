@@ -15,11 +15,14 @@ export function SubmitButton({
   pendingLabel,
   className = "w-full",
   variant = "primary",
+  blocked = false,
 }: {
   children: ReactNode;
   pendingLabel: string;
   className?: string;
   variant?: ButtonVariant;
+  /** The form isn't ready to send yet. */
+  blocked?: boolean;
 }) {
   const { pending } = useFormStatus();
   const hydrated = useSyncExternalStore(
@@ -27,7 +30,7 @@ export function SubmitButton({
     () => true,
     () => false,
   );
-  const disabled = pending || !hydrated;
+  const disabled = pending || !hydrated || blocked;
   return (
     <button
       type="submit"
