@@ -121,56 +121,24 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-1">
           {cls.state === "finished" ? (
             <Link href={`/admin/classes/new?from=${cls.id}`} className={buttonClass("primary")}>
               <ArrowRight aria-hidden size={18} className="icon-directional" />
               {t("detail.next")}
             </Link>
-          ) : (
-            running && (
-              <span
-                aria-disabled="true"
-                title={
-                  last
-                    ? t("detail.nextLocked", {
-                        date: formatDate(last.startsAt, locale, { year: false }),
-                      })
-                    : undefined
-                }
-                className={buttonClass(
-                  "primary",
-                  "cursor-not-allowed bg-mist text-body/60 hover:bg-mist",
-                )}
-              >
-                <ArrowRight aria-hidden size={18} className="icon-directional" />
-                {t("detail.next")}
-              </span>
-            )
-          )}
+          ) : null}
           {running && <ShareLinkButton url={`${process.env.APP_URL}/j/${cls.id}`} />}
           {cls.state !== "archived" && (
-            <Link href={`/admin/classes/${cls.id}/edit`} className={buttonClass("ghost")}>
+            <Link href={`/admin/classes/${cls.id}/edit`} className={buttonClass("quiet")}>
               <PencilSimple aria-hidden size={18} />
               {t("detail.edit")}
             </Link>
           )}
-          {cls.state !== "archived" && cls.learners.length === 0 && (
-            <form action={archiveClassAction}>
-              <input type="hidden" name="id" value={cls.id} />
-              <input type="hidden" name="locale" value={locale} />
-              <button
-                type="submit"
-                className="min-h-touch rounded-pill border border-line/50 px-5 font-bold hover:border-brand"
-              >
-                {t("detail.archive")}
-              </button>
-            </form>
-          )}
         </div>
       </header>
       {running && last && (
-        <p className="-mt-2 text-end text-sm">
+        <p className="-mt-2 text-sm">
           {t("detail.nextLocked", { date: formatDate(last.startsAt, locale, { year: false }) })}
         </p>
       )}
@@ -237,6 +205,15 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
           )}
         </div>
       </div>
+      {cls.state !== "archived" && cls.learners.length === 0 && (
+        <form action={archiveClassAction} className="border-t border-surface pt-4">
+          <input type="hidden" name="id" value={cls.id} />
+          <input type="hidden" name="locale" value={locale} />
+          <button type="submit" className={buttonClass("quiet", "text-red-700 hover:bg-red-50")}>
+            {t("detail.archive")}
+          </button>
+        </form>
+      )}
     </>
   );
 }

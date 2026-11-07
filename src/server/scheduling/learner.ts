@@ -62,7 +62,9 @@ export async function learnerSchedule(
       endsAt: sessions.endsAt,
       cancelReason: sessions.cancelReason,
       movedFrom: sessions.movedFrom,
-      topics: sessions.topics,
+      topics: sql<
+        string | null
+      >`case when ${sessions.afterClassSentAt} is not null then ${sessions.topics} end`,
     })
     .from(sessions)
     .innerJoin(classes, eq(classes.id, sessions.classId))

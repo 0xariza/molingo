@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
   assignmentRecipients,
@@ -62,7 +62,7 @@ export async function homeworkBoard(teacherId: string): Promise<BoardSession[]> 
     .from(assignments)
     .innerJoin(sessions, eq(sessions.id, assignments.sessionId))
     .innerJoin(classes, eq(classes.id, sessions.classId))
-    .where(eq(assignments.teacherId, teacherId))
+    .where(and(eq(assignments.teacherId, teacherId), isNotNull(assignments.publishedAt)))
     .orderBy(desc(sessions.startsAt), asc(assignments.createdAt));
   if (!items.length) return [];
   const ids = items.map((i) => i.id);

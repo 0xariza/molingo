@@ -10,9 +10,7 @@ import {
 } from "@/db/schema";
 import { toLatinDigits } from "@/lib/format";
 
-export const MIN_SKILLS = 3;
-export const MAX_SKILLS = 4;
-export const MAX_PLANNED_SESSIONS = 4;
+export const MIN_SKILLS = 1;
 export const MAX_CHAPTERS = 30;
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
@@ -28,7 +26,7 @@ export const newSourceSchema = z.object({
   title: z.string().trim().min(1, "title").max(120, "title"),
   level: z.enum(cefrLevelEnum.enumValues, "level"),
   chapters: count(1, MAX_CHAPTERS, "chapters"),
-  plannedSessions: count(1, MAX_PLANNED_SESSIONS, "plannedSessions"),
+  plannedSessions: count(1, 99, "plannedSessions"),
 });
 export type NewSource = z.infer<typeof newSourceSchema>;
 
@@ -36,11 +34,11 @@ export type NewSource = z.infer<typeof newSourceSchema>;
 export const stationSchema = z.object({
   title: z.string().trim().max(120, "title"),
   sourceUnit: z.string().trim().max(60, "sourceUnit"),
-  plannedSessions: count(1, MAX_PLANNED_SESSIONS, "plannedSessions"),
+  plannedSessions: count(1, 99, "plannedSessions"),
   skills: z
     .array(z.string().trim().max(160, "skills"))
     .transform((xs) => xs.filter(Boolean))
-    .pipe(z.array(z.string()).max(MAX_SKILLS, "skills")),
+    .pipe(z.array(z.string())),
 });
 export type StationInput = z.infer<typeof stationSchema>;
 

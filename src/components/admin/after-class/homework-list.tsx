@@ -43,11 +43,21 @@ export function HomeworkList({ page }: { page: AfterClass }) {
         : t("noDue"),
     });
 
+  const warning = (h: SessionHomework) =>
+    h.issue === "no_audio"
+      ? t("warnNoAudio")
+      : h.issue === "no_text"
+        ? t("warnNoText")
+        : h.issue === "no_body"
+          ? t("warnNoBody")
+          : null;
+
   return (
     <div className="space-y-3">
       {page.homework.length === 0 && open !== "new" && <p>{t("none")}</p>}
       <ol className="space-y-3">
-        {page.homework.map((h) => {
+        {page.homework.map((h, i) => {
+          const warn = warning(h);
           const look = TYPE_LOOK[h.type];
           const Icon = look.icon;
           const editing = open === h.id;
@@ -64,12 +74,24 @@ export function HomeworkList({ page }: { page: AfterClass }) {
                 </span>
                 <div className="min-w-44 flex-1 leading-snug">
                   <p className="font-bold text-ocean">
-                    <span dir="auto">{h.title}</span>
+                    {t("itemNumber", { n: i + 1 })} <span dir="auto">{h.title}</span>
+                    {!h.published && (
+                      <span className="ms-2 rounded-pill bg-mist px-2 py-0.5 align-middle text-xs font-bold text-brand">
+                        {ta("draftTag")}
+                      </span>
+                    )}
+                    {warn && (
+                      <span className="ms-2 rounded-pill bg-cinnamon-soft px-2 py-0.5 align-middle text-xs font-bold text-cinnamon-ink">
+                        {warn}
+                      </span>
+                    )}
                   </p>
                   <p className="text-sm">{meta(h)}</p>
-                  <p className="text-sm">
-                    {t("handedIn", { in: h.handedIn, of: h.recipientIds.length })}
-                  </p>
+                  {h.published && (
+                    <p className="text-sm">
+                      {t("handedIn", { in: h.handedIn, of: h.recipientIds.length })}
+                    </p>
+                  )}
                 </div>
                 {!editing && (
                   <button
@@ -110,7 +132,7 @@ export function HomeworkList({ page }: { page: AfterClass }) {
             id="hw-new"
             className="font-sans text-base font-extrabold normal-case tracking-normal"
           >
-            {ta("newTitle")}
+            {t("itemNumber", { n: page.homework.length + 1 })} {ta("newTitle")}
           </h3>
           <HomeworkEditor key="new" page={page} item={null} onDone={() => setOpen(null)} />
         </section>

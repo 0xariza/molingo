@@ -16,10 +16,8 @@ import {
 } from "@/db/schema";
 import { reassignSessions } from "./class-paths";
 
-const MAX_SESSIONS = 4;
-
 /** Error keys map to `Admin.afterClass.check.errors`. */
-export type CheckError = "not_found" | "not_last" | "max_sessions";
+export type CheckError = "not_found" | "not_last";
 
 export const checkSchema = z.object({
   sessionId: z.uuid(),
@@ -104,7 +102,6 @@ export async function getStationCheck(teacherId: string, sessionId: string) {
     : [];
   return {
     closed: ps.closedAt !== null,
-    canHold: ps.planned < MAX_SESSIONS,
     skills,
     learners,
     results: saved.filter((r) => learners.some((l) => l.id === r.studentId)),
@@ -131,8 +128,6 @@ export async function saveStationCheck(
       .from(classPathStations)
       .where(eq(classPathStations.id, s.pathStationId));
     if (!ps) return { ok: false, error: "not_found" } as const;
-    if (input.action === "hold" && ps.planned >= MAX_SESSIONS)
-      return { ok: false, error: "max_sessions" } as const;
     const [skills, learners] = await Promise.all([
       tx
         .select({ id: stationSkills.id })
@@ -228,6 +223,7 @@ async function addReinforcements(
         title: skill.text,
         stationSkillId: again.skillId,
         reinforcement: true,
+        publishedAt: new Date(),
       })
       .returning({ id: assignments.id });
     await tx.insert(assignmentRecipients).values({ assignmentId: made.id, studentId });

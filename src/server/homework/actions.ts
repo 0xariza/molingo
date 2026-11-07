@@ -6,7 +6,7 @@ import { redirect } from "@/i18n/navigation";
 import { requireStudent, requireTeacher } from "../auth/current";
 import { fieldErrors, formLocale, text } from "../forms";
 import { uploadedFiles } from "../files/storage";
-import { coveredSchema, saveCovered } from "./after-class";
+import { coveredSchema, saveCovered, sendAfterClass } from "./after-class";
 import { assignmentSchema, deleteAssignment, saveAssignment } from "./assignments";
 import { answerSchema, reviewSchema, reviewSubmission, submitAnswer } from "./submissions";
 
@@ -27,6 +27,7 @@ export async function assignHomeworkAction(
     sessionId: text(form, "sessionId"),
     type: text(form, "type"),
     title: text(form, "title"),
+    titleFallback: text(form, "titleFallback"),
     body: text(form, "body"),
     dueDate: text(form, "dueDate"),
     dueTime: text(form, "dueTime"),
@@ -62,6 +63,20 @@ export async function saveCoveredAction(
   if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error.issues) };
   const saved = await saveCovered(teacherId, parsed.data);
   if (!saved) return { status: "error", error: "not_held" };
+  refresh();
+  return { status: "success" };
+}
+
+/** "Save and send": publishes the drafts and the covered log. Error keys: `Admin.afterClass.errors`. */
+export async function sendAfterClassAction(
+  _: HomeworkFormState,
+  form: FormData,
+): Promise<HomeworkFormState> {
+  const { teacherId } = await requireTeacher();
+  const id = z.uuid().safeParse(text(form, "sessionId"));
+  if (!id.success) return { status: "error", error: "not_held" };
+  const result = await sendAfterClass(teacherId, id.data);
+  if (!result.ok) return { status: "error", error: result.error };
   refresh();
   return { status: "success" };
 }

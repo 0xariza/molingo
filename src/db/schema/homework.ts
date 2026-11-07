@@ -51,6 +51,8 @@ export const assignments = pgTable(
     /** Made by the app from a station check's "again"; one open per learner. */
     reinforcement: boolean().notNull().default(false),
     dueAt: timestamp({ withTimezone: true }),
+    /** Null while it is a draft: learners only see published items. Set when the teacher sends. */
+    publishedAt: timestamp({ withTimezone: true }),
     ...timestamps,
   },
   (t) => [index().on(t.teacherId, t.createdAt), index().on(t.sessionId)],

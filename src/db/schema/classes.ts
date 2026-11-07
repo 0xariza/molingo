@@ -116,6 +116,8 @@ export const sessions = pgTable(
     topics: text(),
     summary: text(),
     privateNote: text(),
+    /** When the teacher last sent the after-class page; any later change clears it. */
+    afterClassSentAt: timestamp({ withTimezone: true }),
     /** The path station this session teaches; set by the app from the class path. */
     pathStationId: uuid().references((): AnyPgColumn => classPathStations.id, {
       onDelete: "set null",

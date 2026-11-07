@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull } from "drizzle-orm";
 import { db } from "@/db";
 import {
   assignmentFiles,
@@ -65,8 +65,13 @@ export async function readableFile(userId: string, fileId: string): Promise<Stor
     .select({ studentId: assignmentRecipients.studentId })
     .from(assignmentRecipients)
     .innerJoin(students, eq(students.id, assignmentRecipients.studentId))
+    .innerJoin(assignments, eq(assignments.id, assignmentRecipients.assignmentId))
     .where(
-      and(eq(assignmentRecipients.assignmentId, given.assignmentId), eq(students.userId, userId)),
+      and(
+        eq(assignmentRecipients.assignmentId, given.assignmentId),
+        eq(students.userId, userId),
+        isNotNull(assignments.publishedAt),
+      ),
     );
   return recipient ? given.file : null;
 }

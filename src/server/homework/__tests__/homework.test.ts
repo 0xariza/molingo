@@ -5,16 +5,17 @@ import { join } from "node:path";
 import { eq } from "drizzle-orm";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { files, sessions, students, teacherLearners } from "@/db/schema";
+import { assignments, files, sessions, students, teacherLearners } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
 import { createTeacher, createUser, resetDb } from "@/test/factories";
 import { createClass, endEnrollment, enroll, newClassSchema } from "@/server/classes/classes";
 import { markHeld } from "@/server/classes/sessions";
 import { readableFile } from "../access";
+import { homeworkIssue } from "../issues";
 import {
   assignmentSchema,
   assignTargets,
-  saveAssignment,
+  saveAssignment as saveDraft,
   deleteAssignment,
   homeworkOverview,
 } from "../assignments";
@@ -48,6 +49,17 @@ const input = (sessionId: string, extra: object = {}) =>
     keep: [],
     ...extra,
   });
+
+/** Most tests give homework the way a teacher does after sending: the item is published. */
+const saveAssignment: typeof saveDraft = async (t, i, uploads) => {
+  const result = await saveDraft(t, i, uploads);
+  if (result.ok)
+    await db
+      .update(assignments)
+      .set({ publishedAt: new Date() })
+      .where(eq(assignments.id, result.id));
+  return result;
+};
 
 let teacher: { teacherId: string; userId: string };
 let n = 0;
@@ -110,19 +122,20 @@ async function heldClass() {
 }
 
 describe("assignmentSchema", () => {
-  it("needs a title, and a deadline date and time together", () => {
+  it("a title is optional, a deadline needs date and time together", () => {
     expect(
       assignmentSchema.safeParse({
         sessionId: crypto.randomUUID(),
         type: "writing",
         title: " ",
+        body: "",
         dueDate: "",
         dueTime: "",
         studentIds: [],
         stationSkillId: "",
         keep: [],
       }).success,
-    ).toBe(false);
+    ).toBe(true);
     const half = {
       sessionId: crypto.randomUUID(),
       type: "writing",
@@ -141,24 +154,22 @@ describe("assignmentSchema", () => {
 });
 
 describe("saveAssignment", () => {
-  const mp3 = () => new File(["ID3"], "trip.mp3", { type: "audio/mpeg" });
+  it("saves incomplete drafts; the issues only block sending", () => {
+    expect(homeworkIssue("listening", "Listen.", ["application/pdf"])).toBe("no_audio");
+    expect(homeworkIssue("listening", "Listen.", ["audio/mpeg"])).toBeNull();
+    expect(homeworkIssue("reading", "Short.", [])).toBe("no_text");
+    expect(homeworkIssue("reading", "x".repeat(40), [])).toBeNull();
+    expect(homeworkIssue("reading", null, ["application/pdf"])).toBe("no_body");
+    expect(homeworkIssue("writing", " ", [])).toBe("no_body");
+  });
 
-  it("listening needs an audio file; reading a file or a text", async () => {
-    const { sessionId } = await heldClass();
-    expect(await saveAssignment(teacher, input(sessionId, { type: "listening" }), [pdf()])).toEqual(
-      { ok: false, error: "audio_needed" },
+  it("names an item without a title by its fallback, then its type", () => {
+    const base = { title: "", body: "", sessionId: crypto.randomUUID() };
+    expect(input(base.sessionId, { title: "", titleFallback: "Writing: Tell…" }).title).toBe(
+      "Writing: Tell…",
     );
-    expect(
-      (await saveAssignment(teacher, input(sessionId, { type: "listening" }), [mp3()])).ok,
-    ).toBe(true);
-    expect(await saveAssignment(teacher, input(sessionId, { type: "reading" }), [])).toEqual({
-      ok: false,
-      error: "reading_needed",
-    });
-    expect(
-      (await saveAssignment(teacher, input(sessionId, { type: "reading", body: "Read this." }), []))
-        .ok,
-    ).toBe(true);
+    expect(input(base.sessionId, { title: "" }).title).toBe("writing");
+    expect(input(base.sessionId, { title: "Mine", titleFallback: "x" }).title).toBe("Mine");
   });
 
   it("can go to some learners only, never to one outside the class", async () => {

@@ -13,6 +13,8 @@ const variants = {
   ocean: "bg-ocean text-white hover:bg-deep",
   /** Secondary action on light backgrounds. */
   ghost: "border border-brand text-brand hover:bg-mist",
+  /** Low-emphasis action next to a primary one: no border, so several can sit in a row. */
+  quiet: "px-4 text-brand hover:bg-mist",
   /** Destructive confirmation (e.g. cancel a session). */
   danger: "bg-red-700 text-white hover:bg-red-800",
 } as const;

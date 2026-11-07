@@ -19,8 +19,9 @@ import {
   saveStation,
   stationSchema,
 } from "@/server/paths/sources";
-import { coveredSchema, getAfterClass, saveCovered } from "../after-class";
-import { assignmentSchema, saveAssignment } from "../assignments";
+import { coveredSchema, getAfterClass, saveCovered, sendAfterClass } from "../after-class";
+import { assignmentSchema, deleteAssignment, saveAssignment } from "../assignments";
+import { learnerHomework } from "../submissions";
 
 beforeAll(async () => {
   process.env.UPLOAD_DIR = await mkdtemp(join(tmpdir(), "hoopo-uploads-"));
@@ -100,7 +101,7 @@ async function setup({ withPath = true } = {}) {
     .where(eq(sessions.classId, made.id))
     .orderBy(asc(sessions.startsAt));
   await markHeld(teacher.teacherId, first.id, { [sara.id]: "present" }, after);
-  return { classId: made.id, sessionId: first.id, saraId: sara.id };
+  return { classId: made.id, sessionId: first.id, saraId: sara.id, userId: user.id };
 }
 
 describe("after class", () => {
@@ -144,6 +145,84 @@ describe("after class", () => {
     expect(page.summary).toBe("Weekend stories.");
     expect(page.privateNote).toBeNull();
     expect(page.station!.skills.map((k) => k.worked)).toEqual([true, true, false]);
+  });
+
+  describe("drafts", () => {
+    const item = (sessionId: string, extra: object = {}) =>
+      assignmentSchema.parse({
+        sessionId,
+        type: "writing",
+        title: "Weekend",
+        body: "Write five lines.",
+        dueDate: "",
+        dueTime: "",
+        studentIds: [],
+        stationSkillId: "",
+        keep: [],
+        ...extra,
+      });
+    const mine = (sessionId: string) =>
+      getAfterClass(teacher.teacherId, sessionId, after).then((p) => p!);
+
+    it("keeps homework from learners until the page is sent", async () => {
+      const { sessionId, userId } = await setup();
+      await saveAssignment(teacher, item(sessionId), []);
+      expect(await learnerHomework(userId)).toEqual([]);
+      expect((await mine(sessionId)).homework[0]).toMatchObject({ published: false });
+
+      expect(await sendAfterClass(teacher.teacherId, sessionId, after)).toEqual({ ok: true });
+      expect((await learnerHomework(userId)).map((h) => h.title)).toEqual(["Weekend"]);
+      const page = await mine(sessionId);
+      expect(page.sentAt).toEqual(after);
+      expect(page.homework[0]).toMatchObject({ published: true });
+    });
+
+    it("is blocked while an item has an issue", async () => {
+      const { sessionId, userId } = await setup();
+      await saveAssignment(teacher, item(sessionId, { type: "listening" }), []);
+      expect((await mine(sessionId)).homework[0].issue).toBe("no_audio");
+      expect(await sendAfterClass(teacher.teacherId, sessionId, after)).toEqual({
+        ok: false,
+        error: "issues",
+      });
+      expect(await learnerHomework(userId)).toEqual([]);
+      expect((await mine(sessionId)).sentAt).toBeNull();
+    });
+
+    it("goes back to not sent after any change; new items stay drafts", async () => {
+      const { sessionId, userId } = await setup();
+      const made = await saveAssignment(teacher, item(sessionId), []);
+      await sendAfterClass(teacher.teacherId, sessionId, after);
+
+      await saveCovered(
+        teacher.teacherId,
+        coveredSchema.parse({
+          sessionId,
+          topics: ["Past simple"],
+          summary: "",
+          privateNote: "",
+          skillIds: [],
+        }),
+      );
+      expect((await mine(sessionId)).sentAt).toBeNull();
+
+      await sendAfterClass(teacher.teacherId, sessionId, after);
+      await saveAssignment(teacher, item(sessionId, { title: "Second" }), []);
+      expect((await mine(sessionId)).sentAt).toBeNull();
+      expect((await learnerHomework(userId)).map((h) => h.title)).toEqual(["Weekend"]);
+
+      await sendAfterClass(teacher.teacherId, sessionId, after);
+      if (made.ok) await deleteAssignment(teacher.teacherId, made.id);
+      expect((await mine(sessionId)).sentAt).toBeNull();
+    });
+
+    it("only the teacher's own held session can be sent", async () => {
+      const { sessionId } = await setup();
+      expect(await sendAfterClass(crypto.randomUUID(), sessionId, after)).toEqual({
+        ok: false,
+        error: "not_held",
+      });
+    });
   });
 
   it("lists the session's homework with its type, skill and recipients", async () => {
@@ -204,7 +283,7 @@ describe("station check", () => {
     const { classId, sessionId, saraId } = await setup();
     expect(await getStationCheck(teacher.teacherId, sessionId)).toBeNull();
     const last = await holdSecond(classId, saraId);
-    expect(await getStationCheck(teacher.teacherId, last)).toMatchObject({ canHold: true });
+    expect(await getStationCheck(teacher.teacherId, last)).toMatchObject({ closed: false });
     expect(
       await saveStationCheck(teacher.teacherId, { sessionId, results: [], action: "close" }),
     ).toEqual({ ok: false, error: "not_last" });

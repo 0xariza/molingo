@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import {
@@ -16,7 +16,7 @@ import {
 import { fromTehranTime } from "@/lib/format";
 import { formatClock, parseClock } from "@/lib/schedule";
 import { checkUploads, deleteFiles, MAX_FILES, storeFiles, type FileError } from "../files/storage";
-import { HOMEWORK_TYPES, type HomeworkType } from "./types";
+import { HOMEWORK_TYPES } from "./types";
 import { assignmentFilesOf, type StoredFile } from "./submissions";
 
 const clean = (max: number, error: string) =>
@@ -32,7 +32,9 @@ export const assignmentSchema = z
     id: z.uuid().optional(),
     sessionId: z.uuid(),
     type: z.enum(HOMEWORK_TYPES, "type"),
-    title: z.string().trim().min(1, "title").max(120, "title"),
+    /** Optional: without one the item is named by `titleFallback`, then by its type. */
+    title: z.string().trim().max(120, "title"),
+    titleFallback: z.string().trim().max(120).default(""),
     body: clean(4000, "body"),
     /** Tehran calendar date and time of the deadline; both empty means no deadline. */
     dueDate: z.string().regex(/^(\d{4}-\d{2}-\d{2})?$/, "due"),
@@ -55,43 +57,21 @@ export const assignmentSchema = z
     message: "due",
     path: ["dueDate"],
   })
-  .transform(({ dueDate, dueTime, ...rest }) => ({
+  .transform(({ dueDate, dueTime, titleFallback, ...rest }) => ({
     ...rest,
+    title: rest.title || titleFallback || rest.type,
     dueAt: dueDate && dueTime !== null ? fromTehranTime(dueDate, formatClock(dueTime)) : null,
   }));
 export type AssignmentInput = z.output<typeof assignmentSchema>;
 
 export type AssignError =
-  | "not_held"
-  | "not_found"
-  | "no_learners"
-  | "learners"
-  | "answered"
-  | "skill"
-  | "audio_needed"
-  | "reading_needed"
-  | FileError;
+  "not_held" | "not_found" | "no_learners" | "learners" | "answered" | "skill" | FileError;
 export type AssignResult = { ok: true; id: string } | { ok: false; error: AssignError };
 
-const isAudio = (mime: string) => mime.split(";")[0].trim().toLowerCase().startsWith("audio/");
-
 /**
- * What each type needs: listening an audio file to listen to; reading a file or a text in the
- * description to read. Writing and speaking need only the task.
- */
-export function typeError(
-  type: HomeworkType,
-  body: string | null,
-  mimes: string[],
-): "audio_needed" | "reading_needed" | null {
-  if (type === "listening" && !mimes.some(isAudio)) return "audio_needed";
-  if (type === "reading" && !mimes.length && !body) return "reading_needed";
-  return null;
-}
-
-/**
- * Gives (or edits) one homework item of a held session. It goes to the chosen learners, or to
- * every active learner of the class; an optional skill must belong to the session's station.
+ * Saves (or edits) one homework item of a held session as a draft; learners get it when the
+ * teacher sends the page. It is for the chosen learners, or every active learner of the class; an
+ * optional skill must belong to the session's station. Any change marks the page "not sent".
  */
 export async function saveAssignment(
   teacher: { teacherId: string; userId: string },
@@ -135,11 +115,6 @@ export async function saveAssignment(
   const kept = before.filter((f) => input.keep.includes(f.id));
   const fileError = checkUploads(uploads, kept.length);
   if (fileError) return { ok: false, error: fileError };
-  const wrongType = typeError(input.type, input.body, [
-    ...kept.map((f) => f.mime),
-    ...uploads.map((f) => f.type),
-  ]);
-  if (wrongType) return { ok: false, error: wrongType };
 
   const active = (
     await db
@@ -190,6 +165,10 @@ export async function saveAssignment(
             .insert(assignments)
             .values({ ...values, teacherId: teacher.teacherId, sessionId: input.sessionId })
             .returning({ id: assignments.id });
+      await tx
+        .update(sessions)
+        .set({ afterClassSentAt: null })
+        .where(eq(sessions.id, input.sessionId));
       await tx.delete(assignmentRecipients).where(eq(assignmentRecipients.assignmentId, row.id));
       await tx
         .insert(assignmentRecipients)
@@ -213,7 +192,10 @@ export async function saveAssignment(
 /** Deletes the assignment with every answer and file that belongs to it. */
 export async function deleteAssignment(teacherId: string, id: string): Promise<boolean> {
   const own = and(eq(assignments.id, id), eq(assignments.teacherId, teacherId));
-  const [exists] = await db.select({ id: assignments.id }).from(assignments).where(own);
+  const [exists] = await db
+    .select({ id: assignments.id, sessionId: assignments.sessionId })
+    .from(assignments)
+    .where(own);
   if (!exists) return false;
   const [given, answered] = await Promise.all([
     db
@@ -227,6 +209,10 @@ export async function deleteAssignment(teacherId: string, id: string): Promise<b
       .where(eq(submissions.assignmentId, id)),
   ]);
   await db.delete(assignments).where(own);
+  await db
+    .update(sessions)
+    .set({ afterClassSentAt: null })
+    .where(eq(sessions.id, exists.sessionId));
   await deleteFiles([...given, ...answered].map((f) => f.id));
   return true;
 }
@@ -343,7 +329,7 @@ export async function homeworkOverview(
       .from(assignments)
       .innerJoin(sessions, eq(sessions.id, assignments.sessionId))
       .innerJoin(classes, eq(classes.id, sessions.classId))
-      .where(eq(assignments.teacherId, teacherId))
+      .where(and(eq(assignments.teacherId, teacherId), isNotNull(assignments.publishedAt)))
       .orderBy(desc(assignments.createdAt)),
     db
       .select({ id: sessions.id, classId: sessions.classId, kind: sessions.kind })

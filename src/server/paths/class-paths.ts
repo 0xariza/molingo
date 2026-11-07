@@ -11,11 +11,11 @@ import {
   stations,
 } from "@/db/schema";
 import { planSessions, stationRanges } from "./plan";
-import { isStationComplete, MAX_PLANNED_SESSIONS, MAX_SKILLS, MIN_SKILLS } from "./sources";
+import { isStationComplete, MIN_SKILLS } from "./sources";
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
-const planned = z.number().int().min(1, "planned").max(MAX_PLANNED_SESSIONS, "planned");
+const planned = z.number().int().min(1, "planned").max(99, "planned");
 
 /** One row of a class path as the editor sends it, in path order. Error keys map to `Admin.paths.errors`. */
 const pathItemSchema = z.discriminatedUnion("kind", [
@@ -34,14 +34,20 @@ const pathItemSchema = z.discriminatedUnion("kind", [
     skills: z
       .array(z.string().trim().max(160, "customSkills"))
       .transform((xs) => xs.filter(Boolean))
-      .pipe(z.array(z.string()).min(MIN_SKILLS, "customSkills").max(MAX_SKILLS, "customSkills")),
+      .pipe(z.array(z.string()).min(MIN_SKILLS, "customSkills")),
   }),
 ]);
 
-export const pathInputSchema = z.object({
-  sourceId: z.uuid("source"),
-  items: z.array(pathItemSchema).min(1, "items"),
-});
+export const pathInputSchema = z
+  .object({
+    sourceId: z.uuid("source").optional(),
+    /** No source yet: make one at the class's level; the items become its stations. */
+    newSource: z
+      .object({ title: z.string().trim().min(1, "source").max(120, "source") })
+      .optional(),
+    items: z.array(pathItemSchema).min(1, "items"),
+  })
+  .refine((v) => Boolean(v.sourceId) !== Boolean(v.newSource), { message: "source" });
 export type PathInput = z.infer<typeof pathInputSchema>;
 
 /** The editor's hidden `path` field (JSON) → a validated path, or the error key. */
@@ -136,12 +142,42 @@ export async function setClassPath(
     .from(classes)
     .where(and(eq(classes.id, classId), eq(classes.teacherId, teacherId)));
   if (!cls) return "notFound";
+  if (input.newSource) {
+    if (input.items.some((i) => i.kind !== "custom")) return "stations";
+    const [made] = await tx
+      .insert(learningSources)
+      .values({ teacherId, title: input.newSource.title, level: cls.level })
+      .returning({ id: learningSources.id });
+    const items: PathInput["items"] = [];
+    for (const [i, item] of input.items.entries()) {
+      if (item.kind !== "custom") continue;
+      const [row] = await tx
+        .insert(stations)
+        .values({
+          sourceId: made.id,
+          position: i + 1,
+          title: item.title,
+          plannedSessions: item.plannedSessions,
+        })
+        .returning({ id: stations.id });
+      await tx
+        .insert(stationSkills)
+        .values(item.skills.map((text, k) => ({ stationId: row.id, position: k + 1, text })));
+      items.push({
+        kind: "source",
+        stationId: row.id,
+        included: true,
+        plannedSessions: item.plannedSessions,
+      });
+    }
+    return setClassPath(tx, teacherId, classId, { sourceId: made.id, items });
+  }
   const [source] = await tx
     .select({ level: learningSources.level })
     .from(learningSources)
     .where(
       and(
-        eq(learningSources.id, input.sourceId),
+        eq(learningSources.id, input.sourceId!),
         eq(learningSources.teacherId, teacherId),
         isNull(learningSources.archivedAt),
       ),
@@ -152,7 +188,7 @@ export async function setClassPath(
   const sourceStations = await tx
     .select({ id: stations.id, title: stations.title })
     .from(stations)
-    .where(eq(stations.sourceId, input.sourceId));
+    .where(eq(stations.sourceId, input.sourceId!));
   const skillRows = await tx
     .select({ stationId: stationSkills.stationId })
     .from(stationSkills)
@@ -196,7 +232,7 @@ export async function setClassPath(
   if (existing) {
     const { rows, held } = await heldByStation(tx, classId, existing.id);
     const locked = rows.filter((r) => held.has(r.stationId)).map((r) => r.stationId);
-    if (locked.length && existing.sourceId !== input.sourceId) return "sourceLocked";
+    if (locked.length && existing.sourceId !== input.sourceId!) return "sourceLocked";
     const taken = input.items.filter((i) => i.kind === "custom" || i.included);
     const keepsLocked = locked.every((id, i) => {
       const item = taken[i];
@@ -204,15 +240,15 @@ export async function setClassPath(
     });
     if (!keepsLocked) return "locked";
     pathId = existing.id;
-    if (existing.sourceId !== input.sourceId)
+    if (existing.sourceId !== input.sourceId!)
       await tx
         .update(classPaths)
-        .set({ sourceId: input.sourceId })
+        .set({ sourceId: input.sourceId! })
         .where(eq(classPaths.id, pathId));
   } else {
     const [row] = await tx
       .insert(classPaths)
-      .values({ classId, sourceId: input.sourceId })
+      .values({ classId, sourceId: input.sourceId! })
       .returning({ id: classPaths.id });
     pathId = row.id;
   }

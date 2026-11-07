@@ -52,7 +52,7 @@ describe("schemas", () => {
         .success,
     ).toBe(false);
     expect(
-      newSourceSchema.safeParse({ title: "x", level: "A2", chapters: "3", plannedSessions: "5" })
+      newSourceSchema.safeParse({ title: "x", level: "A2", chapters: "3", plannedSessions: "0" })
         .success,
     ).toBe(false);
     expect(
@@ -60,7 +60,7 @@ describe("schemas", () => {
         .success,
     ).toBe(false);
   });
-  it("drops empty skill lines and allows at most four", () => {
+  it("drops empty skill lines and has no skill cap", () => {
     expect(station({ skills: ["a", " ", "b"] }).skills).toEqual(["a", "b"]);
     expect(
       stationSchema.safeParse({
@@ -69,15 +69,15 @@ describe("schemas", () => {
         plannedSessions: "2",
         skills: ["a", "b", "c", "d", "e"],
       }).success,
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 
 describe("map state", () => {
-  it("needs a title and three skills per station", () => {
+  it("needs a title and one skill per station", () => {
     expect(isStationComplete({ title: "x", skillCount: 3 })).toBe(true);
     expect(isStationComplete({ title: "", skillCount: 4 })).toBe(false);
-    expect(isStationComplete({ title: "x", skillCount: 2 })).toBe(false);
+    expect(isStationComplete({ title: "x", skillCount: 0 })).toBe(false);
     expect(mapState([])).toEqual({ total: 0, done: 0, state: "empty" });
     expect(
       mapState([

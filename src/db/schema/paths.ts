@@ -56,7 +56,7 @@ export const stations = pgTable(
   },
   (t) => [
     index().on(t.sourceId, t.position),
-    check("stations_planned_sessions_check", sql`${t.plannedSessions} between 1 and 4`),
+    check("stations_planned_sessions_check", sql`${t.plannedSessions} >= 1`),
     check("stations_owner_check", sql`(${t.sourceId} is null) <> (${t.classId} is null)`),
   ],
 );
@@ -111,7 +111,7 @@ export const classPathStations = pgTable(
   (t) => [
     uniqueIndex().on(t.pathId, t.stationId),
     index().on(t.pathId, t.position),
-    check("class_path_stations_planned_check", sql`${t.plannedSessions} between 1 and 4`),
+    check("class_path_stations_planned_check", sql`${t.plannedSessions} >= 1`),
   ],
 );
 

@@ -12,8 +12,7 @@ import { formatNumber } from "@/lib/format";
 import { saveStationAction, type SourceFormState } from "@/server/paths/actions";
 
 const initial: SourceFormState = { status: "idle" };
-const MIN_SKILLS = 3;
-const MAX_SKILLS = 4;
+const MIN_SKILLS = 1;
 
 /** One station of a source map: its name, place in the book, suggested sessions and 3–4 skills. */
 export function StationEditor({
@@ -77,7 +76,7 @@ export function StationEditor({
           name="plannedSessions"
           value={sessions}
           min={1}
-          max={4}
+          max={99}
           display={n(sessions)}
           onChange={setSessions}
           lessLabel={t("form.less")}
@@ -117,7 +116,7 @@ export function StationEditor({
           </div>
         ))}
         {err("skills") && <p className="text-sm font-medium text-red-700">{err("skills")}</p>}
-        {skills.length < MAX_SKILLS && (
+        {
           <button
             type="button"
             onClick={() => setSkills([...skills, ""])}
@@ -125,7 +124,7 @@ export function StationEditor({
           >
             {t("station.addSkill")}
           </button>
-        )}
+        }
         <div className="grid gap-2 text-sm sm:grid-cols-2">
           <p className="rounded-xl bg-[#ddf5e8] px-3 py-2 text-[#14613a]">{t("station.good")}</p>
           <p className="rounded-xl bg-cinnamon-soft px-3 py-2 text-cinnamon-ink">

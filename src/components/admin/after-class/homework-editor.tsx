@@ -8,6 +8,7 @@ import { ErrorAlert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button";
 import { DatePicker } from "@/components/ui/date-picker";
 import { Field, TextareaField } from "@/components/ui/field";
+import { SelectMenu } from "@/components/ui/select-menu";
 import { SubmitButton } from "@/components/ui/submit-button";
 import type { Locale } from "@/i18n/routing";
 import { tehranClock, tehranDateKey } from "@/lib/format";
@@ -50,22 +51,29 @@ export function HomeworkEditor({
     return next;
   }, initial);
 
-  const [type, setType] = useState<HomeworkType>(item?.type ?? "listening");
+  const [type, setType] = useState<HomeworkType>(item?.type ?? "writing");
   const [title, setTitle] = useState(item?.title ?? "");
   const [body, setBody] = useState(item?.body ?? "");
-  const [toAll, setToAll] = useState(item ? item.all : true);
-  const [chosen, setChosen] = useState<string[]>(item && !item.all ? item.recipientIds : []);
+  // "all" or one learner's id.
+  const [who, setWho] = useState(item && !item.all ? (item.recipientIds[0] ?? "all") : "all");
   const [skill, setSkill] = useState(item?.skillId ?? "");
-  const [due, setDue] = useState(() =>
-    item
-      ? item.dueAt
-        ? { date: tehranDateKey(item.dueAt), time: tehranClock(item.dueAt), suggested: false }
-        : { date: "", time: "", suggested: false }
-      : defaultDue(page.nextStartsAt),
+  const suggested = defaultDue(page.nextStartsAt);
+  const [dueMode, setDueMode] = useState<"suggested" | "custom" | "none">(
+    item ? (item.dueAt ? "custom" : "none") : suggested.suggested ? "suggested" : "none",
   );
+  const [custom, setCustom] = useState(
+    item?.dueAt
+      ? { date: tehranDateKey(item.dueAt), time: tehranClock(item.dueAt) }
+      : { date: suggested.date, time: suggested.time },
+  );
+  const due =
+    dueMode === "suggested" ? suggested : dueMode === "custom" ? custom : { date: "", time: "" };
   const [ai, setAi] = useState({ request: "", error: "", busy: false });
   const group = page.learners.length > 1;
-  const count = toAll || !group ? page.learners.length : chosen.length;
+  // Without a title the item is "type: description…".
+  const fallback = body.trim()
+    ? `${t(`types.${type}`)}: ${body.trim().slice(0, 40)}${body.trim().length > 40 ? "…" : ""}`
+    : t(`types.${type}`);
   const err = (k: string) => state.fieldErrors?.[k] && te(state.fieldErrors[k] as "title");
 
   async function draft() {
@@ -97,13 +105,14 @@ export function HomeworkEditor({
   }
 
   return (
-    <form action={action} className="space-y-5">
+    <form id="homework-form" action={action} className="space-y-5">
       <input type="hidden" name="sessionId" value={page.sessionId} />
       {item && <input type="hidden" name="id" value={item.id} />}
       <input type="hidden" name="type" value={type} />
-      {group &&
-        !toAll &&
-        chosen.map((id) => <input key={id} type="hidden" name="studentIds" value={id} />)}
+      <input type="hidden" name="titleFallback" value={fallback} />
+      <input type="hidden" name="dueDate" value={due.date} />
+      <input type="hidden" name="dueTime" value={due.time} />
+      {group && who !== "all" && <input type="hidden" name="studentIds" value={who} />}
       {state.status === "error" && state.error && (
         <ErrorAlert>{te(state.error as "not_held")}</ErrorAlert>
       )}
@@ -158,11 +167,10 @@ export function HomeworkEditor({
         dir="auto"
         error={err("title")}
         maxLength={120}
-        required
         value={title}
-        placeholder={t(`defaultTitle.${type}`)}
+        placeholder={fallback}
+        hint={t("titleHint", { type: t(`types.${type}`) })}
         onChange={(e) => setTitle(e.target.value)}
-        onBlur={() => !title.trim() && setTitle(t(`defaultTitle.${type}`))}
       />
       <TextareaField
         label={t("body")}
@@ -179,95 +187,65 @@ export function HomeworkEditor({
           {t("attachLabel")}{" "}
           <span className="font-normal text-body">{t(`attachNeed.${type}`)}</span>
         </p>
-        <AttachmentPicker kept={item?.files.map((f) => ({ id: f.id, name: f.name })) ?? []} />
+        <AttachmentPicker
+          kept={item?.files ?? []}
+          recordLabel={type === "speaking" ? t("recordSample") : undefined}
+        />
       </div>
 
       <div className="grid items-start gap-4 sm:grid-cols-2">
         {group && (
-          <fieldset className="space-y-2">
-            <legend className="text-sm font-bold text-ocean">{t("for")}</legend>
-            <label className="flex min-h-touch items-center gap-2.5 font-semibold text-ocean">
-              <input
-                type="radio"
-                name="who"
-                checked={toAll}
-                onChange={() => setToAll(true)}
-                className="size-5 accent-brand"
-              />
-              {t("everyone", { count: page.learners.length })}
-            </label>
-            <label className="flex min-h-touch items-center gap-2.5 font-semibold text-ocean">
-              <input
-                type="radio"
-                name="who"
-                checked={!toAll}
-                onChange={() => setToAll(false)}
-                className="size-5 accent-brand"
-              />
-              {t("chosen")}
-            </label>
-            {!toAll && (
-              <ul className="space-y-1 ps-7">
-                {page.learners.map((l) => (
-                  <li key={l.id}>
-                    <label className="flex min-h-10 items-center gap-2.5 text-ocean">
-                      <input
-                        type="checkbox"
-                        checked={chosen.includes(l.id)}
-                        onChange={(e) =>
-                          setChosen(
-                            e.target.checked ? [...chosen, l.id] : chosen.filter((x) => x !== l.id),
-                          )
-                        }
-                        className="size-5 accent-brand"
-                      />
-                      {learnerNames(l, locale).primary}
-                    </label>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </fieldset>
+          <SelectMenu
+            label={t("for")}
+            value={who}
+            onChange={setWho}
+            options={[
+              { value: "all", label: t("everyone", { count: page.learners.length }) },
+              ...page.learners.map((l) => ({
+                value: l.id,
+                label: learnerNames(l, locale).primary,
+              })),
+            ]}
+          />
         )}
-        <div className="space-y-2">
+        <SelectMenu
+          label={t("due")}
+          value={dueMode}
+          onChange={(v) => setDueMode(v as typeof dueMode)}
+          options={[
+            { value: "suggested", label: t("dueSuggested"), disabled: !suggested.suggested },
+            { value: "custom", label: t("dueCustom") },
+            { value: "none", label: t("dueNone") },
+          ]}
+        />
+      </div>
+      {dueMode === "custom" && (
+        <div className="grid items-start gap-4 sm:grid-cols-2">
           <DatePicker
-            label={`${t("due")} ${t("optional")}`}
-            name="dueDate"
-            value={due.date}
-            onChange={(date) => setDue((d) => ({ ...d, date, suggested: false }))}
+            label={t("dueDate")}
+            value={custom.date}
+            onChange={(date) => setCustom((c) => ({ ...c, date }))}
             allowed={(key) => key >= tehranDateKey(new Date())}
             placeholder={t("pickDate")}
             error={err("dueDate")}
-            hint={due.suggested ? t("dueHelp") : undefined}
           />
-          <label htmlFor={`hw-due-time-${item?.id ?? "new"}`} className="sr-only">
-            {t("dueTime")}
+          <label className="block space-y-1.5">
+            <span className="block text-sm font-bold text-ocean">{t("dueTime")}</span>
+            <span className="flex h-12 items-center gap-2 rounded-2xl border-[1.5px] border-line bg-white px-3 focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15">
+              <Clock aria-hidden size={18} className="shrink-0 text-body" />
+              <input
+                inputMode="numeric"
+                dir="ltr"
+                maxLength={5}
+                placeholder="18:00"
+                value={custom.time}
+                onChange={(e) => setCustom((c) => ({ ...c, time: e.target.value }))}
+                className="min-w-0 flex-1 bg-transparent text-ocean outline-none"
+              />
+            </span>
           </label>
-          <div className="flex h-12 items-center gap-2 rounded-2xl border-[1.5px] border-line bg-white px-3 focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15">
-            <Clock aria-hidden size={18} className="shrink-0 text-body" />
-            <input
-              id={`hw-due-time-${item?.id ?? "new"}`}
-              name="dueTime"
-              inputMode="numeric"
-              dir="ltr"
-              maxLength={5}
-              placeholder="18:00"
-              value={due.time}
-              onChange={(e) => setDue((d) => ({ ...d, time: e.target.value, suggested: false }))}
-              className="min-w-0 flex-1 bg-transparent text-center font-bold text-ocean outline-none"
-            />
-          </div>
-          {(due.date || due.time) && (
-            <button
-              type="button"
-              onClick={() => setDue({ date: "", time: "", suggested: false })}
-              className="min-h-touch font-bold text-brand hover:underline"
-            >
-              {t("dueClear")}
-            </button>
-          )}
         </div>
-      </div>
+      )}
 
       {page.station && (
         <fieldset className="space-y-2">
@@ -291,20 +269,16 @@ export function HomeworkEditor({
               </button>
             ))}
           </div>
-          <p className="text-sm">{t("skillHint")}</p>
+          <p className="text-sm">{skill ? t("skillHint") : t("skillNoneHint")}</p>
         </fieldset>
       )}
 
-      <div className="flex flex-wrap justify-end gap-3 border-t border-mist pt-4">
-        <button type="button" onClick={onDone} className={buttonClass("ghost")}>
-          {t("cancel")}
+      <div className="flex flex-wrap items-center justify-end gap-2 border-t border-mist pt-4">
+        <button type="button" onClick={onDone} className={buttonClass("quiet")}>
+          {t("close")}
         </button>
-        <SubmitButton
-          pendingLabel={t("sending")}
-          blocked={group && !toAll && chosen.length === 0}
-          className="w-full sm:w-auto"
-        >
-          {item ? t("save") : t("send", { count })}
+        <SubmitButton pendingLabel={t("savingItem")} className="w-full sm:w-auto">
+          {t("saveItem")}
         </SubmitButton>
       </div>
     </form>

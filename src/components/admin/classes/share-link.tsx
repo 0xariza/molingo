@@ -16,7 +16,7 @@ export function ShareLinkButton({ url }: { url: string }) {
         await navigator.clipboard.writeText(url);
         setCopied(true);
       }}
-      className={buttonClass("ghost")}
+      className={buttonClass("quiet")}
     >
       {copied ? <Check aria-hidden size={18} /> : <LinkSimple aria-hidden size={18} />}
       <span aria-live="polite">{copied ? t("detail.shareCopied") : t("detail.share")}</span>

@@ -162,6 +162,20 @@
       "when": 1794000106490,
       "tag": "0022_voice_recordings",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794005901036,
+      "tag": "0023_no_session_cap",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794008035607,
+      "tag": "0024_after_class_drafts",
+      "breakpoints": true
     }
   ]
 }

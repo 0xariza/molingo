@@ -14,6 +14,7 @@ import { getClassDetail } from "../classes/sessions";
 import { getClassPath } from "../paths/class-paths";
 import { assignmentFilesOf, type StoredFile } from "./submissions";
 
+import { homeworkIssue, type HomeworkIssue } from "./issues";
 import type { HomeworkType } from "./types";
 
 export type SessionHomework = {
@@ -28,6 +29,9 @@ export type SessionHomework = {
   all: boolean;
   skillId: string | null;
   handedIn: number;
+  /** False for a draft. */
+  published: boolean;
+  issue: HomeworkIssue | null;
 };
 
 export type AfterClass = {
@@ -57,6 +61,8 @@ export type AfterClass = {
   /** When the class next meets: the default deadline is an hour before. */
   nextStartsAt: Date | null;
   homework: SessionHomework[];
+  /** When the page was last sent; null while it is a draft or changed since. */
+  sentAt: Date | null;
 };
 
 /** Topics are kept one per line in `sessions.topics`. */
@@ -77,6 +83,7 @@ export async function getAfterClass(
       classId: sessions.classId,
       status: sessions.status,
       pathStationId: sessions.pathStationId,
+      sentAt: sessions.afterClassSentAt,
     })
     .from(sessions)
     .where(and(eq(sessions.id, sessionId), eq(sessions.teacherId, teacherId)));
@@ -131,6 +138,7 @@ export async function getAfterClass(
       body: assignments.body,
       dueAt: assignments.dueAt,
       skillId: assignments.stationSkillId,
+      publishedAt: assignments.publishedAt,
       handedIn: sql<number>`(select count(*)::int from ${submissions} s where s.assignment_id = "assignments"."id")`,
     })
     .from(assignments)
@@ -165,6 +173,7 @@ export async function getAfterClass(
     privateNote: s.privateNote,
     station,
     learners: active.map(({ id, fullNameFa, fullNameEn }) => ({ id, fullNameFa, fullNameEn })),
+    sentAt: row.sentAt,
     nextStartsAt:
       cls.sessions.find((x) => x.phase === "upcoming" && x.startsAt > now)?.startsAt ?? null,
     homework: items.map((i) => {
@@ -174,6 +183,12 @@ export async function getAfterClass(
         files: fileMap.get(i.id) ?? [],
         recipientIds: to,
         all: active.every((l) => to.includes(l.id)),
+        published: i.publishedAt !== null,
+        issue: homeworkIssue(
+          i.type,
+          i.body,
+          (fileMap.get(i.id) ?? []).map((f) => f.mime),
+        ),
       };
     }),
   };
@@ -204,7 +219,7 @@ export async function saveCovered(teacherId: string, input: CoveredInput): Promi
   return db.transaction(async (tx) => {
     const [saved] = await tx
       .update(sessions)
-      .set(log)
+      .set({ ...log, afterClassSentAt: null })
       .where(
         and(
           eq(sessions.id, sessionId),
@@ -230,4 +245,51 @@ export async function saveCovered(teacherId: string, input: CoveredInput): Promi
         .values(keep.map((stationSkillId) => ({ sessionId, stationSkillId })));
     return true;
   });
+}
+
+/**
+ * "Save and send": publishes every draft item of the session and marks the page sent, which also
+ * shows the topics to learners. Blocked while any item has an issue.
+ */
+export async function sendAfterClass(
+  teacherId: string,
+  sessionId: string,
+  now = new Date(),
+): Promise<{ ok: true } | { ok: false; error: "not_held" | "issues" }> {
+  const [session] = await db
+    .select({ id: sessions.id })
+    .from(sessions)
+    .where(
+      and(
+        eq(sessions.id, sessionId),
+        eq(sessions.teacherId, teacherId),
+        eq(sessions.status, "held"),
+      ),
+    );
+  if (!session) return { ok: false, error: "not_held" };
+  const items = await db
+    .select({ id: assignments.id, type: assignments.type, body: assignments.body })
+    .from(assignments)
+    .where(and(eq(assignments.sessionId, sessionId), eq(assignments.teacherId, teacherId)));
+  const fileMap = await assignmentFilesOf(items.map((i) => i.id));
+  if (
+    items.some((i) =>
+      homeworkIssue(
+        i.type,
+        i.body,
+        (fileMap.get(i.id) ?? []).map((f) => f.mime),
+      ),
+    )
+  )
+    return { ok: false, error: "issues" };
+  await db.transaction(async (tx) => {
+    await tx
+      .update(assignments)
+      .set({
+        publishedAt: sql`coalesce(${assignments.publishedAt}, ${now.toISOString()}::timestamptz)`,
+      })
+      .where(eq(assignments.sessionId, sessionId));
+    await tx.update(sessions).set({ afterClassSentAt: now }).where(eq(sessions.id, sessionId));
+  });
+  return { ok: true };
 }

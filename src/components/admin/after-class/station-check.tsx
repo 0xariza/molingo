@@ -67,17 +67,15 @@ export function StationCheck({
         <SubmitButton name="action" value="close" pendingLabel={t("saving")} className="">
           {t("close")}
         </SubmitButton>
-        {check.canHold && (
-          <SubmitButton
-            name="action"
-            value="hold"
-            pendingLabel={t("saving")}
-            variant="ghost"
-            className=""
-          >
-            {t("hold")}
-          </SubmitButton>
-        )}
+        <SubmitButton
+          name="action"
+          value="hold"
+          pendingLabel={t("saving")}
+          variant="ghost"
+          className=""
+        >
+          {t("hold")}
+        </SubmitButton>
       </div>
     </form>
   );

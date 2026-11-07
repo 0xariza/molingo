@@ -124,14 +124,17 @@ export function PathEditor({
     skills: string[];
   } | null>(null);
   const [seq, setSeq] = useState(0);
+  // A source made here: only its name is asked; the stations are the class-only rows below.
+  const [fresh, setFresh] = useState<string | null>(null);
 
   const pick = (id: string) => {
+    setFresh(null);
     setSourceId(id);
     setRows(rowsFor(id));
   };
   // A level change in the wizard drops a source of another level.
   const current = atLevel.find((s) => s.id === sourceId);
-  if (use && !current) {
+  if (use && !current && fresh === null) {
     const next = atLevel.find((s) => s.complete)?.id ?? "";
     if (next !== sourceId) pick(next);
   }
@@ -165,9 +168,9 @@ export function PathEditor({
   const fitting = ranges.filter((r) => r.count > 0).length;
 
   const value =
-    use && current?.complete && taken.length
+    use && (current?.complete || fresh?.trim()) && taken.length
       ? JSON.stringify({
-          sourceId,
+          ...(fresh === null ? { sourceId } : { newSource: { title: fresh.trim() } }),
           items: rows.map((r) =>
             r.kind === "source"
               ? {
@@ -188,7 +191,7 @@ export function PathEditor({
       : "";
 
   const draftSkills = draft?.skills.filter((s) => s.trim()).length ?? 0;
-  const draftOk = Boolean(draft?.title.trim()) && draftSkills >= 3;
+  const draftOk = Boolean(draft?.title.trim()) && draftSkills >= 1;
   const levelIndex = LEVELS.indexOf(level as (typeof LEVELS)[number]);
   const target = LEVELS[levelIndex + 1];
 
@@ -242,7 +245,7 @@ export function PathEditor({
         <>
           <fieldset className="space-y-2">
             <legend className="mb-1.5 text-sm font-bold text-ocean">{t("source")}</legend>
-            {atLevel.length === 0 && (
+            {atLevel.length === 0 && fresh === null && (
               <p className="rounded-2xl border border-dashed border-line px-4 py-3 text-sm">
                 {t("noSources", { level })}
               </p>
@@ -276,18 +279,34 @@ export function PathEditor({
                 )}
               </div>
             ))}
-            <p className="text-sm text-body/80">
-              {t.rich("sourcesHint", {
-                link: (chunks) => (
-                  <Link href="/admin/sources/new" className="font-bold text-brand">
-                    {chunks}
-                  </Link>
-                ),
-              })}
-            </p>
+            {fresh === null ? (
+              <button
+                type="button"
+                disabled={lockedCount > 0}
+                onClick={() => {
+                  setSourceId("");
+                  setRows([]);
+                  setFresh("");
+                }}
+                className="flex min-h-15 w-full items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-whale font-bold text-brand hover:bg-mist/40 disabled:opacity-50"
+              >
+                <Plus aria-hidden size={16} weight="bold" />
+                {t("addSource")}
+              </button>
+            ) : (
+              <label className="block space-y-1.5 rounded-2xl border-[1.5px] border-brand p-4">
+                <span className="block text-sm font-bold text-ocean">{t("newSourceName")}</span>
+                <input
+                  value={fresh}
+                  onChange={(e) => setFresh(e.target.value)}
+                  placeholder={t("newSourcePlaceholder")}
+                  className={box}
+                />
+              </label>
+            )}
           </fieldset>
 
-          {current?.complete && (
+          {(current?.complete || fresh !== null) && (
             <section aria-labelledby="path-stations" className="space-y-2">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 id="path-stations" className="text-sm font-bold text-ocean">
@@ -387,7 +406,7 @@ export function PathEditor({
                             <button
                               type="button"
                               aria-label={t("more", { name: r.title })}
-                              disabled={r.plannedSessions >= 4}
+                              disabled={r.plannedSessions >= 99}
                               onClick={() =>
                                 update(r.key, { plannedSessions: r.plannedSessions + 1 })
                               }
@@ -422,7 +441,7 @@ export function PathEditor({
                       name="custom-sessions"
                       value={draft.plannedSessions}
                       min={1}
-                      max={4}
+                      max={99}
                       display={n(draft.plannedSessions)}
                       onChange={(v) => setDraft({ ...draft, plannedSessions: v })}
                       lessLabel={t("lessPlain")}
@@ -447,7 +466,7 @@ export function PathEditor({
                         className={box}
                       />
                     ))}
-                    {draft.skills.length < 4 && (
+                    {
                       <button
                         type="button"
                         onClick={() => setDraft({ ...draft, skills: [...draft.skills, ""] })}
@@ -455,7 +474,7 @@ export function PathEditor({
                       >
                         {t("customMoreSkill")}
                       </button>
-                    )}
+                    }
                   </fieldset>
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     <span className="flex-1 text-sm">
@@ -497,7 +516,7 @@ export function PathEditor({
               ) : (
                 <button
                   type="button"
-                  onClick={() => setDraft({ title: "", plannedSessions: 2, skills: ["", "", ""] })}
+                  onClick={() => setDraft({ title: "", plannedSessions: 2, skills: [""] })}
                   className="flex min-h-13 w-full items-center justify-center rounded-2xl border-[1.5px] border-dashed border-whale font-bold text-brand hover:bg-mist/40"
                 >
                   {t("addCustom")}

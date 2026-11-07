@@ -5,7 +5,6 @@ import { useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { ErrorAlert } from "@/components/ui/alert";
 import { TextareaField } from "@/components/ui/field";
-import { SubmitButton } from "@/components/ui/submit-button";
 import { saveCoveredAction, type HomeworkFormState } from "@/server/homework/actions";
 import type { AfterClass } from "@/server/homework/after-class";
 
@@ -29,7 +28,7 @@ export function CoveredForm({ page }: { page: AfterClass }) {
   const heading = "text-sm font-bold text-ocean";
 
   return (
-    <form action={action} className="space-y-5">
+    <form id="covered-form" action={action} className="space-y-5">
       <input type="hidden" name="sessionId" value={page.sessionId} />
       {skills.map((id) => (
         <input key={id} type="hidden" name="skillIds" value={id} />
@@ -145,9 +144,6 @@ export function CoveredForm({ page }: { page: AfterClass }) {
             {t("saved")}
           </p>
         )}
-        <SubmitButton pendingLabel={t("saving")} className="w-full sm:w-auto">
-          {t("save")}
-        </SubmitButton>
       </div>
     </form>
   );

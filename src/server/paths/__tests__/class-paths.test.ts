@@ -138,6 +138,20 @@ describe("class paths", () => {
     expect(await db.select().from(stations).where(eq(stations.id, custom.stationId))).toEqual([]);
   });
 
+  it("makes a source from the class's own stations, with one skill and many sessions", async () => {
+    const cls = await klass();
+    const input: PathInput = {
+      newSource: { title: "My book" },
+      items: [
+        { kind: "custom", title: "One", plannedSessions: 7, skills: ["only"] },
+        { kind: "custom", title: "Two", plannedSessions: 1, skills: ["a", "b", "c", "d", "e"] },
+      ],
+    };
+    expect(await saveClassPath(tid, cls.id, input)).toBeNull();
+    expect(await sessionStations(cls.id)).toEqual(["One", "One", "One", "One", "One", "One"]);
+    const made = (await pathSources(tid)).find((x) => x.title === "My book");
+    expect(made?.stations.map((x) => x.title)).toEqual(["One", "Two"]);
+  });
   it("keeps held sessions and reflows the rest", async () => {
     const src = await source();
     const cls = await klass();

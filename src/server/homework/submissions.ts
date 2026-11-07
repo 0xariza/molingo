@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, inArray, ne, sql } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNotNull, ne, sql } from "drizzle-orm";
 import { z } from "zod";
 import { db } from "@/db";
 import {
@@ -325,7 +325,7 @@ const learnerRows = (studentId: string) =>
         eq(submissions.studentId, assignmentRecipients.studentId),
       ),
     )
-    .where(eq(assignmentRecipients.studentId, studentId));
+    .where(and(eq(assignmentRecipients.studentId, studentId), isNotNull(assignments.publishedAt)));
 
 const toLearnerHomework = (
   r: Awaited<ReturnType<typeof learnerRows>>[number],
@@ -424,10 +424,12 @@ export async function submitAnswer(
   const [given] = await db
     .select({ id: assignmentRecipients.assignmentId })
     .from(assignmentRecipients)
+    .innerJoin(assignments, eq(assignments.id, assignmentRecipients.assignmentId))
     .where(
       and(
         eq(assignmentRecipients.assignmentId, input.assignmentId),
         eq(assignmentRecipients.studentId, studentId),
+        isNotNull(assignments.publishedAt),
       ),
     );
   if (!given) return { ok: false, error: "not_found" };
