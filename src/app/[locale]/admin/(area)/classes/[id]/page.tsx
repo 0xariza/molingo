@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
 import { BackLink } from "@/components/admin/learners/back-link";
+import { ClassMoney } from "@/components/admin/finance/class-money";
 import { Roster } from "@/components/admin/classes/roster";
 import { PathCard } from "@/components/admin/paths/path-card";
 import { scheduleText } from "@/components/admin/classes/schedule-text";
@@ -19,6 +20,7 @@ import { requireTeacher } from "@/server/auth/current";
 import { archiveClassAction } from "@/server/classes/actions";
 import { listCandidates, listClasses } from "@/server/classes/classes";
 import { getClassDetail } from "@/server/classes/sessions";
+import { moveCreditProposal } from "@/server/billing/payments";
 import { getClassPath } from "@/server/paths/class-paths";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -38,6 +40,7 @@ export default function ClassPage({ params }: PageProps<"/[locale]/admin/classes
   );
 }
 
+const isRunningState = (state: string) => state === "open" || state === "full";
 const card = "space-y-4 rounded-card border border-hairline bg-white p-6";
 const heading = "font-sans text-lg font-extrabold normal-case tracking-normal";
 
@@ -48,16 +51,23 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
   const cls = valid.success ? await getClassDetail(teacherId, valid.data) : null;
   if (!cls) notFound();
 
-  const [t, locale, candidates, cards, path] = await Promise.all([
+  const [t, locale, candidates, cards, path, credits] = await Promise.all([
     getTranslations("Admin.classes"),
     getLocale() as Promise<Locale>,
     listCandidates(teacherId),
     listClasses(teacherId),
     getClassPath(teacherId, cls.id),
+    cls.type === "group" && isRunningState(cls.state)
+      ? Promise.all(
+          cls.learners.map(
+            async (l) => [l.id, await moveCreditProposal(teacherId, cls.id, l.id)] as const,
+          ),
+        )
+      : Promise.resolve([]),
   ]);
   const n = (v: number) => formatNumber(v, locale);
   const daysShort = t.raw("weekdaysShort") as string[];
-  const running = cls.state === "open" || cls.state === "full";
+  const running = isRunningState(cls.state);
   const free = cls.capacity - cls.learners.length;
   const last = cls.sessions.filter((s) => s.phase !== "cancelled").at(-1);
   const stateLabel =
@@ -152,6 +162,8 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
         sessionCount={cls.sessionCount}
       />
 
+      <ClassMoney teacherId={teacherId} cls={cls} />
+
       <div className="grid items-start gap-5 lg:grid-cols-2">
         <Roster
           classId={cls.id}
@@ -162,6 +174,9 @@ async function ClassView({ params }: { params: Promise<{ id: string }> }) {
           learners={cls.learners}
           candidates={candidates}
           targets={targets}
+          credits={Object.fromEntries(
+            credits.flatMap(([id, c]) => (c && c.paid > 0 ? [[id, c]] : [])),
+          )}
         />
         <div className="space-y-5">
           <section aria-labelledby="details-title" className={card}>

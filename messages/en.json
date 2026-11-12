@@ -13,6 +13,8 @@
     "english": "EN · English",
     "persian": "FA · فارسی",
     "freeSession": "Get my free roadmap",
+    "notifications": "Notifications",
+    "noNotifications": "Nothing new",
     "areaNav": "Panel menu"
   },
   "NotFound": {
@@ -96,7 +98,8 @@
       "sources": "Sources",
       "schedule": "Weekly schedule",
       "myPage": "My page",
-      "homework": "Homework"
+      "homework": "Homework",
+      "finance": "Finance"
     },
     "home": {
       "bookedTitle": "Booked level checks",
@@ -589,7 +592,9 @@
         "full": "Full",
         "none": "There's no other running class.",
         "confirm": "Confirm move",
-        "saving": "Moving…"
+        "saving": "Moving…",
+        "credit": "Credit for the learner (Toman)",
+        "creditHint": "Suggested: {remaining} of {total} sessions still to come, rounded. Change it if you like; zero means no credit."
       },
       "makeup": {
         "title": "Make-up session",
@@ -1246,6 +1251,283 @@
         "unmarked": "Mark every answer first.",
         "score": "The score is out of range."
       }
+    },
+    "finance": {
+      "title": "Finance",
+      "lead": "Invoices, payments and receipts. All amounts in Toman.",
+      "close": "Close",
+      "cancel": "Cancel",
+      "nav": {
+        "invoices": "Invoices",
+        "receipts": "Receipts",
+        "settings": "Payment settings"
+      },
+      "banner": {
+        "drafts": "{count, plural, one {# invoice is} other {# invoices are}} ready to review",
+        "draftsLead": "{total} in all. Learners don't see them until you issue them.",
+        "review": "Review and issue",
+        "receipts": "{count, plural, one {# receipt is} other {# receipts are}} waiting for you",
+        "see": "See receipts"
+      },
+      "stats": {
+        "income": "Received in {month}",
+        "open": "Owed to you",
+        "openCount": "{count, plural, one {# issued invoice} other {# issued invoices}}",
+        "overdue": "Overdue",
+        "overdueCount": "{count, plural, one {# learner} other {# learners}} past the deadline",
+        "credit": "Learners' credit"
+      },
+      "overdue": {
+        "title": "Overdue",
+        "since": "Due {date}",
+        "remind": "Remind",
+        "note": "The reminder goes out by SMS, once a day."
+      },
+      "income": {
+        "title": "Income",
+        "by": {
+          "month": "By month",
+          "class": "Class",
+          "learner": "Learner"
+        },
+        "received": "Received in {month}",
+        "open": "Owed"
+      },
+      "payments": {
+        "title": "Recent payments",
+        "empty": "No payments yet.",
+        "date": "Date",
+        "learner": "Learner",
+        "method": "Method",
+        "amount": "Amount",
+        "receipt": "receipt"
+      },
+      "state": {
+        "draft": "Draft",
+        "open": "Unpaid",
+        "partial": "Part paid",
+        "overdue": "Overdue",
+        "overduePartial": "Overdue, part paid",
+        "paid": "Paid",
+        "void": "Void"
+      },
+      "errors": {
+        "none": "Pick at least one invoice.",
+        "not_found": "Not found.",
+        "locked": "This invoice can't be changed any more.",
+        "has_payments": "An invoice with payments can't be voided.",
+        "void": "This invoice is void.",
+        "draft": "Issue the invoice first.",
+        "not_open": "This invoice has nothing left to pay.",
+        "already_pending": "A receipt is already waiting.",
+        "decided": "This receipt was already reviewed.",
+        "not_private": "A per-session price is only for private classes.",
+        "reason": "Pick a reason."
+      },
+      "fieldErrors": {
+        "required": "This is required.",
+        "amount": "Enter a valid amount.",
+        "date": "The date isn't valid.",
+        "card": "A card number has 16 digits.",
+        "sheba": "A Sheba starts with IR and has 26 characters.",
+        "last4": "Enter the last 4 digits of the card."
+      },
+      "invoices": {
+        "title": "Invoices",
+        "lead": "Private: at the end of each month, from the sessions held. Group: the whole course fee, when the learner joins.",
+        "back": "Finance",
+        "empty": "Nothing here.",
+        "tabs": {
+          "draft": "Drafts",
+          "open": "Open",
+          "overdue": "Overdue",
+          "paid": "Paid",
+          "all": "All"
+        },
+        "monthly": "{month} invoice",
+        "course": "Course fee",
+        "selected": "{count, plural, one {# invoice} other {# invoices}}, {total} in all",
+        "issueHint": "Issuing shows the invoice in the learner's panel and sends an SMS.",
+        "issue": "Issue and send SMS",
+        "issuing": "Issuing…"
+      },
+      "detail": {
+        "title": "Invoice",
+        "back": "Invoices",
+        "monthly": "{month} invoice, no. {number}",
+        "course": "Course fee, no. {number}",
+        "sessions": "Sessions",
+        "sessionsLead": "Absences are charged; excused absences and sessions you cancelled aren't. Use “Don't charge” for any other exception.",
+        "fee": "Fee",
+        "courseFee": "Whole-course fee",
+        "dontCharge": "Don't charge",
+        "chargeAgain": "Charge again",
+        "why": {
+          "cancelled": "Cancelled by you",
+          "excused": "Excused, not charged",
+          "exempt": "Not charged (manual)"
+        },
+        "adjustment": "adjustment",
+        "remove": "Remove",
+        "creditLine": "Learner's credit",
+        "history": "Payments and receipts",
+        "noHistory": "Nothing yet.",
+        "paymentOf": "Payment",
+        "receipt": {
+          "pending": "Receipt waiting",
+          "approved": "Receipt approved",
+          "rejected": "Receipt rejected"
+        },
+        "summary": "Summary",
+        "count": "Sessions",
+        "total": "Total",
+        "paid": "Paid",
+        "left": "Left to pay",
+        "due": "Deadline",
+        "remind": "Remind by SMS",
+        "allPaid": "Paid in full",
+        "void": "Void",
+        "voidTitle": "Void this invoice?",
+        "voidLead": "Its sessions are freed and billed on next month's invoice. Any credit spent on it comes back.",
+        "voidConfirm": "Void it",
+        "voiding": "Voiding…",
+        "adjustTitle": "Adjustment (discount, fee, book, …)",
+        "adjustDesc": "Description",
+        "adjustAmount": "Amount",
+        "adjustSign": "Type",
+        "adjustMinus": "Subtract",
+        "adjustPlus": "Add",
+        "add": "Add",
+        "adding": "Adding…"
+      },
+      "pay": {
+        "open": "Record payment",
+        "title": "Record a payment from {name}",
+        "left": "{left} left. A part payment is fine.",
+        "anyLead": "For money you took in cash or without a receipt. More than they owe? The rest becomes credit.",
+        "for": "For",
+        "noInvoice": "No invoice (credit)",
+        "amount": "Amount (Toman)",
+        "date": "Date",
+        "method": "Method",
+        "methods": {
+          "card": "Card to card",
+          "cash": "Cash",
+          "bank": "Bank transfer",
+          "other": "Other"
+        },
+        "reference": "Reference number (optional)",
+        "sms": "Send a “payment recorded” SMS",
+        "saving": "Saving…",
+        "save": "Record"
+      },
+      "receipts": {
+        "title": "Receipts",
+        "lead": "Learners send a receipt after paying card to card. When you approve it, the payment is recorded.",
+        "back": "Finance",
+        "empty": "No receipts here.",
+        "detail": "Receipt details",
+        "photo": "Receipt photo",
+        "written": "Amount they wrote",
+        "invoiceLeft": "Invoice left to pay",
+        "card": "From card",
+        "matches": "The amount matches what is left on the invoice.",
+        "differs": "The amount differs from what is left on the invoice.",
+        "openInvoice": "Open the invoice",
+        "tabs": {
+          "pending": "Waiting",
+          "approved": "Approved",
+          "rejected": "Rejected"
+        },
+        "recorded": "Amount to record",
+        "recordedHint": "If the deposit differs from the receipt, enter what reached your account.",
+        "approving": "Recording…",
+        "approve": "Approve and record payment",
+        "reject": "Reject",
+        "why": "Why? It reaches the learner by SMS.",
+        "reasons": {
+          "amount": "The amount doesn't match the deposit",
+          "unreadable": "The receipt is unreadable",
+          "not_received": "The deposit didn't reach my account"
+        },
+        "rejecting": "Rejecting…",
+        "rejectConfirm": "Reject and tell them"
+      },
+      "settings": {
+        "title": "Payment settings",
+        "lead": "Learners see this card on the payment page.",
+        "back": "Finance",
+        "saved": "Saved.",
+        "cardTitle": "Card for card-to-card",
+        "cardNumber": "Card number",
+        "cardHolder": "Name on the card",
+        "cardHolderHint": "Learners see this name before they send money.",
+        "sheba": "Sheba number (optional)",
+        "rulesTitle": "Invoices and deadlines",
+        "dueDays": "Payment deadline",
+        "daysAfter": "{count, plural, one {# day} other {# days}} after issuing",
+        "graceDays": "Grace before “overdue”",
+        "days": "{count, plural, one {# day} other {# days}}",
+        "noGrace": "No grace",
+        "roundTo": "Round credit",
+        "round": {
+          "1000": "To 1,000 Toman",
+          "10000": "To 10,000 Toman"
+        },
+        "autoIssue": "Issue private invoices without review",
+        "autoIssueHint": "Off: drafts wait until you issue them. On: they are issued at once and the SMS goes out.",
+        "smsTitle": "SMS",
+        "smsLead": "Everything below also shows in the learner's panel.",
+        "sms": {
+          "smsBefore": "Reminder before the deadline",
+          "smsOverdue": "Overdue",
+          "smsApproved": "Receipt approved",
+          "smsRejected": "Receipt rejected",
+          "smsManual": "Manual payment recorded"
+        },
+        "smsWhen": {
+          "smsBefore": "2 days before the deadline, if unpaid",
+          "smsOverdue": "The first overdue day, then weekly",
+          "smsApproved": "When you approve a receipt",
+          "smsRejected": "When you reject a receipt, with the reason",
+          "smsManual": "When you record a payment yourself"
+        },
+        "smsAlways": "The SMS for issuing an invoice always goes out.",
+        "saving": "Saving…",
+        "save": "Save"
+      },
+      "price": {
+        "new": "New price per session",
+        "current": "Now {price}",
+        "from": "From",
+        "hint": "Issued invoices don't change. Drafts are priced by each session's own date.",
+        "saving": "Saving…",
+        "save": "Save"
+      },
+      "account": {
+        "title": "Account",
+        "due": "Owes",
+        "credit": "Credit",
+        "paidAll": "Paid so far",
+        "monthly": "{month} invoice",
+        "course": "{name} fee",
+        "invoices": "Invoices",
+        "none": "No invoices yet.",
+        "payments": "Payments",
+        "noPayments": "No payments yet."
+      },
+      "classMoney": {
+        "title": "Tuition",
+        "groupLead": "{fee} per learner for the whole course; issued when they join.",
+        "received": "Received",
+        "left": "Left",
+        "owes": "{left} left",
+        "full": "Paid",
+        "feeHint": "Change the fee under “Edit”; it applies to people who join from now on, and issued invoices don't change.",
+        "privateLead": "Each session costs the price that applied on its date.",
+        "from": "From {date}",
+        "now": "Now"
+      }
     }
   },
   "Student": {
@@ -1256,6 +1538,7 @@
       "schedule": "My schedule",
       "classes": "My classes",
       "homework": "Homework",
+      "bills": "Bills",
       "path": "My path"
     },
     "home": {
@@ -1267,7 +1550,39 @@
       "aiBody": "Soon you'll practise between classes with an AI tutor that knows your roadmap.",
       "seeAll": "Full schedule",
       "station": "Station {n, number}",
-      "skillsReady": "{n, number} of {total, number} skills ready"
+      "skillsReady": "{n, number} of {total, number} skills ready",
+      "billTitle": "Bill",
+      "billLead": "Tap to view and pay.",
+      "upcoming": "Coming up",
+      "pathTitle": "Learning path",
+      "stationsDone": "{done, number} of {total, number} stations done",
+      "pathContinue": "Continue your path",
+      "pathNone": "Your class has no path yet.",
+      "hwTitle": "Homework",
+      "hwOpen": "{n, number} to do",
+      "hwNone": "All done",
+      "hwDue": "Next due: {date}",
+      "hwNoDue": "Nothing due soon.",
+      "examTitle": "Assessment",
+      "examNone": "None open",
+      "examNoneHint": "You will see it here when your teacher opens one.",
+      "billNone": "Nothing to pay",
+      "billNoneHint": "All your bills are paid.",
+      "hwUnit": "to do",
+      "examUnit": "open",
+      "toman": "Toman",
+      "open": "Open",
+      "pay": "Pay",
+      "toDo": "Waiting for you",
+      "toPay": "Unpaid",
+      "roomOpen": "Your class is open, join now",
+      "joinHint": "The join button appears at the top of this page 5 minutes before class starts.",
+      "dayAt": "{day} · {time}",
+      "timeLine": "{day} · {from} to {to}",
+      "tasksTitle": "Up next for you",
+      "tasksNone": "You are all caught up.",
+      "liveNow": "Live now",
+      "today": "Today"
     },
     "schedule": {
       "title": "My schedule",
@@ -1294,14 +1609,12 @@
       "nextWeek": "Next week",
       "range": "{from} – {to}",
       "weekNav": "Week",
-      "days": "Days of the week",
-      "emptyDay": "No sessions."
+      "days": "Days of the week"
     },
     "account": {
       "open": "Account menu",
       "profile": "Profile",
       "settings": "Settings",
-      "settingsHint": "Language, password",
       "logout": "Log out"
     },
     "homework": {
@@ -1428,6 +1741,26 @@
       "next": "Next",
       "ready": "Ready",
       "again": "Practise again",
+      "level": "Level",
+      "goal": "Goal:",
+      "stationOf": "Station {n} of {total}",
+      "sessionOf": "Session {n} of {total}",
+      "sessions": "{n, plural, one {# session} other {# sessions}}",
+      "doneSub": "Done",
+      "nowHere": "You are here",
+      "workedOn": "{n} of {total} skills worked on",
+      "myHomework": "My homework",
+      "lastSession": "Last session",
+      "worked": "Worked on",
+      "notYet": "Next session",
+      "noSkills": "Your teacher opens this station’s skills before it starts.",
+      "allDone": "All stations done",
+      "stationsDone": "{done} of {total} stations done",
+      "skillsOf": "{n} of {total} skills",
+      "skillsReady": "{n} of {total} skills ready",
+      "overall": "Path progress",
+      "goalNote": "final assessment with your teacher",
+      "close": "Close",
       "progress": "My progress"
     },
     "assessment": {
@@ -1481,6 +1814,60 @@
         "file_type": "This file type isn’t allowed.",
         "file_size": "The recording is too large.",
         "file_count": "Only one recording at a time."
+      }
+    },
+    "bills": {
+      "title": "Bills",
+      "due": "You owe",
+      "credit": "You have {amount} of credit; it comes off your next bill.",
+      "pay": "View and pay",
+      "empty": "No bills yet.",
+      "monthly": "{month}",
+      "course": "Course fee",
+      "dueOn": "due {date}",
+      "receiptPending": "Receipt waiting",
+      "note": "A month's bill arrives in the first days of the next month. A session your teacher cancelled, or an excused absence, isn't charged.",
+      "back": "Bills",
+      "monthlyTitle": "{month} bill",
+      "courseTitle": "Course fee",
+      "from": "From {name}",
+      "summary": "How much, and for what",
+      "creditLine": "Your credit",
+      "courseFee": "Whole-course fee",
+      "sessions": "{count, plural, one {# session} other {# sessions}}",
+      "total": "Total",
+      "paid": "You paid",
+      "deadline": "Deadline: {date}",
+      "seeSessions": "See {count, plural, one {# session} other {# sessions}}",
+      "thanks": "Paid, thank you!",
+      "sentTitle": "Your receipt went to your teacher",
+      "sentLead": "When they approve it you get an SMS and this bill says “Paid”.",
+      "refused": {
+        "amount": "Your receipt wasn't accepted: the amount doesn't match the deposit. Send it again.",
+        "unreadable": "Your receipt wasn't accepted: it's unreadable. Send it again.",
+        "not_received": "Your receipt wasn't accepted: the deposit didn't arrive. Send it again."
+      },
+      "step1": "1. Pay card to card",
+      "holder": "In the name of {name}",
+      "noCard": "Your teacher hasn't added a card number yet. Ask them.",
+      "step1Hint": "Amount: {amount}. After paying, keep the bank's receipt screenshot.",
+      "step2": "2. Send the receipt",
+      "photo": "Receipt photo",
+      "amount": "How much did you send? (Toman)",
+      "amountHint": "If you are paying only part of it now, write that amount.",
+      "last4": "Last 4 digits of your card",
+      "sending": "Sending…",
+      "send": "Send receipt to your teacher",
+      "copy": "Copy card number",
+      "copied": "Copied",
+      "errors": {
+        "photo": "Choose a photo of the receipt.",
+        "file_type": "Only a photo (JPG, PNG or WebP).",
+        "file_size": "The photo is too big.",
+        "file_count": "Only one photo.",
+        "not_found": "Not found.",
+        "not_open": "This bill has nothing left to pay.",
+        "already_pending": "A receipt is already waiting."
       }
     }
   },

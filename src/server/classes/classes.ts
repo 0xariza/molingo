@@ -21,6 +21,9 @@ import {
   type Weekday,
 } from "@/lib/schedule";
 import { pathField, setClassPath, type PathInput, type PathError } from "../paths/class-paths";
+import { grantCredit } from "../billing/payments";
+import { createCourseInvoice } from "../billing/invoices";
+import { notifyIssued } from "../billing/notify";
 import { findClash, isOverlapError, type ClashWith } from "./clash";
 
 export const cefrLevels = cefrLevelEnum.enumValues;
@@ -172,6 +175,7 @@ export async function createClass(
   if (clash) return { ok: false, error: "clash", clash };
 
   try {
+    const invoiceIds: string[] = [];
     const id = await db.transaction(async (tx) => {
       const [row] = await tx
         .insert(classes)
@@ -219,9 +223,11 @@ export async function createClass(
       for (const studentId of input.studentIds) {
         const placed = await placeLearner(tx, teacherId, row.id, studentId, now);
         if (!placed.ok) throw new Refused({ ok: false, error: "learner_unavailable" });
+        if (placed.invoiceId) invoiceIds.push(placed.invoiceId);
       }
       return row.id;
     });
+    for (const invoiceId of invoiceIds) await notifyIssued(invoiceId);
     return { ok: true, id };
   } catch (e) {
     if (e instanceof Refused) return e.result;
@@ -231,7 +237,8 @@ export async function createClass(
 }
 
 export type PlaceResult =
-  { ok: true } | { ok: false; error: "full" | "already" | "unavailable" | "finished" };
+  | { ok: true; invoiceId: string | null }
+  | { ok: false; error: "full" | "already" | "unavailable" | "finished" };
 
 /**
  * Gives a learner a seat in one of this teacher's classes. The class row is locked, so two people
@@ -246,7 +253,12 @@ export async function placeLearner(
   now = new Date(),
 ): Promise<PlaceResult> {
   const [cls] = await tx
-    .select({ capacity: classes.capacity, archivedAt: classes.archivedAt })
+    .select({
+      capacity: classes.capacity,
+      archivedAt: classes.archivedAt,
+      type: classes.type,
+      fee: classes.priceToman,
+    })
     .from(classes)
     .where(and(eq(classes.id, classId), eq(classes.teacherId, teacherId)))
     .for("update");
@@ -294,7 +306,12 @@ export async function placeLearner(
       })
       .where(mine);
   }
-  return { ok: true };
+  // A group's whole-course fee is issued the moment the learner takes a seat.
+  const invoiceId =
+    cls.type === "group"
+      ? await createCourseInvoice(tx, teacherId, classId, studentId, cls.fee, now)
+      : null;
+  return { ok: true, invoiceId };
 }
 
 export async function enroll(
@@ -302,7 +319,9 @@ export async function enroll(
   classId: string,
   studentId: string,
 ): Promise<PlaceResult> {
-  return db.transaction((tx) => placeLearner(tx, teacherId, classId, studentId));
+  const placed = await db.transaction((tx) => placeLearner(tx, teacherId, classId, studentId));
+  if (placed.ok && placed.invoiceId) await notifyIssued(placed.invoiceId);
+  return placed;
 }
 
 export async function endEnrollment(
@@ -339,9 +358,11 @@ export async function moveLearner(
   toClassId: string,
   studentId: string,
   now = new Date(),
+  /** Toman credited for sessions paid in the old class; it comes off the new class's invoice. */
+  credit = 0,
 ): Promise<{ ok: true } | { ok: false; error: MoveRefused["error"] }> {
   try {
-    await db.transaction(async (tx) => {
+    const invoiceId = await db.transaction(async (tx) => {
       const ended = await tx
         .update(enrollments)
         .set({ status: "ended", endedAt: now })
@@ -355,9 +376,12 @@ export async function moveLearner(
         )
         .returning({ id: enrollments.id });
       if (!ended.length) throw new MoveRefused("not_enrolled");
+      await grantCredit(tx, teacherId, studentId, credit, "move");
       const placed = await placeLearner(tx, teacherId, toClassId, studentId, now);
       if (!placed.ok) throw new MoveRefused(placed.error);
+      return placed.invoiceId;
     });
+    if (invoiceId) await notifyIssued(invoiceId);
     return { ok: true };
   } catch (e) {
     if (e instanceof MoveRefused) return { ok: false, error: e.error };

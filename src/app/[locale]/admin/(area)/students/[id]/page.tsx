@@ -4,6 +4,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { z } from "zod";
+import { LearnerAccount } from "@/components/admin/finance/learner-account";
 import { BackLink } from "@/components/admin/learners/back-link";
 import { LearnerClasses } from "@/components/admin/learners/learner-classes";
 import { LoginCard } from "@/components/admin/learners/login-card";
@@ -128,6 +129,7 @@ async function Profile({ params }: { params: Promise<{ id: string }> }) {
           </section>
         </div>
         <div className="space-y-5">
+          <LearnerAccount teacherId={teacherId} learner={learner} />
           <LoginCard studentId={learner.id} phone={learner.phone} login={learner.login} />
           <StatusSwitch id={learner.id} status={learner.status} />
         </div>

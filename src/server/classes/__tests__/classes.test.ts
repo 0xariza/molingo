@@ -231,7 +231,7 @@ describe("seats", () => {
     await enroll(tid, id, b);
     expect(await enroll(tid, id, c)).toEqual({ ok: false, error: "full" });
     expect(await endEnrollment(tid, id, a)).toBe(true);
-    expect(await enroll(tid, id, c)).toEqual({ ok: true });
+    expect(await enroll(tid, id, c)).toMatchObject({ ok: true });
     expect((await learnerClasses(tid, a))[0].status).toBe("ended");
   });
 

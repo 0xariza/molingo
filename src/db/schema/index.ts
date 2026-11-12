@@ -7,3 +7,4 @@ export * from "./live";
 export * from "./homework";
 export * from "./paths";
 export * from "./assessments";
+export * from "./finance";

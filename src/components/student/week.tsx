@@ -47,11 +47,6 @@ export function LearnerWeek({
             compact={compact}
           />
         ))}
-        {list.length === 0 && (
-          <p className={`text-center font-bold text-line ${compact ? "py-2 text-sm" : "py-6"}`}>
-            {t("emptyDay")}
-          </p>
-        )}
       </section>
     );
   };

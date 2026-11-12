@@ -10,8 +10,8 @@ type Props = {
   name: string;
   role: string;
   phone: string;
-  /** `avatar`: the phone header's round button. `card`: the desktop sidebar's user card. */
-  variant: "avatar" | "card";
+  /** `avatar`: the phone header's round button. `card`: the sidebar user card. `top`: the desktop top bar. */
+  variant: "avatar" | "card" | "top";
 };
 
 /** The learner's avatar menu: profile, settings and log out. */
@@ -36,16 +36,17 @@ export function AccountMenu({ name, role, phone, variant }: Props) {
     };
   }, [open]);
 
-  const initial = (
+  const avatar = (size: string) => (
     <span
       aria-hidden="true"
-      className="grid size-10 shrink-0 place-items-center rounded-full bg-cinnamon font-bold text-ocean"
+      className={`grid shrink-0 place-items-center rounded-full bg-cinnamon font-extrabold leading-none text-ocean ${size}`}
     >
       {name.slice(0, 1)}
     </span>
   );
   const item =
-    "flex min-h-touch items-center gap-3 rounded-xl px-3 font-bold text-ocean hover:bg-surface";
+    "flex min-h-11 items-center gap-2.5 rounded-xl px-2 text-sm font-bold text-ocean transition hover:bg-line/15";
+  const chip = "grid size-8 shrink-0 place-items-center rounded-lg bg-surface text-ocean";
 
   return (
     <div ref={root} className="relative">
@@ -59,10 +60,18 @@ export function AccountMenu({ name, role, phone, variant }: Props) {
         className={
           variant === "avatar"
             ? "grid size-11 place-items-center rounded-full hover:bg-white/10"
-            : "flex w-full items-center gap-3 rounded-card bg-white/5 p-3 text-start hover:bg-white/10"
+            : variant === "top"
+              ? "flex items-center gap-2.5 rounded-pill border border-hairline bg-white p-1 pe-4 text-start shadow-[0_6px_20px_rgba(7,30,54,.10)] hover:border-brand"
+              : "flex w-full items-center gap-3 rounded-card bg-white/5 p-3 text-start hover:bg-white/10"
         }
       >
-        {initial}
+        {avatar("size-10 text-base")}
+        {variant === "top" && (
+          <span className="leading-tight">
+            <span className="block font-bold text-ocean">{name}</span>
+            <span className="block text-xs text-body">{role}</span>
+          </span>
+        )}
         {variant === "card" && (
           <span className="min-w-0 flex-1 leading-tight">
             <span className="block truncate font-bold text-white">{name}</span>
@@ -74,38 +83,54 @@ export function AccountMenu({ name, role, phone, variant }: Props) {
         <div
           id={id}
           role="menu"
-          className={`absolute z-40 w-64 rounded-2xl border border-line/40 bg-white p-1.5 shadow-[0_16px_40px_rgba(7,30,54,.14)] ${
-            variant === "avatar"
-              ? "end-0 top-[calc(100%+6px)]"
+          className={`absolute z-40 w-60 rounded-2xl border border-hairline bg-white p-1.5 shadow-[0_20px_50px_rgba(7,30,54,.16)] ${
+            variant !== "card"
+              ? "end-0 top-[calc(100%+8px)]"
               : "inset-x-0 bottom-[calc(100%+6px)] w-auto"
           }`}
         >
-          <div className="px-3 py-2 leading-tight">
-            <p className="font-bold text-ocean">{name}</p>
-            <p dir="ltr" className="text-sm text-start">
-              {phone}
-            </p>
-          </div>
-          <Link href="/app/profile" role="menuitem" onClick={() => setOpen(false)} className={item}>
-            <IdentificationCard aria-hidden size={20} />
-            {t("profile")}
-          </Link>
-          <Link
-            href="/app/settings"
-            role="menuitem"
-            onClick={() => setOpen(false)}
-            className={item}
-          >
-            <Gear aria-hidden size={20} />
-            <span className="leading-tight">
-              <span className="block">{t("settings")}</span>
-              <span className="block text-sm font-normal text-body">{t("settingsHint")}</span>
+          <div className="flex items-center gap-2.5 px-2 pb-2.5 pt-1.5">
+            {avatar("size-10 text-base")}
+            <span className="min-w-0 leading-snug">
+              <b className="block truncate text-sm text-ocean">{name}</b>
+              <span dir="ltr" className="block text-start text-xs">
+                {phone}
+              </span>
             </span>
-          </Link>
-          <form action={logoutAction} className="mt-1 border-t border-mist pt-1">
+          </div>
+          <div className="space-y-0.5 border-t border-surface pt-1">
+            <Link
+              href="/app/profile"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={item}
+            >
+              <span aria-hidden className={chip}>
+                <IdentificationCard size={18} />
+              </span>
+              {t("profile")}
+            </Link>
+            <Link
+              href="/app/settings"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+              className={item}
+            >
+              <span aria-hidden className={chip}>
+                <Gear size={18} />
+              </span>
+              {t("settings")}
+            </Link>
+          </div>
+          <form action={logoutAction} className="mt-1 border-t border-surface pt-1">
             <input type="hidden" name="locale" value={locale} />
-            <button type="submit" role="menuitem" className={`${item} w-full`}>
-              <SignOut aria-hidden size={20} className="icon-directional" />
+            <button type="submit" role="menuitem" className={`${item} w-full text-red-700`}>
+              <span
+                aria-hidden
+                className="grid size-8 shrink-0 place-items-center rounded-lg bg-red-50 text-red-700"
+              >
+                <SignOut size={18} className="icon-directional" />
+              </span>
               {t("logout")}
             </button>
           </form>

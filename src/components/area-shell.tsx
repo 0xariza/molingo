@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { logoutAction } from "@/server/auth/actions";
 import { AreaNav, type AreaNavItem } from "./area-nav";
 import { AccountMenu } from "./account-menu";
+import { NotificationBell } from "./notification-bell";
 import { LanguageSwitcher } from "./language-switcher";
 import { Logo } from "./logo";
 
@@ -25,36 +26,12 @@ type Props = {
 export function AreaShell({ home, items, user, account, children }: Props) {
   const t = useTranslations("Common");
   return (
-    <div className="flex flex-1">
-      <aside className="sticky top-0 hidden h-dvh w-68 shrink-0 flex-col gap-8 bg-ocean px-5 py-6 lg:flex">
+    <div className="mx-auto flex w-full max-w-[1440px] flex-1 lg:gap-6 lg:px-6 lg:pb-6 lg:pt-10 xl:px-8 xl:pb-8 xl:pt-12">
+      <aside className="sticky top-10 hidden h-[calc(100dvh-4rem)] xl:top-12 xl:h-[calc(100dvh-5rem)] w-68 shrink-0 self-start flex-col gap-8 rounded-[28px] bg-ocean px-5 py-6 shadow-[0_12px_40px_rgba(7,30,54,.18)] lg:flex">
         <Link href={home} className="inline-flex min-h-touch items-center self-start rounded-pill">
           <Logo variant="dark" className="text-2xl" />
         </Link>
         <AreaNav items={items} label={t("areaNav")} variant="side" />
-        {account ? (
-          <div className="mt-auto">
-            <AccountMenu variant="card" name={user.name} role={user.role} phone={account.phone} />
-          </div>
-        ) : (
-          <>
-            <div className="mt-auto self-start">
-              <LanguageSwitcher tone="dark" />
-            </div>
-            <div className="flex items-center gap-3 rounded-card bg-white/5 p-3">
-              <span
-                aria-hidden="true"
-                className="grid size-10 shrink-0 place-items-center rounded-full bg-cinnamon font-bold text-ocean"
-              >
-                {user.name.slice(0, 1)}
-              </span>
-              <div className="min-w-0 flex-1 leading-tight">
-                <p className="truncate font-bold text-white">{user.name}</p>
-                <p className="text-sm text-whale">{user.role}</p>
-              </div>
-              <LogoutIconButton label={t("logout")} />
-            </div>
-          </>
-        )}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -78,12 +55,45 @@ export function AreaShell({ home, items, user, account, children }: Props) {
             )}
           </div>
         </header>
-        <main
-          id="main"
-          className="mx-auto w-full max-w-6xl flex-1 px-4 pt-6 pb-28 sm:px-8 lg:px-10 lg:pt-8 lg:pb-12"
-        >
-          {children}
-        </main>
+        <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col lg:px-6 xl:px-12">
+          <div className="hidden justify-end pb-4 pt-2 lg:flex">
+            <div className="flex items-center gap-3">
+              <NotificationBell
+                items={items
+                  .filter((i) => i.badge)
+                  .map((i) => ({ href: i.href, label: i.label, badge: i.badge! }))}
+              />
+              {account ? (
+                <AccountMenu
+                  variant="top"
+                  name={user.name}
+                  role={user.role}
+                  phone={account.phone}
+                />
+              ) : (
+                <>
+                  <LanguageSwitcher tone="light" />
+                  <div className="flex items-center gap-2.5 rounded-pill border border-hairline bg-white p-1 pe-1.5 shadow-[0_6px_20px_rgba(7,30,54,.10)]">
+                    <span
+                      aria-hidden="true"
+                      className="grid size-10 shrink-0 place-items-center rounded-full bg-cinnamon font-bold text-ocean"
+                    >
+                      {user.name.slice(0, 1)}
+                    </span>
+                    <span className="leading-tight">
+                      <span className="block font-bold text-ocean">{user.name}</span>
+                      <span className="block text-xs text-body">{user.role}</span>
+                    </span>
+                    <LogoutIconButton label={t("logout")} tone="light" />
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+          <main id="main" className="w-full flex-1 px-4 pt-6 pb-28 sm:px-8 lg:px-0 lg:pt-0 lg:pb-8">
+            {children}
+          </main>
+        </div>
       </div>
 
       {items.length > 1 && <AreaNav items={items} label={t("areaNav")} variant="bar" />}
@@ -91,7 +101,7 @@ export function AreaShell({ home, items, user, account, children }: Props) {
   );
 }
 
-function LogoutIconButton({ label }: { label: string }) {
+function LogoutIconButton({ label, tone = "dark" }: { label: string; tone?: "dark" | "light" }) {
   const locale = useLocale();
   return (
     <form action={logoutAction}>
@@ -100,7 +110,7 @@ function LogoutIconButton({ label }: { label: string }) {
         type="submit"
         aria-label={label}
         title={label}
-        className="grid size-11 place-items-center rounded-xl text-whale transition hover:bg-white/10 hover:text-white"
+        className={`grid size-10 place-items-center rounded-full transition ${tone === "dark" ? "text-whale hover:bg-white/10 hover:text-white" : "text-body hover:bg-surface hover:text-ocean"}`}
       >
         <SignOut aria-hidden size={20} className="icon-directional" />
       </button>
@@ -110,8 +120,11 @@ function LogoutIconButton({ label }: { label: string }) {
 
 export function AreaSkeleton() {
   return (
-    <div aria-hidden="true" className="flex flex-1">
-      <div className="hidden w-68 shrink-0 bg-ocean lg:block" />
+    <div
+      aria-hidden="true"
+      className="mx-auto flex w-full max-w-[1440px] flex-1 lg:gap-6 lg:px-6 lg:pb-6 lg:pt-10 xl:px-8 xl:pb-8 xl:pt-12"
+    >
+      <div className="hidden h-[calc(100dvh-4rem)] w-68 xl:h-[calc(100dvh-5rem)] shrink-0 rounded-[28px] bg-ocean lg:block" />
       <div className="flex-1">
         <div className="h-16 bg-ocean lg:hidden" />
         <div className="mx-auto max-w-6xl animate-pulse space-y-4 px-4 py-8 sm:px-8">

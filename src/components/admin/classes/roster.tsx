@@ -4,6 +4,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useActionState, useState } from "react";
 import { ErrorAlert } from "@/components/ui/alert";
 import { buttonClass } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { Link } from "@/i18n/navigation";
@@ -41,6 +42,7 @@ export function Roster({
   learners,
   candidates,
   targets,
+  credits,
 }: {
   classId: string;
   className: string;
@@ -50,6 +52,8 @@ export function Roster({
   learners: (Person & { since: Date })[];
   candidates: Candidate[];
   targets: MoveTarget[];
+  /** Per group learner: what they paid and the credit we suggest when they leave. */
+  credits: Record<string, { paid: number; suggested: number; remaining: number; total: number }>;
 }) {
   const t = useTranslations("Admin.classes");
   const locale = useLocale() as Locale;
@@ -156,6 +160,7 @@ export function Roster({
           person={moving}
           name={nameOf(moving)}
           targets={targets}
+          credit={credits[moving.id]}
           onClose={() => setMoving(null)}
         />
       )}
@@ -169,6 +174,7 @@ function MoveDialog({
   person,
   name,
   targets,
+  credit,
   onClose,
 }: {
   classId: string;
@@ -176,6 +182,7 @@ function MoveDialog({
   person: Person;
   name: string;
   targets: MoveTarget[];
+  credit?: { paid: number; suggested: number; remaining: number; total: number };
   onClose: () => void;
 }) {
   const t = useTranslations("Admin.classes");
@@ -228,6 +235,16 @@ function MoveDialog({
               </button>
             ))}
           </div>
+        )}
+        {credit && (
+          <Field
+            label={t("move.credit")}
+            name="credit"
+            inputMode="numeric"
+            dir="ltr"
+            defaultValue={String(credit.suggested)}
+            hint={t("move.creditHint", { remaining: credit.remaining, total: credit.total })}
+          />
         )}
         <div className="flex flex-wrap justify-end gap-3 border-t border-mist pt-4">
           <button type="button" onClick={onClose} className={buttonClass("ghost")}>

@@ -12,6 +12,7 @@ import { phoneField } from "../forms";
 export const RESERVED_SLUGS = new Set([
   "fa",
   "en",
+  "b",
   "j",
   "l",
   "admin",

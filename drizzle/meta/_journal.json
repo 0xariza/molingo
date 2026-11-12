@@ -176,6 +176,13 @@
       "when": 1794008035607,
       "tag": "0024_after_class_drafts",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794496188337,
+      "tag": "0025_demonic_photon",
+      "breakpoints": true
     }
   ]
 }

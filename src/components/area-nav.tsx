@@ -10,6 +10,7 @@ import {
   House,
   IdentificationCard,
   Users,
+  Wallet,
   type Icon,
 } from "@phosphor-icons/react";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -25,6 +26,7 @@ const ICONS = {
   homework: ClipboardText,
   sources: BookOpen,
   path: MapTrifold,
+  finance: Wallet,
 } satisfies Record<string, Icon>;
 
 export type AreaNavItem = {
@@ -36,11 +38,13 @@ export type AreaNavItem = {
     | "/admin/homework"
     | "/admin/my-page"
     | "/admin/sources"
+    | "/admin/finance"
     | "/app"
     | "/app/classes"
     | "/app/schedule"
     | "/app/homework"
     | "/app/path"
+    | "/app/bills"
     | "/owner";
   label: string;
   icon: keyof typeof ICONS;

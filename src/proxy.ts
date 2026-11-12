@@ -45,6 +45,6 @@ export default function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Everything except API routes, share links (/j/*), Next internals and files with an extension.
-  matcher: ["/((?!api|j/|_next|_vercel|.*\\..*).*)"],
+  // Everything except API routes, share links (/j/*, /b/*), Next internals and files with an extension.
+  matcher: ["/((?!api|j/|b/|_next|_vercel|.*\\..*).*)"],
 };

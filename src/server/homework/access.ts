@@ -10,16 +10,29 @@ import {
   submissions,
   teacherLearners,
   teachers,
+  receipts,
   voiceRecordings,
 } from "@/db/schema";
 
 type StoredFile = typeof files.$inferSelect;
 
 /**
- * The file, if this user may read it: the teacher who gave the homework (its files and every
+ * The file, if this user may read it: a receipt (its learner and teacher), the teacher who gave the homework (its files and every
  * answer to it), a learner it was given to (its files), or a learner (their own answer's files).
  */
 export async function readableFile(userId: string, fileId: string): Promise<StoredFile | null> {
+  const [receipt] = await db
+    .select({ file: files, teacherUserId: teachers.userId, studentUserId: students.userId })
+    .from(receipts)
+    .innerJoin(files, eq(files.id, receipts.fileId))
+    .innerJoin(teachers, eq(teachers.id, receipts.teacherId))
+    .innerJoin(students, eq(students.id, receipts.studentId))
+    .where(eq(receipts.fileId, fileId));
+  if (receipt) {
+    return receipt.teacherUserId === userId || receipt.studentUserId === userId
+      ? receipt.file
+      : null;
+  }
   const [rec] = await db
     .select({ file: files, studentId: students.id, studentUserId: students.userId })
     .from(voiceRecordings)

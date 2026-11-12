@@ -6,8 +6,10 @@ import {
   assignments,
   classPaths,
   classPathStations,
+  classes,
   enrollments,
   sessions,
+  sessionSkills,
   stationSkills,
   stations,
   studentSkills,
@@ -232,8 +234,18 @@ async function addReinforcements(
 
 export type LearnerStation = {
   title: string;
+  /** The book unit it comes from, e.g. "Unit 3"; empty for a class-only station. */
+  unit: string;
   state: "done" | "current" | "next";
-  skills: { id: string; text: string; result: "ready" | "again" | null }[];
+  planned: number;
+  held: number;
+  skills: {
+    id: string;
+    text: string;
+    result: "ready" | "again" | null;
+    /** Worked on in a held session of the class. */
+    worked: boolean;
+  }[];
 };
 
 /** The learner's station map for each class they are in that has a path. */
@@ -244,17 +256,33 @@ export async function learnerPaths(userId: string) {
     .where(eq(students.userId, userId));
   if (!me) return [];
   const paths = await db
-    .select({ pathId: classPaths.id, classId: classPaths.classId })
+    .select({
+      pathId: classPaths.id,
+      classId: classPaths.classId,
+      level: classes.level,
+      nameFa: classes.nameFa,
+      nameEn: classes.nameEn,
+    })
     .from(enrollments)
+    .innerJoin(classes, eq(classes.id, enrollments.classId))
     .innerJoin(classPaths, eq(classPaths.classId, enrollments.classId))
     .where(and(eq(enrollments.studentId, me.id), eq(enrollments.status, "active")));
-  const out: { classId: string; stations: LearnerStation[] }[] = [];
+  const out: {
+    classId: string;
+    level: string;
+    nameFa: string;
+    nameEn: string | null;
+    stations: LearnerStation[];
+  }[] = [];
   for (const p of paths) {
     const rows = await db
       .select({
         id: classPathStations.id,
         title: stations.title,
         stationId: stations.id,
+        unit: stations.sourceUnit,
+        planned: classPathStations.plannedSessions,
+        held: sql<number>`(select count(*)::int from ${sessions} s where s.path_station_id = ${classPathStations.id} and s.status = 'held')`,
         closedAt: classPathStations.closedAt,
       })
       .from(classPathStations)
@@ -268,6 +296,7 @@ export async function learnerPaths(userId: string) {
             stationId: stationSkills.stationId,
             text: stationSkills.text,
             result: studentSkills.result,
+            worked: sql<boolean>`exists (select 1 from ${sessionSkills} w inner join ${sessions} s on s.id = w.session_id where w.station_skill_id = ${stationSkills.id} and s.class_id = ${p.classId} and s.status = 'held')`,
           })
           .from(stationSkills)
           .leftJoin(
@@ -288,12 +317,18 @@ export async function learnerPaths(userId: string) {
     const current = rows.findIndex((r) => !r.closedAt);
     out.push({
       classId: p.classId,
+      level: p.level,
+      nameFa: p.nameFa,
+      nameEn: p.nameEn,
       stations: rows.map((r, i) => ({
         title: r.title,
+        unit: r.unit,
+        planned: r.planned,
+        held: r.held,
         state: r.closedAt ? "done" : i === current ? "current" : "next",
         skills: skills
           .filter((k) => k.stationId === r.stationId)
-          .map((k) => ({ id: k.id, text: k.text, result: k.result })),
+          .map((k) => ({ id: k.id, text: k.text, result: k.result, worked: k.worked })),
       })),
     });
   }

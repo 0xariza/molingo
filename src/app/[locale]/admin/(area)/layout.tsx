@@ -5,6 +5,7 @@ import type { Locale } from "@/i18n/routing";
 import { formatNumber } from "@/lib/format";
 import { requireTeacher } from "@/server/auth/current";
 import { listUpcomingSlots } from "@/server/funnel/level-check";
+import { pendingReceiptCount } from "@/server/billing/reports";
 import { toReviewCount } from "@/server/homework/submissions";
 
 export default function AdminLayout({ children }: LayoutProps<"/[locale]/admin">) {
@@ -20,11 +21,12 @@ export default function AdminLayout({ children }: LayoutProps<"/[locale]/admin">
 async function AdminGate({ children }: { children: React.ReactNode }) {
   // The session check comes first: it marks the request dynamic before the bookings read the clock.
   const user = await requireTeacher();
-  const [t, locale, slots, toReview] = await Promise.all([
+  const [t, locale, slots, toReview, receipts] = await Promise.all([
     getTranslations("Admin"),
     getLocale() as Promise<Locale>,
     listUpcomingSlots(user.teacherId),
     toReviewCount(user.teacherId),
+    pendingReceiptCount(user.teacherId),
   ]);
   const booked = slots.filter((s) => s.lead).length;
   return (
@@ -47,6 +49,12 @@ async function AdminGate({ children }: { children: React.ReactNode }) {
           label: t("nav.homework"),
           icon: "homework",
           badge: toReview ? formatNumber(toReview, locale) : undefined,
+        },
+        {
+          href: "/admin/finance",
+          label: t("nav.finance"),
+          icon: "finance",
+          badge: receipts ? formatNumber(receipts, locale) : undefined,
         },
         { href: "/admin/my-page", label: t("nav.myPage"), icon: "page", sideOnly: true },
       ]}

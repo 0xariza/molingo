@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { z } from "zod";
 import { redirect } from "@/i18n/navigation";
 import { requireTeacher } from "../auth/current";
+import { moveCreditProposal, tomanField } from "../billing/payments";
 import { fieldErrors, formLocale, text } from "../forms";
 import type { ClashWith } from "./clash";
 import {
@@ -145,7 +146,13 @@ export async function moveLearnerAction(
     });
   if (!parsed.success) return { status: "error", error: "pickClass" };
   const { classId, toClassId, studentId } = parsed.data;
-  const result = await moveLearner(teacherId, classId, toClassId, studentId);
+  // The credit can't exceed what the learner paid for the class they are leaving.
+  const asked = tomanField.safeParse(text(form, "credit"));
+  const paid = asked.success
+    ? ((await moveCreditProposal(teacherId, classId, studentId))?.paid ?? 0)
+    : 0;
+  const credit = asked.success ? Math.min(asked.data, paid) : 0;
+  const result = await moveLearner(teacherId, classId, toClassId, studentId, new Date(), credit);
   refresh();
   return result.ok ? { status: "success" } : { status: "error", error: result.error };
 }

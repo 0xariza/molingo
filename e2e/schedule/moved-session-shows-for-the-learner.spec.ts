@@ -42,8 +42,7 @@ test.describe("Learner schedule", () => {
     await expect(wednesday).toContainText(t.moved);
     await expect(wednesday).toContainText(`Moved from ${dateLabel(dayOfWeek(2, 1))} 10:30`);
     await showDay(page, dayOfWeek(2, 1));
-    await expect(page.getByRole("region", { name: dateLabel(dayOfWeek(2, 1)) })).toContainText(
-      t.emptyDay,
-    );
+    // The day it left has no sessions and says nothing.
+    await expect(page.getByRole("region", { name: dateLabel(dayOfWeek(2, 1)) })).toBeEmpty();
   });
 });
