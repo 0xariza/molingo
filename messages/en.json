@@ -1823,6 +1823,7 @@
       "drag": "Your video. Drag it to another corner.",
       "restore": "Show my video",
       "presenting": "You're showing your screen to everyone.",
+      "sharedToAll": "This is what everyone sees",
       "reconnecting": "Reconnecting…",
       "dropped": "{name}'s connection dropped; coming back…"
     },

@@ -77,6 +77,29 @@ export function useBoxSize<T extends Element>() {
   return [setEl, size] as const;
 }
 
+/**
+ * Who the big tile follows in speaker view: the last person to speak (not whoever is first when
+ * it goes quiet), and it holds for 2.5 seconds so quick back-and-forth doesn't make it jump.
+ * Takes identities; falls back to the first candidate.
+ */
+export function useActiveSpeaker(candidates: string[], speaking: string[]) {
+  const [held, setHeld] = useState<string | null>(null);
+  const since = useRef(0);
+  const want = candidates.find((id) => speaking.includes(id));
+  useEffect(() => {
+    if (!want || want === held) return;
+    const id = setTimeout(
+      () => {
+        since.current = Date.now();
+        setHeld(want);
+      },
+      Math.max(0, since.current + 2500 - Date.now()),
+    );
+    return () => clearTimeout(id);
+  }, [want, held]);
+  return held && candidates.includes(held) ? held : candidates[0];
+}
+
 /** Ticks every `ms` milliseconds, for clocks and timers. */
 export function useNow(ms = 15_000) {
   const [now, setNow] = useState(() => new Date());

@@ -79,7 +79,8 @@ export function Classroom({
             : false
         }
         options={{
-          adaptiveStream: true,
+          // "screen": ask for the layer a full-density display needs, so slide text stays sharp.
+          adaptiveStream: { pixelDensity: "screen" },
           dynacast: true,
           reconnectPolicy: RECONNECT,
           audioOutput: choices.audioOutputId ? { deviceId: choices.audioOutputId } : undefined,
@@ -88,6 +89,8 @@ export function Classroom({
             // Speech, not music: half the audio upload, still clear for pronunciation.
             audioPreset: AudioPresets.speech,
             videoSimulcastLayers: [VideoPresets.h180, VideoPresets.h360],
+            // A shared screen is one full-quality layer: a low layer turns slide text to mush.
+            screenShareSimulcastLayers: [],
           },
         }}
         onConnected={() => (connected.current = true)}

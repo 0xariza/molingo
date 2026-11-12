@@ -57,6 +57,7 @@ import { formatNumber } from "@/lib/format";
 import { canAutoFloat } from "@/lib/float-window";
 import { gridTileSize } from "@/lib/video-grid";
 import {
+  useActiveSpeaker,
   useAudioOnly,
   useBoxSize,
   useMediaQuery,
@@ -136,14 +137,15 @@ export function Room({
   const anyShare = tracks.find(
     (tr) => isTrackReference(tr) && tr.source === Track.Source.ScreenShare,
   );
-  // Your own shared screen isn't shown back to you (a hall of mirrors): a "presenting" bar instead.
   const presenting = !!anyShare?.participant.isLocal;
-  const share = presenting ? undefined : anyShare;
   // While you present, the class follows you in a small always-on-top window (see float-window).
   const surface = localParticipant
     .getTrackPublication(Track.Source.ScreenShare)
     ?.track?.mediaStreamTrack.getSettings().displaySurface;
   const wholeScreen = presenting && !canAutoFloat(surface);
+  // You see what you share (what everyone sees), except a whole screen or tab, which would show
+  // the room inside itself forever: a "presenting" card instead.
+  const share = presenting && surface !== "window" ? undefined : anyShare;
   const [floatWin, openFloat] = useFloatWindow(presenting, !narrow && !wholeScreen);
   // Mona first, then raised hands, then everyone else in joining order.
   const rank = (tr: TrackReferenceOrPlaceholder) =>
@@ -151,6 +153,10 @@ export function Room({
   const others = tracks
     .filter((tr) => !tr.participant.isLocal && tr.source === Track.Source.Camera)
     .sort((a, b) => rank(a) - rank(b));
+  const speakerId = useActiveSpeaker(
+    others.map((tr) => tr.participant.identity),
+    speaking.map((p) => p.identity),
+  );
   const teacherHere = teacher || participants.some((p) => isTeacher(p) && !p.isLocal);
 
   const unread =
@@ -272,7 +278,7 @@ export function Room({
   // yours alone: nobody else's view changes.
   const keyOf = (tr: TrackReferenceOrPlaceholder) => `${tr.participant.identity}-${tr.source}`;
   const pinnedTrack = pinned ? tracks.find((tr) => keyOf(tr) === pinned) : undefined;
-  const speaker = others.find((tr) => speaking.includes(tr.participant)) ?? others[0];
+  const speaker = others.find((tr) => tr.participant.identity === speakerId);
   const spotlight = pinnedTrack ?? share ?? (narrow || view === "speaker" ? speaker : undefined);
   // While you present, the big spot holds the "you're presenting" card (see PresentingCard).
   const big = !!spotlight || presenting;
@@ -542,19 +548,21 @@ export function Room({
 
   return (
     <div className="flex h-dvh flex-col bg-room text-room-ink">
-      <TopBar
-        info={info}
-        count={participants.length}
-        narrow={narrow}
-        more={narrow ? moreMenu : null}
-        view={view}
-        onView={setView}
-      />
+      {!landscapePhone && (
+        <TopBar
+          info={info}
+          count={participants.length}
+          narrow={narrow}
+          more={narrow ? moreMenu : null}
+          view={view}
+          onView={setView}
+        />
+      )}
 
       <main
         id="main"
         // The chat and people panel sits on the right in both languages, as in Meet.
-        className={`flex min-h-0 flex-1 gap-4 ${narrow ? "flex-col px-3" : "px-6 pt-4 pb-2 rtl:flex-row-reverse"}`}
+        className={`flex min-h-0 flex-1 gap-4 ${narrow ? "flex-col px-3" : landscapePhone ? "px-3 pt-2 pb-1 rtl:flex-row-reverse" : "px-6 pt-4 pb-2 rtl:flex-row-reverse"}`}
       >
         {stage}
         {panelEl}
@@ -571,10 +579,12 @@ export function Room({
         className={`flex gap-x-6 gap-y-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] ${
           narrow
             ? "items-start justify-between px-3 pt-2"
-            : "flex-wrap items-center justify-between px-6 pt-3 rtl:flex-row-reverse"
+            : landscapePhone
+              ? "items-center justify-between px-3 pt-1 rtl:flex-row-reverse"
+              : "flex-wrap items-center justify-between px-6 pt-3 rtl:flex-row-reverse"
         }`}
       >
-        {!narrow && (
+        {!narrow && !landscapePhone && (
           <p className="flex min-w-40 flex-1 items-center gap-2 self-center text-sm whitespace-nowrap text-room-muted rtl:justify-end">
             <b className="font-semibold tabular-nums text-room-ink">
               {elapsedText(now, info.startsAt, locale)}
@@ -603,7 +613,9 @@ export function Room({
           {leaveButton}
         </div>
         {!narrow && (
-          <div className="flex min-w-40 flex-1 items-center justify-end gap-1.5 rtl:justify-start">
+          <div
+            className={`flex flex-1 items-center justify-end gap-1.5 rtl:justify-start ${landscapePhone ? "" : "min-w-40"}`}
+          >
             {peopleButton}
             {chatButton}
           </div>
@@ -981,7 +993,15 @@ function MediaButton({
     source,
     // "detail": on a weak link the browser drops frames, not sharpness, so slide text stays readable.
     captureOptions:
-      source === Track.Source.ScreenShare ? { audio: true, contentHint: "detail" } : undefined,
+      source === Track.Source.ScreenShare
+        ? {
+            audio: true,
+            contentHint: "detail",
+            // Not LiveKit's forced 1080p: a window that isn't 16:9 got cropped to it, so the learners
+            // saw only part of the page. 0 x 0 means the window's own size.
+            resolution: { width: 0, height: 0, frameRate: 15 },
+          }
+        : undefined,
   });
   if (source === Track.Source.ScreenShare)
     return (

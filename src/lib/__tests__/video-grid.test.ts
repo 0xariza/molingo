@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampPan, clampZoom, gridTileSize, videoFit } from "../video-grid";
+import { clampPan, clampZoom, gridTileSize, pictureSize, videoFit } from "../video-grid";
 
 describe("gridTileSize", () => {
   it("gives one tile the whole box", () => {
@@ -14,6 +14,10 @@ describe("gridTileSize", () => {
   it("makes four a 2 x 2 square, and three two on top with one below", () => {
     expect(gridTileSize({ width: 1212, height: 712 }, 4, 12)).toEqual({ width: 600, height: 350 });
     expect(gridTileSize({ width: 1212, height: 712 }, 3, 12)).toEqual({ width: 600, height: 350 });
+  });
+
+  it("keeps four in a 2 x 2 on a wide laptop box, not three over one", () => {
+    expect(gridTileSize({ width: 1392, height: 740 }, 4, 12)).toEqual({ width: 690, height: 364 });
   });
 
   it("is zero before the box is measured", () => {
@@ -51,5 +55,21 @@ describe("clampPan", () => {
 
   it("pins the picture in place at normal size", () => {
     expect(clampPan({ x: 120, y: 80 }, 1, box)).toEqual({ x: 0, y: 0 });
+  });
+});
+
+describe("pictureSize and clampPan with a letterboxed window share", () => {
+  const box = { width: 800, height: 400 };
+  const portrait = { width: 600, height: 1200 }; // a tall window shown in a wide box
+
+  it("measures the part of the box the picture covers", () => {
+    expect(pictureSize(box, portrait)).toEqual({ width: 200, height: 400 });
+    expect(pictureSize(box, null)).toEqual(box);
+    expect(pictureSize(box, { width: 0, height: 0 })).toEqual(box);
+  });
+
+  it("gives no sideways room until the picture is wider than the box", () => {
+    expect(clampPan({ x: 300, y: 300 }, 2, box, portrait)).toEqual({ x: 0, y: 200 });
+    expect(clampPan({ x: 300, y: 300 }, 4, box, portrait)).toEqual({ x: 0, y: 300 });
   });
 });

@@ -21,8 +21,22 @@ export default defineConfig({
   },
   // Mobile-first: most students use phones (Android Chrome and iOS Safari).
   projects: [
-    { name: "mobile-chrome", use: { ...devices["Pixel 7"] } },
-    { name: "mobile-safari", use: { ...devices["iPhone 15"] } },
+    { name: "mobile-chrome", use: { ...devices["Pixel 7"] }, testIgnore: /\/live-/ },
+    { name: "mobile-safari", use: { ...devices["iPhone 15"] }, testIgnore: /\/live-/ },
+    // The live room needs a real LiveKit server (`docker compose -f compose.dev.yml --profile live
+    // up -d`), a desktop screen and fake camera/microphone devices.
+    {
+      name: "live-room",
+      testMatch: /\/live-/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 900 },
+        permissions: ["camera", "microphone"],
+        launchOptions: {
+          args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream"],
+        },
+      },
+    },
   ],
   // Tests run against a real production build, pointed at the dedicated e2e database.
   // (The web server starts before any global setup, so it also prepares the database.)
@@ -39,6 +53,10 @@ export default defineConfig({
       HOSTNAME: "localhost",
       // The platform home page (M6d) is tested as it will ship; production keeps it off for now.
       PLATFORM_HOME: "on",
+      // LiveKit dev server from compose.dev.yml (only the live-room project needs it).
+      LIVEKIT_URL: "ws://localhost:7880",
+      LIVEKIT_API_KEY: "devkey",
+      LIVEKIT_API_SECRET: "secret",
     },
   },
 });

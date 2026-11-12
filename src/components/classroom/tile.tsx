@@ -45,12 +45,15 @@ export function Tile({
   self = false,
   actions,
   videoStyle,
+  onVideoSize,
 }: {
   trackRef: TrackReferenceOrPlaceholder;
   size?: "large" | "small" | "pip";
   self?: boolean;
   actions?: TileAction[];
   videoStyle?: CSSProperties;
+  /** Told whenever the picture's own size changes (a shared window being resized). */
+  onVideoSize?: (size: { width: number; height: number }) => void;
 }) {
   const t = useTranslations("Classroom");
   const p = trackRef.participant;
@@ -92,7 +95,9 @@ export function Tile({
           style={videoStyle}
           onResize={(e) => {
             const v = e.currentTarget;
-            setVideo({ width: v.videoWidth, height: v.videoHeight });
+            const next = { width: v.videoWidth, height: v.videoHeight };
+            setVideo(next);
+            onVideoSize?.(next);
           }}
           className={`size-full ${fit === "cover" ? "object-cover" : "object-contain"} ${self && !isShare ? "-scale-x-100" : ""}`}
         />
