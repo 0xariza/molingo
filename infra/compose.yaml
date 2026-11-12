@@ -54,6 +54,7 @@ services:
       LIVEKIT_HTTP: http://127.0.0.1:7880
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
+      PLATFORM_HOME: ${PLATFORM_HOME:-off} # the platform home page instead of the first teacher's page
     volumes:
       - uploads:/data/uploads # homework files (M8); the image creates it owned by `node`
     depends_on:
