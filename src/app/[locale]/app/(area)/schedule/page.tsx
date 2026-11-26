@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { NextSessionCard, nextSession } from "@/components/student/schedule";
+import { ScheduleTabs } from "@/components/student/schedule-tabs";
 import { LearnerWeek } from "@/components/student/week";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
@@ -67,6 +68,7 @@ async function MySchedule({
 
   return (
     <div className="space-y-5">
+      <ScheduleTabs current="week" />
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm font-bold text-brand">{t("title")}</p>

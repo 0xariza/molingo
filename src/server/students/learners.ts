@@ -3,8 +3,14 @@ import { z } from "zod";
 import { db } from "@/db";
 import {
   authSessions,
+  classes,
+  enrollments,
+  invoices,
   leads,
   levelCheckSlots,
+  payments,
+  receipts,
+  studentCredits,
   studentStatusEnum,
   students,
   teacherLearners,
@@ -248,6 +254,44 @@ export async function setLearnerStatus(
         await tx.delete(authSessions).where(eq(authSessions.userId, learner.userId));
     }
     return true;
+  });
+}
+
+export type RemoveResult = { ok: true } | { ok: false; error: "not_found" | "has_records" };
+
+/**
+ * Takes the learner off this teacher's list. Refused while they have classes or money records with
+ * this teacher (those must stay intact; "left" is the answer then). When no other teacher has
+ * them, the person, their login and everything that hangs off them are deleted.
+ */
+export async function removeLearner(teacherId: string, id: string): Promise<RemoveResult> {
+  return db.transaction(async (tx) => {
+    const owned = (
+      table: typeof invoices | typeof payments | typeof receipts | typeof studentCredits,
+    ) =>
+      sql`exists (select 1 from ${table} where student_id = ${id} and teacher_id = ${teacherId})`;
+    const [mine] = await tx
+      .select({
+        busy: sql<boolean>`exists (select 1 from ${enrollments} e join ${classes} c on c.id = e.class_id
+          where e.student_id = ${id} and c.teacher_id = ${teacherId})
+          or ${owned(invoices)} or ${owned(payments)} or ${owned(receipts)} or ${owned(studentCredits)}`,
+      })
+      .from(teacherLearners)
+      .where(link(teacherId, id))
+      .for("update");
+    if (!mine) return { ok: false, error: "not_found" };
+    if (mine.busy) return { ok: false, error: "has_records" };
+
+    await tx.delete(teacherLearners).where(link(teacherId, id));
+    if (await isSoleTeacher(tx, teacherId, id)) {
+      const [person] = await tx
+        .delete(students)
+        .where(eq(students.id, id))
+        .returning({ userId: students.userId });
+      if (person?.userId)
+        await tx.delete(users).where(and(eq(users.id, person.userId), eq(users.role, "student")));
+    }
+    return { ok: true };
   });
 }
 

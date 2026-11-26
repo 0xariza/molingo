@@ -59,9 +59,7 @@ export async function ClassList({
               }`}
             >
               {t(`filters.${f}`)}
-              <span className="font-semibold opacity-75">
-                {n(cards.filter((c) => inFilter(c, f)).length)}
-              </span>
+              <span className="font-semibold">{n(cards.filter((c) => inFilter(c, f)).length)}</span>
             </Link>
           );
         })}
@@ -145,7 +143,7 @@ export async function ClassList({
                         inClass={c.learnerIds}
                       />
                     ) : (
-                      <span className="rounded-pill bg-[#edf0f3] px-3.5 py-2 text-sm font-bold text-body/80">
+                      <span className="rounded-pill bg-[#edf0f3] px-3.5 py-2 text-sm font-bold text-body">
                         {t("card.classFull")}
                       </span>
                     )}

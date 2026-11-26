@@ -8,6 +8,7 @@ import { LearnerAccount } from "@/components/admin/finance/learner-account";
 import { BackLink } from "@/components/admin/learners/back-link";
 import { LearnerClasses } from "@/components/admin/learners/learner-classes";
 import { LoginCard } from "@/components/admin/learners/login-card";
+import { RemoveLearner } from "@/components/admin/learners/remove-learner";
 import { StatusBadge } from "@/components/admin/learners/status-badge";
 import { StatusSwitch } from "@/components/admin/learners/status-switch";
 import { buttonClass } from "@/components/ui/button";
@@ -132,6 +133,7 @@ async function Profile({ params }: { params: Promise<{ id: string }> }) {
           <LearnerAccount teacherId={teacherId} learner={learner} />
           <LoginCard studentId={learner.id} phone={learner.phone} login={learner.login} />
           <StatusSwitch id={learner.id} status={learner.status} />
+          <RemoveLearner id={learner.id} name={primary} />
         </div>
       </div>
     </>

@@ -2,22 +2,19 @@ import { describe, expect, it } from "vitest";
 import { clampPan, clampZoom, gridTileSize, pictureSize, videoFit } from "../video-grid";
 
 describe("gridTileSize", () => {
-  it("gives one tile the whole box", () => {
+  it("gives one tile the biggest 16:9 that fits", () => {
     expect(gridTileSize({ width: 1600, height: 900 }, 1, 12)).toEqual({ width: 1600, height: 900 });
+    expect(gridTileSize({ width: 2000, height: 900 }, 1, 12)).toEqual({ width: 1600, height: 900 });
   });
 
-  it("splits the box in half for two: side by side when wide, stacked when tall", () => {
-    expect(gridTileSize({ width: 1112, height: 700 }, 2, 12)).toEqual({ width: 550, height: 700 });
-    expect(gridTileSize({ width: 700, height: 1112 }, 2, 12)).toEqual({ width: 700, height: 550 });
+  it("puts two side by side when wide and stacked when tall, always 16:9", () => {
+    expect(gridTileSize({ width: 1600, height: 700 }, 2, 12)).toEqual({ width: 794, height: 446 });
+    expect(gridTileSize({ width: 700, height: 1112 }, 2, 12)).toEqual({ width: 700, height: 393 });
   });
 
-  it("makes four a 2 x 2 square, and three two on top with one below", () => {
-    expect(gridTileSize({ width: 1212, height: 712 }, 4, 12)).toEqual({ width: 600, height: 350 });
-    expect(gridTileSize({ width: 1212, height: 712 }, 3, 12)).toEqual({ width: 600, height: 350 });
-  });
-
-  it("keeps four in a 2 x 2 on a wide laptop box, not three over one", () => {
-    expect(gridTileSize({ width: 1392, height: 740 }, 4, 12)).toEqual({ width: 690, height: 364 });
+  it("makes four a 2 x 2 and three two on top with one below", () => {
+    expect(gridTileSize({ width: 1212, height: 712 }, 4, 12)).toEqual({ width: 600, height: 337 });
+    expect(gridTileSize({ width: 1212, height: 712 }, 3, 12)).toEqual({ width: 600, height: 337 });
   });
 
   it("is zero before the box is measured", () => {
@@ -26,14 +23,18 @@ describe("gridTileSize", () => {
 });
 
 describe("videoFit", () => {
-  it("fills, except an upright video in a wide tile shows whole", () => {
-    const wide = { width: 1280, height: 720 };
-    const tall = { width: 720, height: 1280 };
-    expect(videoFit(wide, wide)).toBe("cover");
-    expect(videoFit(tall, tall)).toBe("cover");
-    expect(videoFit(wide, tall)).toBe("contain");
-    expect(videoFit(tall, wide)).toBe("cover");
-    expect(videoFit(wide, null)).toBe("cover");
+  const hd = { width: 1280, height: 720 };
+  it("fills only when the shapes nearly match", () => {
+    expect(videoFit(hd, hd)).toBe("cover");
+    expect(videoFit({ width: 1300, height: 700 }, hd)).toBe("cover");
+    expect(videoFit(hd, null)).toBe("cover");
+  });
+
+  it("shows the whole picture instead of zooming in", () => {
+    expect(videoFit(hd, { width: 640, height: 480 })).toBe("contain"); // 4:3 webcam
+    expect(videoFit(hd, { width: 720, height: 1280 })).toBe("contain"); // upright phone
+    expect(videoFit({ width: 2000, height: 870 }, hd)).toBe("contain"); // wide spotlight
+    expect(videoFit({ width: 250, height: 600 }, hd)).toBe("contain"); // tall strip
   });
 });
 

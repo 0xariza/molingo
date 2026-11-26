@@ -90,13 +90,15 @@ export function AreaShell({ home, items, user, account, children }: Props) {
               )}
             </div>
           </div>
-          <main id="main" className="w-full flex-1 px-4 pt-6 pb-28 sm:px-8 lg:px-0 lg:pt-0 lg:pb-8">
+          <main id="main" className="w-full flex-1 px-4 pt-6 pb-32 sm:px-8 lg:px-0 lg:pt-0 lg:pb-8">
             {children}
           </main>
         </div>
       </div>
 
-      {items.length > 1 && <AreaNav items={items} label={t("areaNav")} variant="bar" />}
+      {items.length > 1 && (
+        <AreaNav items={items} label={t("areaNav")} moreLabel={t("more")} variant="bar" />
+      )}
     </div>
   );
 }

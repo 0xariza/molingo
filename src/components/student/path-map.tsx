@@ -133,6 +133,8 @@ export function PathMap({
           const isNow = s.state === "current";
           const size = isNow ? 76 : 48;
           const far = p.x > W / 2;
+          // The label clears the node and, on the current one, its 8px halo.
+          const gap = size / 2 + (isNow ? 8 : 0) + 12;
           return (
             <div key={i}>
               <button
@@ -158,7 +160,7 @@ export function PathMap({
               </button>
               <p
                 style={{
-                  left: `${((far ? p.x - 44 - 128 : p.x + 44) / W) * 100}%`,
+                  left: `${((far ? p.x - gap - 128 : p.x + gap) / W) * 100}%`,
                   top: `${((p.y - 22) / height) * 100}%`,
                   width: `${(128 / W) * 100}%`,
                 }}

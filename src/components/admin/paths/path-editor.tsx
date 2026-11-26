@@ -213,7 +213,7 @@ export function PathEditor({
             </b>
           </span>
         )}
-        <span className="text-line">{t("targetNote")}</span>
+        <span className="text-body">{t("targetNote")}</span>
       </p>
 
       {optional && (

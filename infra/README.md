@@ -12,6 +12,7 @@ shipped over SSH; the VPS never builds or pulls anything.
 | `livekit.yaml`  | LiveKit with embedded TURN (UDP 443, TLS via Caddy on 443), media on UDP 50000–50200      |
 | `caddy/`        | Builds Caddy with `caddy-l4`                                                              |
 | `call-test/`    | M0 test page and token service (no app, no database); reports go to `/data/reports.jsonl` |
+| `backup.sh`     | Nightly `pg_dump` + uploads tarball (14 daily, 8 weekly), optional restic snapshot        |
 | `ship.sh`       | Copies images and config, adds missing secrets to `.env`, migrates the database, restarts |
 
 ## Build and ship
@@ -40,4 +41,24 @@ SSH uses the project key in `.deploy/` (git-ignored). Secrets stay on the VPS in
 cd /opt/molingo && docker compose ps && docker compose logs --tail 50 caddy livekit
 docker compose exec call-test cat /data/reports.jsonl   # testers' connection reports
 docker stats --no-stream                                # CPU and memory during a call
+```
+
+## Backups
+
+`ship.sh` copies `backup.sh` to `/opt/molingo`. Install the nightly cron once on the VPS
+(`crontab -e` as `deploy`):
+
+```bash
+30 3 * * * cd /opt/molingo && ./backup.sh >> backups/backup.log 2>&1
+```
+
+Backups land in `/opt/molingo/backups/{daily,weekly}`. For the off-box copy, install `restic` and put
+`RESTIC_REPOSITORY` and `RESTIC_PASSWORD` in `/opt/molingo/.env` (a domestic target, PLAN §7);
+without them only the local copy is made.
+
+Restore drill, monthly, into a throwaway container (never the real database):
+
+```bash
+scripts/restore-test.sh                      # newest daily dump
+scripts/restore-test.sh path/to/pg-2026-11-22.dump
 ```

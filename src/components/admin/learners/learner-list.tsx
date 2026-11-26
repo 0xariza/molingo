@@ -69,7 +69,7 @@ export async function LearnerList({
                 }`}
               >
                 {f.label}
-                <span className="font-semibold opacity-75">{n(f.count)}</span>
+                <span className="font-semibold">{n(f.count)}</span>
               </Link>
             );
           })}

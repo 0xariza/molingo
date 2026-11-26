@@ -429,7 +429,10 @@ export function Room({
       {big && rest.length > 0 && (
         <ul className="flex w-62.5 shrink-0 flex-col gap-3 overflow-y-auto">
           {rest.map((tr) => (
-            <li key={keyOf(tr)} className="min-h-32 flex-1 basis-0 overflow-hidden rounded-[20px]">
+            <li
+              key={keyOf(tr)}
+              className="aspect-video w-full shrink-0 overflow-hidden rounded-[20px]"
+            >
               {tile(tr, "small")}
             </li>
           ))}

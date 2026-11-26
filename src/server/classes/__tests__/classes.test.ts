@@ -1,12 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { classSlots, enrollments, sessions, students, teacherLearners } from "@/db/schema";
+import { classes, classSlots, enrollments, sessions, students, teacherLearners } from "@/db/schema";
 import { fromTehranTime } from "@/lib/format";
 import { createTeacher, createUser, resetDb } from "@/test/factories";
 import {
   archiveClass,
   createClass,
+  deleteClass,
   endEnrollment,
   enroll,
   listClasses,
@@ -14,6 +15,8 @@ import {
   moveLearner,
   newClassSchema,
   nextCourseDefaults,
+  rescheduleClass,
+  scheduleSchema,
   updateClass,
 } from "../classes";
 import { classStats, learnerClasses } from "../stats";
@@ -427,5 +430,122 @@ describe("another teacher", () => {
     const theirs = await created({}, other);
     expect(await enroll(other, theirs, sara)).toEqual({ ok: false, error: "unavailable" });
     expect(await endEnrollment(other, mine, sara)).toBe(false);
+  });
+});
+
+describe("rescheduleClass", () => {
+  const schedule = (o: Record<string, unknown>) =>
+    scheduleSchema.parse({ sessionCount: "4", sessionMinutes: "90", ...o });
+  const times = async (classId: string) =>
+    (
+      await db
+        .select()
+        .from(sessions)
+        .where(eq(sessions.classId, classId))
+        .orderBy(sessions.startsAt)
+    ).map((s) => ({ at: s.startsAt, status: s.status, min: (+s.endsAt - +s.startsAt) / 60_000 }));
+
+  it("before the first session, replaces every session and moves the start date", async () => {
+    const id = await created();
+    const input = schedule({
+      sessionCount: "5",
+      sessionMinutes: "60",
+      slots: JSON.stringify([
+        { weekday: 1, time: "10:00" },
+        { weekday: 3, time: "10:00" },
+      ]),
+      startsOn: "2026-10-25",
+    });
+    expect(await rescheduleClass(tid, id, input, now)).toEqual({ ok: true });
+    const list = await times(id);
+    expect(list.map((s) => s.at)).toEqual(
+      ["2026-10-25", "2026-10-27", "2026-11-01", "2026-11-03", "2026-11-08"].map((d) =>
+        fromTehranTime(d, "10:00"),
+      ),
+    );
+    expect(list.every((s) => s.min === 60)).toBe(true);
+    const [cls] = await db.select().from(classes).where(eq(classes.id, id));
+    expect([cls.startsOn, cls.sessionCount, cls.sessionMinutes]).toEqual(["2026-10-25", 5, 60]);
+    const slots = await db.select().from(classSlots).where(eq(classSlots.classId, id));
+    expect(slots.map((s) => s.weekday).sort()).toEqual([1, 3]);
+  });
+
+  it("mid-course, keeps held and started sessions and replaces the rest", async () => {
+    const id = await created();
+    const [first] = await times(id);
+    await db
+      .update(sessions)
+      .set({ status: "held", heldAt: first.at })
+      .where(and(eq(sessions.classId, id), eq(sessions.startsAt, first.at)));
+    const later = fromTehranTime("2026-10-27", "12:00");
+    const thursdays = schedule({
+      slots: JSON.stringify([{ weekday: 5, time: "17:00" }]),
+      startsOn: "2026-10-29",
+    });
+    expect(await rescheduleClass(tid, id, thursdays, later)).toEqual({ ok: true });
+    expect((await times(id)).map((s) => [s.at, s.status])).toEqual([
+      [fromTehranTime("2026-10-24", "08:00"), "held"],
+      [fromTehranTime("2026-10-26", "08:00"), "scheduled"],
+      [fromTehranTime("2026-10-29", "17:00"), "scheduled"],
+      [fromTehranTime("2026-11-05", "17:00"), "scheduled"],
+    ]);
+    const [cls] = await db.select().from(classes).where(eq(classes.id, id));
+    expect(cls.startsOn).toBe("2026-10-24");
+
+    expect(
+      await rescheduleClass(tid, id, schedule({ ...thursdaysRaw(), sessionCount: "1" }), later),
+    ).toEqual({ ok: false, error: "too_few", min: 2 });
+  });
+
+  it("refuses a schedule that clashes with another class or lies in the past", async () => {
+    const id = await created();
+    await created({
+      slots: JSON.stringify([{ weekday: 5, time: "17:30" }]),
+      startsOn: "2026-10-29",
+    });
+    const thursdays = schedule(thursdaysRaw());
+    expect(await rescheduleClass(tid, id, thursdays, now)).toMatchObject({ error: "clash" });
+    const past = schedule({ ...thursdaysRaw(), startsOn: "2026-10-08" });
+    expect(await rescheduleClass(tid, id, past, now)).toEqual({ ok: false, error: "past" });
+  });
+
+  it("only touches this teacher's classes", async () => {
+    const id = await created();
+    const ali = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    const other = (await createTeacher(db, ali.id)).id;
+    expect(await rescheduleClass(other, id, schedule(thursdaysRaw()), now)).toEqual({
+      ok: false,
+      error: "not_found",
+    });
+  });
+
+  function thursdaysRaw() {
+    return { slots: JSON.stringify([{ weekday: 5, time: "17:00" }]), startsOn: "2026-10-29" };
+  }
+});
+
+describe("deleteClass", () => {
+  it("deletes a class before anything happened, with its sessions and places", async () => {
+    const sara = await learner();
+    const id = await created({ type: "private", studentIds: JSON.stringify([sara]) });
+    expect(await deleteClass(tid, id, now)).toEqual({ ok: true });
+    expect(await db.select().from(classes)).toHaveLength(0);
+    expect(await db.select().from(sessions)).toHaveLength(0);
+    expect(await db.select().from(enrollments)).toHaveLength(0);
+  });
+
+  it("refuses once a session was held or has started", async () => {
+    const id = await created();
+    const during = fromTehranTime("2026-10-24", "08:30");
+    expect(await deleteClass(tid, id, during)).toEqual({ ok: false, error: "has_history" });
+    await db.update(sessions).set({ status: "held" }).where(eq(sessions.classId, id));
+    expect(await deleteClass(tid, id, now)).toEqual({ ok: false, error: "has_history" });
+  });
+
+  it("can't delete another teacher's class", async () => {
+    const id = await created();
+    const ali = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    const other = (await createTeacher(db, ali.id)).id;
+    expect(await deleteClass(other, id, now)).toEqual({ ok: false, error: "not_found" });
   });
 });

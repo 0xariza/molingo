@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getLocale, getTranslations } from "next-intl/server";
 import { Suspense } from "react";
 import { scheduleText } from "@/components/admin/classes/schedule-text";
+import { ScheduleTabs } from "@/components/student/schedule-tabs";
 import { Link } from "@/i18n/navigation";
 import type { Locale } from "@/i18n/routing";
 import { formatDate, formatNumber, formatTime } from "@/lib/format";
@@ -46,6 +47,7 @@ async function Classes() {
 
   return (
     <div className="space-y-5">
+      <ScheduleTabs current="classes" />
       <h1 className="text-4xl sm:text-5xl">{t("title")}</h1>
       {classes.length === 0 && (
         <p className="rounded-card border border-hairline bg-white p-6">{t("empty")}</p>

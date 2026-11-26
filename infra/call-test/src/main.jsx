@@ -22,7 +22,7 @@ import {
   useTracks,
 } from "@livekit/components-react";
 import { ConnectionState, RoomEvent, Track, VideoPresets } from "livekit-client";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { ICONS } from "./icons.js";
 
@@ -184,9 +184,35 @@ function Join({ onJoined }) {
   );
 }
 
+/**
+ * Same rule as the app's videoFit (src/lib/video-grid.ts): fill the tile only when its shape and
+ * the video's nearly match (at most ~10% cut, as in Meet); otherwise show the whole picture.
+ */
+function useFit() {
+  const [value, setValue] = useState("cover");
+  const ref = useCallback((v) => {
+    if (!v) return;
+    const update = () => {
+      const { clientWidth: tw, clientHeight: th, videoWidth: vw, videoHeight: vh } = v;
+      if (!tw || !th || !vw || !vh) return;
+      setValue(Math.abs(Math.log(tw / th / (vw / vh))) <= Math.log(1.1) ? "cover" : "contain");
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(v);
+    v.addEventListener("resize", update);
+    update();
+    return () => {
+      observer.disconnect();
+      v.removeEventListener("resize", update);
+    };
+  }, []);
+  return { ref, value };
+}
+
 /** One person's tile: video (or a coloured initial), name, mic-off badge, hand and turn marks. */
 function Tile({ trackRef, self = false, contain = false }) {
   const p = trackRef.participant;
+  const fit = useFit();
   const camMuted = useIsMuted(trackRef);
   const micMuted = useIsMuted({ participant: p, source: Track.Source.Microphone });
   const speaking = useIsSpeaking(p);
@@ -206,7 +232,11 @@ function Tile({ trackRef, self = false, contain = false }) {
   return (
     <ParticipantTile trackRef={trackRef} className={classes} disableSpeakingIndicator>
       {showVideo ? (
-        <VideoTrack trackRef={trackRef} style={{ objectFit: contain ? "contain" : "cover" }} />
+        <VideoTrack
+          ref={fit.ref}
+          trackRef={trackRef}
+          style={{ objectFit: contain ? "contain" : fit.value }}
+        />
       ) : (
         <div className="mo-avatar-wrap">
           <span className="mo-avatar" style={{ background: avatarColor(p.identity) }}>

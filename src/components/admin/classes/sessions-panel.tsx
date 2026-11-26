@@ -15,6 +15,7 @@ import { formatDate, formatNumber, formatTime } from "@/lib/format";
 import { learnerNames } from "@/lib/names";
 import { cancelSessionAction, markHeldAction, type ClassFormState } from "@/server/classes/actions";
 import type { AttendanceStatus, SessionRow } from "@/server/classes/sessions";
+import { MoveSessionDialog } from "./move-session-dialog";
 
 type Person = { id: string; fullNameFa: string; fullNameEn: string | null };
 
@@ -50,6 +51,7 @@ export function SessionsPanel({
   const [showAll, setShowAll] = useState(false);
   const [cancelling, setCancelling] = useState<SessionRow | null>(null);
   const [marking, setMarking] = useState<SessionRow | null>(null);
+  const [moving, setMoving] = useState<SessionRow | null>(null);
   const when = (s: SessionRow) =>
     `${formatDate(s.startsAt, locale, { year: false })} · ${formatTime(s.startsAt, locale)}–${formatTime(s.endsAt, locale)}`;
   const nameOf = (p: Person) => learnerNames(p, locale).primary;
@@ -188,6 +190,15 @@ export function SessionsPanel({
             {s.phase === "upcoming" && (
               <button
                 type="button"
+                onClick={() => setMoving(s)}
+                className={buttonClass("ghost", "min-h-10 px-4 text-sm")}
+              >
+                {t("detail.move")}
+              </button>
+            )}
+            {s.phase === "upcoming" && (
+              <button
+                type="button"
                 onClick={() => setCancelling(s)}
                 className="min-h-10 rounded-pill border border-line/50 px-4 text-sm font-bold hover:border-red-700 hover:text-red-700"
               >
@@ -215,6 +226,18 @@ export function SessionsPanel({
         </button>
       ) : null}
 
+      {moving && (
+        <MoveSessionDialog
+          session={moving}
+          title={
+            moving.number
+              ? t("detail.moveTitle", { n: n(moving.number) })
+              : t("detail.moveTitleMakeup")
+          }
+          when={when(moving)}
+          onClose={() => setMoving(null)}
+        />
+      )}
       {cancelling && (
         <CancelDialog
           session={cancelling}

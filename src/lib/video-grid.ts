@@ -1,34 +1,31 @@
 type Size = { width: number; height: number };
 
 /**
- * Meet-style grid: the tiles fill the whole box (two people split it in half, side by side on a
- * wide box and stacked on a tall one). Picks the column count whose tiles are closest to 4:3,
- * with a penalty for empty cells in the last row (four people make a 2 x 2, not three over one).
+ * Meet-style grid: every tile is 16:9 (the camera's own shape, so nothing is cropped), as big as
+ * fits. Picks the column count that gives the largest tiles (two people sit side by side on a wide
+ * box and stack on a tall one; four make a 2 x 2).
  */
 export function gridTileSize({ width, height }: Size, count: number, gap: number): Size {
   let best = { width: 0, height: 0 };
-  let bestScore = Infinity;
   for (let cols = 1; cols <= count; cols++) {
     const rows = Math.ceil(count / cols);
-    const w = (width - gap * (cols - 1)) / cols;
-    const h = (height - gap * (rows - 1)) / rows;
-    if (w <= 0 || h <= 0) continue;
-    const score = Math.abs(Math.log(w / h / (4 / 3))) + (1 * (cols * rows - count)) / count;
-    if (score < bestScore) {
-      bestScore = score;
-      best = { width: Math.floor(w), height: Math.floor(h) };
-    }
+    const cellW = (width - gap * (cols - 1)) / cols;
+    const cellH = (height - gap * (rows - 1)) / rows;
+    if (cellW <= 0 || cellH <= 0) continue;
+    const w = Math.floor(Math.min(cellW, (cellH * 16) / 9));
+    if (w > best.width) best = { width: w, height: Math.floor((w * 9) / 16) };
   }
   return best;
 }
 
 /**
- * Fill the tile (a crop, as in Meet) except when an upright phone video sits in a wide tile:
- * then show the whole picture, so it isn't cut down to a zoomed-in strip.
+ * Fill the tile only when the shapes nearly match (at most ~10% of the picture is cut, as in Meet);
+ * otherwise show the whole picture with bars, so a 4:3 webcam or an upright phone isn't zoomed in.
  */
 export function videoFit(tile: Size, video: Size | null): "cover" | "contain" {
-  if (!video || !tile.width || !tile.height) return "cover";
-  return tile.width > tile.height && video.height > video.width ? "contain" : "cover";
+  if (!video?.width || !video.height || !tile.width || !tile.height) return "cover";
+  const mismatch = Math.abs(Math.log(tile.width / tile.height / (video.width / video.height)));
+  return mismatch <= Math.log(1.1) ? "cover" : "contain";
 }
 
 /** A shared screen zooms between its normal size and four times that. */

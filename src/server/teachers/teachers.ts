@@ -1,4 +1,5 @@
 import { and, asc, count, eq, ne, sql } from "drizzle-orm";
+import { cache } from "react";
 import { z } from "zod";
 import { db } from "@/db";
 import { authSessions, teacherLearners, teachers, users } from "@/db/schema";
@@ -63,7 +64,7 @@ export const newTeacherSchema = z.object({
 export type NewTeacher = z.output<typeof newTeacherSchema>;
 
 /** What a teacher's public page shows. Null for an unknown or paused teacher. */
-export async function teacherPage(slug: string, locale: Locale) {
+export const teacherPage = cache(async (slug: string, locale: Locale) => {
   const [row] = await db
     .select({
       id: teachers.id,
@@ -79,9 +80,19 @@ export async function teacherPage(slug: string, locale: Locale) {
   if (!row) return null;
   const { nameFa, nameEn, ...rest } = row;
   return { ...rest, name: locale === "fa" ? nameFa : nameEn };
-}
+});
 
 export type TeacherPage = NonNullable<Awaited<ReturnType<typeof teacherPage>>>;
+
+/** Slugs of the teachers whose public page is live (for the sitemap). */
+export async function listTeacherSlugs(): Promise<string[]> {
+  const rows = await db
+    .select({ slug: teachers.slug })
+    .from(teachers)
+    .innerJoin(users, eq(users.id, teachers.userId))
+    .where(eq(users.isActive, true));
+  return rows.map((r) => r.slug);
+}
 
 // shortcut: hoopo.ir goes to the first teacher's page (Mona) until the platform home page (M6d).
 export async function homeTeacherSlug(): Promise<string | null> {

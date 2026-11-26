@@ -32,7 +32,7 @@ SUMS="cd $DIR && sha256sum Caddyfile livekit.yaml 2>/dev/null || true"
 # The checksums are of the files as rendered on the server (below), so an unchanged livekit.yaml
 # keeps its container.
 BEFORE="$("${SSH[@]}" "$SUMS")"
-COPYFILE_DISABLE=1 tar --no-mac-metadata -cf - compose.yaml Caddyfile livekit.yaml | "${SSH[@]}" "tar -xf - -C $DIR"
+COPYFILE_DISABLE=1 tar --no-mac-metadata -cf - compose.yaml Caddyfile livekit.yaml backup.sh | "${SSH[@]}" "tar -xf - -C $DIR"
 
 echo "→ secrets"
 "${SSH[@]}" bash -s <<EOF

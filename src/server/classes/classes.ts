@@ -6,6 +6,7 @@ import {
   classes,
   classSlots,
   enrollments,
+  invoices,
   sessions,
   students,
   teacherLearners,
@@ -20,7 +21,13 @@ import {
   WEEKDAYS,
   type Weekday,
 } from "@/lib/schedule";
-import { pathField, setClassPath, type PathInput, type PathError } from "../paths/class-paths";
+import {
+  pathField,
+  reassignSessions,
+  setClassPath,
+  type PathInput,
+  type PathError,
+} from "../paths/class-paths";
 import { grantCredit } from "../billing/payments";
 import { createCourseInvoice } from "../billing/invoices";
 import { notifyIssued } from "../billing/notify";
@@ -80,22 +87,45 @@ const detailsShape = {
   isPublic: z.boolean(),
 };
 
+/** The schedule fields, shared by "new class" and "change the schedule". */
+const scheduleShape = {
+  sessionCount: z.coerce
+    .number()
+    .int("sessionCount")
+    .min(1, "sessionCount")
+    .max(60, "sessionCount"),
+  sessionMinutes: z.coerce
+    .number()
+    .refine((n) => SESSION_LENGTHS.includes(n as 30), "sessionMinutes"),
+  // Checked on the field so the error shows even when other fields fail too.
+  slots: jsonArray(slotSchema, "slots").refine((a) => a.length > 0, "slots"),
+  startsOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "startsOn"),
+};
+
+/** Parses the weekly times (one per day) and checks the first date falls on one of them. */
+function checkSchedule(
+  v: { slots: { weekday: number; time: string }[]; startsOn: string },
+  ctx: z.RefinementCtx,
+) {
+  const slots: { weekday: Weekday; minutes: number }[] = [];
+  for (const s of v.slots) {
+    const minutes = parseClock(s.time);
+    if (minutes === null) ctx.addIssue({ code: "custom", path: ["slots"], message: "slotTime" });
+    else slots.push({ weekday: s.weekday as Weekday, minutes });
+  }
+  if (new Set(slots.map((s) => s.weekday)).size !== slots.length)
+    ctx.addIssue({ code: "custom", path: ["slots"], message: "slotDay" });
+  if (slots.length && !slots.some((s) => s.weekday === weekdayOf(v.startsOn)))
+    ctx.addIssue({ code: "custom", path: ["startsOn"], message: "startsOnDay" });
+  return slots.sort((a, b) => a.weekday - b.weekday);
+}
+
 export const newClassSchema = z
   .object({
     ...detailsShape,
+    ...scheduleShape,
     type: z.enum(["private", "group"], "type"),
     capacity: z.coerce.number().int().min(1).max(MAX_GROUP_CAPACITY),
-    sessionCount: z.coerce
-      .number()
-      .int("sessionCount")
-      .min(1, "sessionCount")
-      .max(60, "sessionCount"),
-    sessionMinutes: z.coerce
-      .number()
-      .refine((n) => SESSION_LENGTHS.includes(n as 30), "sessionMinutes"),
-    // Checked on the field so the error shows even when other fields fail too.
-    slots: jsonArray(slotSchema, "slots").refine((a) => a.length > 0, "slots"),
-    startsOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "startsOn"),
     studentIds: jsonArray(z.uuid(), "studentIds"),
     fromClassId: z.uuid().optional(),
     /** The class path from the wizard's path step; empty for no path. */
@@ -114,25 +144,18 @@ export const newClassSchema = z
     const capacity = v.type === "private" ? 1 : v.capacity;
     if (v.type === "group" && capacity < 2)
       ctx.addIssue({ code: "custom", path: ["capacity"], message: "capacity" });
-    const slots: { weekday: Weekday; minutes: number }[] = [];
-    for (const s of v.slots) {
-      const minutes = parseClock(s.time);
-      if (minutes === null) ctx.addIssue({ code: "custom", path: ["slots"], message: "slotTime" });
-      else slots.push({ weekday: s.weekday as Weekday, minutes });
-    }
-    if (new Set(slots.map((s) => s.weekday)).size !== slots.length)
-      ctx.addIssue({ code: "custom", path: ["slots"], message: "slotDay" });
-    if (slots.length && !slots.some((s) => s.weekday === weekdayOf(v.startsOn)))
-      ctx.addIssue({ code: "custom", path: ["startsOn"], message: "startsOnDay" });
+    const slots = checkSchedule(v, ctx);
     if (v.studentIds.length > capacity)
       ctx.addIssue({ code: "custom", path: ["studentIds"], message: "tooMany" });
-    return {
-      ...v,
-      capacity,
-      isPublic: v.type === "group" && v.isPublic,
-      slots: slots.sort((a, b) => a.weekday - b.weekday),
-    };
+    return { ...v, capacity, isPublic: v.type === "group" && v.isPublic, slots };
   });
+
+/** A new schedule for the sessions still to come; `startsOn` is the first day it applies. */
+export const scheduleSchema = z
+  .object(scheduleShape)
+  .transform((v, ctx) => ({ ...v, slots: checkSchedule(v, ctx) }));
+
+export type ScheduleInput = z.output<typeof scheduleSchema>;
 
 export type NewClass = z.output<typeof newClassSchema>;
 
@@ -444,6 +467,116 @@ export async function archiveClass(
     )
     .returning({ id: classes.id });
   return rows.length > 0;
+}
+
+export type RescheduleResult =
+  | { ok: true }
+  | { ok: false; error: "not_found" | "past" }
+  | { ok: false; error: "clash"; clash?: ClashWith }
+  /** Fewer sessions than already held, cancelled or under way. */
+  | { ok: false; error: "too_few"; min: number };
+
+/**
+ * Applies a new schedule to the class sessions still to come: they are replaced by sessions on the
+ * new days, times and length from `startsOn`, up to the new total. Held, cancelled and started
+ * sessions (and make-ups) stay as they are. Then the path is re-assigned.
+ */
+export async function rescheduleClass(
+  teacherId: string,
+  id: string,
+  input: ScheduleInput,
+  now = new Date(),
+): Promise<RescheduleResult> {
+  const [cls] = await db
+    .select({ id: classes.id })
+    .from(classes)
+    .where(and(eq(classes.id, id), eq(classes.teacherId, teacherId), isNull(classes.archivedAt)));
+  if (!cls) return { ok: false, error: "not_found" };
+  const list = await db
+    .select({ id: sessions.id, status: sessions.status, startsAt: sessions.startsAt })
+    .from(sessions)
+    .where(and(eq(sessions.classId, id), eq(sessions.kind, "class")));
+  // shortcut: a moved session or a "don't charge" mark on a replaced session is dropped with it.
+  const replaced = list
+    .filter((s) => s.status === "scheduled" && s.startsAt > now)
+    .map((s) => s.id);
+  const kept = list.length - replaced.length;
+  if (input.sessionCount < kept) return { ok: false, error: "too_few", min: kept };
+
+  const times = sessionTimes({
+    startsOn: input.startsOn,
+    slots: input.slots,
+    count: input.sessionCount - kept,
+    sessionMinutes: input.sessionMinutes,
+  });
+  if (times.length && times[0].startsAt <= now) return { ok: false, error: "past" };
+  const clash = await findClash(teacherId, times, { except: replaced });
+  if (clash) return { ok: false, error: "clash", clash };
+
+  try {
+    return await db.transaction(async (tx) => {
+      const [locked] = await tx
+        .select({ id: classes.id })
+        .from(classes)
+        .where(eq(classes.id, id))
+        .for("update");
+      if (!locked) return { ok: false as const, error: "not_found" as const };
+      if (replaced.length)
+        await tx
+          .delete(sessions)
+          .where(and(inArray(sessions.id, replaced), eq(sessions.status, "scheduled")));
+      if (times.length)
+        await tx.insert(sessions).values(times.map((t) => ({ ...t, teacherId, classId: id })));
+      await tx
+        .update(classes)
+        .set({
+          sessionCount: input.sessionCount,
+          sessionMinutes: input.sessionMinutes,
+          // The class's first day moves only while none of it has happened yet.
+          ...(kept === 0 && { startsOn: input.startsOn }),
+        })
+        .where(eq(classes.id, id));
+      await tx.delete(classSlots).where(eq(classSlots.classId, id));
+      await tx.insert(classSlots).values(
+        input.slots.map((s) => ({
+          classId: id,
+          weekday: s.weekday,
+          startTime: formatClock(s.minutes),
+        })),
+      );
+      await reassignSessions(tx, id);
+      return { ok: true as const };
+    });
+  } catch (e) {
+    if (isOverlapError(e)) return { ok: false, error: "clash" };
+    throw e;
+  }
+}
+
+/**
+ * Deletes a class that has no history yet: no session held or started, no invoice. Its sessions,
+ * places and path go with it. A class with history can only be archived.
+ */
+export async function deleteClass(
+  teacherId: string,
+  id: string,
+  now = new Date(),
+): Promise<{ ok: true } | { ok: false; error: "not_found" | "has_history" }> {
+  return db.transaction(async (tx) => {
+    const [cls] = await tx
+      .select({
+        history: sql<boolean>`exists (select 1 from ${sessions} s where s.class_id = ${id}
+            and (s.status = 'held' or (s.status = 'scheduled' and s.starts_at <= ${now.toISOString()}::timestamptz)))
+          or exists (select 1 from ${invoices} i where i.class_id = ${id})`,
+      })
+      .from(classes)
+      .where(and(eq(classes.id, id), eq(classes.teacherId, teacherId)))
+      .for("update");
+    if (!cls) return { ok: false, error: "not_found" };
+    if (cls.history) return { ok: false, error: "has_history" };
+    await tx.delete(classes).where(eq(classes.id, id));
+    return { ok: true };
+  });
 }
 
 export type ClassState = "open" | "full" | "finished" | "archived";

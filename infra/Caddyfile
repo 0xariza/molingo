@@ -50,6 +50,12 @@ http://:80 {
 	handle /call-test* {
 		reverse_proxy 127.0.0.1:3001
 	}
+	# Next serves public/ files with max-age=0, so every visit revalidates the fonts. They never
+	# change under the same name.
+	handle /fonts/* {
+		header Cache-Control "public, max-age=31536000, immutable"
+		reverse_proxy 127.0.0.1:3000
+	}
 	handle {
 		reverse_proxy 127.0.0.1:3000
 	}

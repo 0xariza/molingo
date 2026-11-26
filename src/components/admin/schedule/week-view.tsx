@@ -269,7 +269,7 @@ function DayColumn({
       ))}
       {isToday && nowAt === -1 && items.length > 0 && nowLine}
       {items.length === 0 && (
-        <p className={`text-center font-bold text-line ${roomy ? "py-6" : "py-2 text-sm"}`}>
+        <p className={`text-center font-bold text-body ${roomy ? "py-6" : "py-2 text-sm"}`}>
           {t("emptyDay")}
         </p>
       )}
@@ -277,7 +277,7 @@ function DayColumn({
         <button
           type="button"
           onClick={onAdd}
-          className={`flex items-center justify-center gap-1 rounded-xl border border-dashed border-line/60 font-bold text-line hover:border-brand hover:bg-white hover:text-brand ${roomy ? "min-h-12" : "min-h-8 text-xs"}`}
+          className={`flex items-center justify-center gap-1 rounded-xl border border-dashed border-line/60 font-bold text-body hover:border-brand hover:bg-white hover:text-brand ${roomy ? "min-h-12" : "min-h-8 text-xs"}`}
         >
           <Plus aria-hidden size={roomy ? 16 : 12} weight="bold" />
           {roomy ? t("addSlotLong") : t("addSlot")}

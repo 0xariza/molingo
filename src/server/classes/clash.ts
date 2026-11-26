@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, lt, ne, or } from "drizzle-orm";
+import { and, asc, eq, gt, lt, ne, notInArray, or } from "drizzle-orm";
 import { db } from "@/db";
 import { classes, levelCheckSlots, sessions } from "@/db/schema";
 import { LEVEL_CHECK_MINUTES } from "../funnel/constants";
@@ -12,12 +12,12 @@ type Span = { startsAt: Date; endsAt: Date };
 
 /**
  * The earliest of the teacher's sessions (not cancelled) or level-check times (open or booked)
- * that overlaps any of these times. `except` leaves out a session being moved.
+ * that overlaps any of these times. `except` leaves out sessions being moved or replaced.
  */
 export async function findClash(
   teacherId: string,
   times: Span[],
-  { except }: { except?: string } = {},
+  { except = [] }: { except?: string | string[] } = {},
 ): Promise<ClashWith | null> {
   if (times.length === 0) return null;
   const length = LEVEL_CHECK_MINUTES * 60_000;
@@ -30,7 +30,7 @@ export async function findClash(
         and(
           eq(sessions.teacherId, teacherId),
           ne(sessions.status, "cancelled"),
-          except ? ne(sessions.id, except) : undefined,
+          except.length ? notInArray(sessions.id, [except].flat()) : undefined,
           or(
             ...times.map((t) =>
               and(lt(sessions.startsAt, t.endsAt), gt(sessions.endsAt, t.startsAt)),

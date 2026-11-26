@@ -1,8 +1,14 @@
 import { eq } from "drizzle-orm";
 import { beforeEach, describe, expect, it } from "vitest";
 import { db } from "@/db";
-import { authSessions, leads, students, teacherLearners, users } from "@/db/schema";
-import { createLevelCheckSlot, createTeacher, createUser, resetDb } from "@/test/factories";
+import { authSessions, leads, payments, students, teacherLearners, users } from "@/db/schema";
+import {
+  createClass,
+  createLevelCheckSlot,
+  createTeacher,
+  createUser,
+  resetDb,
+} from "@/test/factories";
 import { createLogin, newLoginLink } from "../login";
 import {
   countByStatus,
@@ -14,6 +20,7 @@ import {
   listLearners,
   markLeadLost,
   newLearnerSchema,
+  removeLearner,
   setLearnerStatus,
   updateLearner,
 } from "../learners";
@@ -382,5 +389,65 @@ describe("two teachers", () => {
     expect((await db.select().from(users).where(eq(users.id, user.id)))[0].isActive).toBe(true);
     await setLearnerStatus(other, id, "left");
     expect((await db.select().from(users).where(eq(users.id, user.id)))[0].isActive).toBe(false);
+  });
+});
+
+describe("removeLearner", () => {
+  async function learnerWithLogin() {
+    const r = await createLearner(tid, input());
+    const id = r.ok ? r.id : "";
+    const user = await createUser(db, { phone: "+989121234567" });
+    await db.update(students).set({ userId: user.id }).where(eq(students.id, id));
+    return { id, userId: user.id };
+  }
+
+  it("deletes the learner and their login when no other teacher has them", async () => {
+    const { id, userId } = await learnerWithLogin();
+    expect(await removeLearner(tid, id)).toEqual({ ok: true });
+    expect(await db.select().from(students)).toHaveLength(0);
+    expect(await db.select().from(users).where(eq(users.id, userId))).toHaveLength(0);
+    expect(await removeLearner(tid, id)).toEqual({ ok: false, error: "not_found" });
+  });
+
+  it("only unlinks a learner another teacher also has", async () => {
+    const { id, userId } = await learnerWithLogin();
+    const user = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    const other = (await createTeacher(db, user.id)).id;
+    await createLearner(other, input());
+    expect(await removeLearner(tid, id)).toEqual({ ok: true });
+    const links = await db.select().from(teacherLearners);
+    expect(links.map((l) => l.teacherId)).toEqual([other]);
+    expect(await db.select().from(users).where(eq(users.id, userId))).toHaveLength(1);
+  });
+
+  it("refuses while the learner has a class or a payment with this teacher", async () => {
+    const inClass = await learnerWithLogin();
+    await createClass(db, {
+      teacherId: tid,
+      startsOn: "2026-11-21",
+      slots: [{ weekday: 0, time: "18:00" }],
+      studentIds: [inClass.id],
+    });
+    expect(await removeLearner(tid, inClass.id)).toEqual({ ok: false, error: "has_records" });
+
+    const r = await createLearner(tid, input({ phone: "09125550000" }));
+    const paid = r.ok ? r.id : "";
+    await db.insert(payments).values({
+      teacherId: tid,
+      studentId: paid,
+      amountToman: 1_000_000,
+      paidOn: "2026-11-20",
+      method: "card",
+    });
+    expect(await removeLearner(tid, paid)).toEqual({ ok: false, error: "has_records" });
+    expect(await db.select().from(teacherLearners)).toHaveLength(2);
+  });
+
+  it("can't remove another teacher's learner", async () => {
+    const { id } = await learnerWithLogin();
+    const user = await createUser(db, { phone: "+989120000009", role: "teacher" });
+    const other = (await createTeacher(db, user.id)).id;
+    expect(await removeLearner(other, id)).toEqual({ ok: false, error: "not_found" });
+    expect(await db.select().from(students)).toHaveLength(1);
   });
 });

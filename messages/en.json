@@ -1,7 +1,11 @@
 {
   "Metadata": {
     "title": "Hoopo: English with a roadmap made for you",
-    "description": "Live English classes with a real teacher, private or in a group, with a personal roadmap for your goal and an AI assistant. Book your free session."
+    "description": "Live English classes with a real teacher, private or in a group, with a personal roadmap for your goal and an AI assistant. Book your free session.",
+    "homeTitle": "Hoopo: classes, learners and homework for English teachers",
+    "homeDescription": "Classes, students, homework and payments in one place. Between lessons, Hoopo practices with your students so they show up ready.",
+    "teacherTitle": "{brand}: English classes with {teacher}",
+    "teacherDescription": "Live English classes with {teacher}, private or in a group, with a personal roadmap for your goal. Book your free session."
   },
   "Common": {
     "brand": "Hoopo",
@@ -15,7 +19,8 @@
     "freeSession": "Get my free roadmap",
     "notifications": "Notifications",
     "noNotifications": "Nothing new",
-    "areaNav": "Panel menu"
+    "areaNav": "Panel menu",
+    "more": "More"
   },
   "NotFound": {
     "title": "Page not found",
@@ -293,6 +298,18 @@
         "since": "Since {date}",
         "endedOn": "Ended {date}",
         "none": "Not in any class yet."
+      },
+      "remove": {
+        "button": "Remove from my list",
+        "title": "Remove {name}?",
+        "lead": "They leave your learners list and your notes about them are deleted. If no other teacher has them, their profile and login are deleted too. This can't be undone.",
+        "keep": "Keep",
+        "confirm": "Remove",
+        "saving": "Removing…",
+        "errors": {
+          "not_found": "This learner is no longer on your list.",
+          "has_records": "They have classes or payments with you, so they can't be removed. Set their status to Left instead."
+        }
       }
     },
     "classes": {
@@ -365,7 +382,7 @@
         "nextTitle": "Continue with next course",
         "nextLead": "Filled in from {name}. Change anything, then create it. {name}'s learners move to the new class.",
         "editTitle": "Edit class",
-        "editNote": "Days, times and sessions can't change once the class exists. Add a make-up session for a one-off change.",
+        "editNote": "Name, level, seats, tuition and how the class is shown. Change days, times and sessions below.",
         "sectionClass": "Class",
         "sectionSchedule": "Schedule",
         "sectionPrice": "Tuition",
@@ -447,7 +464,10 @@
           "path": "",
           "schedule": "Add at least one day and time and a start date.",
           "learners": "Add at least one learner."
-        }
+        },
+        "scheduleNote": "Applies to sessions that haven't happened yet. The {kept} sessions already held, cancelled or under way stay as they are and count towards the total; make-up sessions don't change.",
+        "scheduleFrom": "New schedule from",
+        "saveSchedule": "Save schedule"
       },
       "errors": {
         "level": "Choose a level.",
@@ -486,7 +506,8 @@
         "replaces": "That session wasn't cancelled.",
         "nameFa": "Give the class a Persian name (at least 2 letters).",
         "nameEn": "Enter the English name (at least 2 letters), or leave it empty.",
-        "learnersRequired": "Add at least one learner."
+        "learnersRequired": "Add at least one learner.",
+        "too_few": "At least {min} sessions: that many are already held, cancelled or under way."
       },
       "detail": {
         "freeSeats": "Open · {count, plural, one {# seat free} other {# seats free}}",
@@ -526,7 +547,7 @@
         "since": "Since {date}",
         "end": "End",
         "endLabel": "End {name}'s place in this class",
-        "move": "Move",
+        "move": "Change time",
         "moveLabel": "Move {name} to another class",
         "addLearner": "Add a learner",
         "addHint": "Adding a lead makes them active.",
@@ -554,7 +575,9 @@
         "share": "Copy share link",
         "shareCopied": "Link copied",
         "afterClass": "Wrap-up",
-        "afterClassCount": "Wrap-up · {count, plural, one {# homework} other {# homework}}"
+        "afterClassCount": "Wrap-up · {count, plural, one {# homework} other {# homework}}",
+        "moveTitle": "Change the time of session {n}",
+        "moveTitleMakeup": "Change the time of the make-up session"
       },
       "attendance": {
         "title": "Session {n} was held",
@@ -619,7 +642,20 @@
         "saving": "Adding…",
         "noLearners": "Nobody is in this class, so there's nobody to invite."
       },
-      "levelCheck": "Level check"
+      "levelCheck": "Level check",
+      "deleteClass": {
+        "hint": "A class can be deleted only before any session is held and before any invoice. Otherwise archive it.",
+        "button": "Delete class",
+        "title": "Delete {name}?",
+        "lead": "The class, its sessions, learners' places and its path are deleted. This can't be undone.",
+        "keep": "Keep",
+        "confirm": "Delete",
+        "saving": "Deleting…",
+        "errors": {
+          "has_history": "This class has held sessions or invoices, so it can't be deleted. Archive it once it's empty.",
+          "not_found": "This class no longer exists."
+        }
+      }
     },
     "schedule": {
       "title": "Weekly schedule",
@@ -1534,7 +1570,7 @@
     "title": "My dashboard",
     "role": "Learner",
     "nav": {
-      "home": "Home",
+      "home": "Dashboard",
       "schedule": "My schedule",
       "classes": "My classes",
       "homework": "Homework",
@@ -1586,6 +1622,9 @@
     },
     "schedule": {
       "title": "My schedule",
+      "tabWeek": "Week",
+      "tabClasses": "My classes",
+      "tabsLabel": "Schedule views",
       "next": "Next session",
       "nextToday": "Next session · today",
       "live": "On now",

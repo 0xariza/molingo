@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   experimental: { serverActions: { bodySizeLimit: "80mb" } },
   async headers() {
     return [
+      // A stale worker script would pin users to an old app shell.
+      { source: "/sw.js", headers: [{ key: "Cache-Control", value: "no-cache" }] },
       {
         source: "/:path*",
         headers: securityHeaders({

@@ -43,20 +43,22 @@ async function AdminGate({ children }: { children: React.ReactNode }) {
         },
         { href: "/admin/students", label: t("nav.learners"), icon: "learners" },
         { href: "/admin/classes", label: t("nav.classes"), icon: "classes" },
-        { href: "/admin/sources", label: t("nav.sources"), icon: "sources", sideOnly: true },
+        { href: "/admin/sources", label: t("nav.sources"), icon: "sources", more: true },
         {
           href: "/admin/homework",
           label: t("nav.homework"),
           icon: "homework",
+          more: true,
           badge: toReview ? formatNumber(toReview, locale) : undefined,
         },
         {
           href: "/admin/finance",
           label: t("nav.finance"),
           icon: "finance",
+          more: true,
           badge: receipts ? formatNumber(receipts, locale) : undefined,
         },
-        { href: "/admin/my-page", label: t("nav.myPage"), icon: "page", sideOnly: true },
+        { href: "/admin/my-page", label: t("nav.myPage"), icon: "page", more: true },
       ]}
     >
       {children}

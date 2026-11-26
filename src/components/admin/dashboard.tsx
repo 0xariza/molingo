@@ -70,6 +70,7 @@ export async function NextClassCard({ next, now }: { next: NextClass | null; now
       </div>
       {shown.length > 0 && (
         <div
+          role="img"
           className="flex items-center"
           aria-label={next.learners.map((l) => learnerNames(l, locale).primary).join("، ")}
         >
@@ -193,7 +194,7 @@ export async function TodayTimeline({
             <li key={i.key}>
               <Link
                 href={i.href}
-                className={`flex items-center gap-3.5 rounded-2xl p-2.5 hover:bg-surface ${i.highlight ? "bg-[#ebf1f7]" : ""}`}
+                className={`flex items-center gap-3.5 rounded-2xl p-2.5 hover:bg-surface ${i.highlight ? "bg-mist" : ""}`}
               >
                 <span dir="ltr" className="min-w-13 text-xl font-bold text-brand">
                   {formatTime(i.at, locale)}
@@ -239,7 +240,7 @@ export async function AwaitingConfirmation({ sessions }: { sessions: DaySession[
           <li key={s.id}>
             <Link
               href={`/admin/classes/${s.classId}`}
-              className="flex items-center gap-3 rounded-2xl bg-[#ebf1f7] p-3 hover:bg-mist"
+              className="flex items-center gap-3 rounded-2xl bg-mist p-3 hover:bg-white"
             >
               <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-white text-[#9a5b10]">
                 <ClipboardText aria-hidden size={20} />

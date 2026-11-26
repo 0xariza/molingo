@@ -10,11 +10,14 @@ import type { ClashWith } from "./clash";
 import {
   archiveClass,
   createClass,
+  deleteClass,
   editClassSchema,
   endEnrollment,
   enroll,
   moveLearner,
   newClassSchema,
+  rescheduleClass,
+  scheduleSchema,
   updateClass,
 } from "./classes";
 import {
@@ -35,6 +38,8 @@ export type ClassFormState = {
   fieldErrors?: Record<string, string>;
   /** With `clash`: the session it collides with. */
   clash?: ClashWith | null;
+  /** With `too_few`: the sessions that already happened or were cancelled. */
+  min?: number;
 };
 
 const bool = (form: FormData, key: string) =>
@@ -99,6 +104,43 @@ export async function updateClassAction(
   const result = await updateClass(teacherId, id.data, parsed.data);
   if (!result.ok) return { status: "error", error: result.error };
   return redirect({ href: `/admin/classes/${id.data}`, locale: formLocale(form) });
+}
+
+export async function rescheduleClassAction(
+  _: ClassFormState,
+  form: FormData,
+): Promise<ClassFormState> {
+  const { teacherId } = await requireTeacher();
+  const id = z.uuid().safeParse(text(form, "id"));
+  if (!id.success) return { status: "error", error: "not_found" };
+  const parsed = scheduleSchema.safeParse({
+    sessionCount: text(form, "sessionCount"),
+    sessionMinutes: text(form, "sessionMinutes"),
+    slots: text(form, "slots"),
+    startsOn: text(form, "startsOn"),
+  });
+  if (!parsed.success) return { status: "error", fieldErrors: fieldErrors(parsed.error.issues) };
+  const result = await rescheduleClass(teacherId, id.data, parsed.data);
+  if (!result.ok)
+    return {
+      status: "error",
+      error: result.error,
+      clash: "clash" in result ? result.clash : undefined,
+      min: "min" in result ? result.min : undefined,
+    };
+  return redirect({ href: `/admin/classes/${id.data}`, locale: formLocale(form) });
+}
+
+export async function deleteClassAction(
+  _: ClassFormState,
+  form: FormData,
+): Promise<ClassFormState> {
+  const { teacherId } = await requireTeacher();
+  const id = z.uuid().safeParse(text(form, "id"));
+  if (!id.success) return { status: "error", error: "not_found" };
+  const result = await deleteClass(teacherId, id.data);
+  if (!result.ok) return { status: "error", error: result.error };
+  return redirect({ href: "/admin/classes", locale: formLocale(form) });
 }
 
 export async function archiveClassAction(form: FormData): Promise<void> {

@@ -1,10 +1,12 @@
 import type { Metadata, Viewport } from "next";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
+import { ServiceWorker } from "@/components/service-worker";
 import { SkipLink } from "@/components/skip-link";
 import { notFound } from "next/navigation";
 import { locale as rootLocale } from "next/root-params";
 import { localeDirection, routing } from "@/i18n/routing";
+import { siteUrl } from "@/lib/site";
 import "../globals.css";
 
 export function generateStaticParams() {
@@ -16,7 +18,9 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: { default: t("title"), template: `%s · Hoopo` },
     description: t("description"),
-    alternates: { languages: { fa: "/fa", en: "/en" } },
+    metadataBase: new URL(siteUrl),
+    icons: { apple: "/apple-icon.png" },
+    appleWebApp: { capable: true, title: "Hoopo", statusBarStyle: "black-translucent" },
   };
 }
 
@@ -49,6 +53,7 @@ export default async function LocaleLayout({ children }: LayoutProps<"/[locale]"
       <body className="flex min-h-dvh flex-col">
         <NextIntlClientProvider>
           <SkipLink />
+          <ServiceWorker />
           {children}
         </NextIntlClientProvider>
       </body>

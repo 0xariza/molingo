@@ -2,6 +2,7 @@
 
 import {
   BookOpen,
+  DotsThree,
   MapTrifold,
   CalendarDots,
   ChalkboardTeacher,
@@ -13,6 +14,7 @@ import {
   Wallet,
   type Icon,
 } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
 import { Link, usePathname } from "@/i18n/navigation";
 
 /** Icons by name: server layouts can't pass components to this client component. */
@@ -52,6 +54,10 @@ export type AreaNavItem = {
   badge?: string;
   /** Left out of the phone tab bar (it stays in the sidebar). */
   sideOnly?: boolean;
+  /** On phones it sits in the "More" sheet instead of the tab bar (it stays in the sidebar). */
+  more?: boolean;
+  /** A path whose pages also count as this section (e.g. a page folded into it). */
+  also?: string;
 };
 
 type Props = {
@@ -59,24 +65,50 @@ type Props = {
   label: string;
   /** `side`: the desktop sidebar list. `bar`: the phone tab bar. */
   variant: "side" | "bar";
+  /** The phone bar's overflow button (only used when some item is `more`). */
+  moreLabel?: string;
 };
 
 /** The area's sections; the current one is highlighted (exact match, or a sub-page of it). */
-export function AreaNav({ items, label, variant }: Props) {
+export function AreaNav({ items, label, variant, moreLabel }: Props) {
   const pathname = usePathname();
-  const current = (href: string) =>
+  const [open, setOpen] = useState(false);
+  const isCurrent = (href: string) =>
     pathname === href || (href !== items[0]?.href && pathname.startsWith(`${href}/`));
-  const tabs = items.filter((item) => !item.sideOnly);
+  const current = (item: AreaNavItem) =>
+    isCurrent(item.href) || (item.also ? isCurrent(item.also) : false);
+  const tabs = items.filter((item) => !item.sideOnly && !item.more);
+  const overflow = items.filter((item) => item.more);
+
+  // The sheet closes on Escape, a tap outside it, or a tap on one of its links.
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: Event) => {
+      if (
+        e instanceof KeyboardEvent
+          ? e.key === "Escape"
+          : !(e.target as Element).closest("[data-more]")
+      )
+        setOpen(false);
+    };
+    document.addEventListener("keydown", close);
+    document.addEventListener("pointerdown", close);
+    return () => {
+      document.removeEventListener("keydown", close);
+      document.removeEventListener("pointerdown", close);
+    };
+  }, [open]);
 
   if (variant === "bar") {
     return (
       <nav
         aria-label={label}
-        className="fixed inset-x-0 bottom-0 z-30 grid auto-cols-fr grid-flow-col gap-1 bg-ocean px-2 pt-2 pb-safe lg:hidden"
+        className="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-30 grid auto-cols-fr grid-flow-col gap-1 rounded-[28px] bg-ocean p-2 shadow-[0_8px_24px_rgba(7,30,54,.28)] lg:hidden"
       >
-        {tabs.map(({ href, label, icon, badge }) => {
+        {tabs.map((item) => {
+          const { href, label, icon, badge } = item;
           const Icon = ICONS[icon];
-          const active = current(href);
+          const active = current(item);
           return (
             <Link
               key={href}
@@ -96,15 +128,71 @@ export function AreaNav({ items, label, variant }: Props) {
             </Link>
           );
         })}
+        {overflow.length > 0 && (
+          <div data-more className="contents">
+            {open && (
+              <ul
+                id="area-more"
+                className="absolute inset-x-0 bottom-[calc(100%+8px)] grid gap-1 rounded-[28px] bg-ocean p-2 shadow-[0_8px_24px_rgba(7,30,54,.28)]"
+              >
+                {overflow.map((item) => {
+                  const Icon = ICONS[item.icon];
+                  const active = current(item);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={`flex min-h-12 items-center gap-3 rounded-2xl px-4 font-bold ${
+                          active ? "bg-whale/15 text-whale" : "text-mist hover:text-white"
+                        }`}
+                      >
+                        <Icon aria-hidden size={22} weight={active ? "fill" : "regular"} />
+                        <span className="flex-1">{item.label}</span>
+                        {item.badge && (
+                          <span className="grid h-5.5 min-w-5.5 place-items-center rounded-pill bg-sand px-1.5 text-xs font-extrabold text-ocean">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-controls="area-more"
+              onClick={() => setOpen((v) => !v)}
+              className={`relative flex min-h-13 flex-col items-center justify-center gap-0.5 rounded-2xl text-xs font-bold ${
+                open || overflow.some(current)
+                  ? "bg-whale/15 text-whale"
+                  : "text-mist/70 hover:text-white"
+              }`}
+            >
+              <DotsThree aria-hidden size={22} weight="bold" />
+              {moreLabel}
+              {overflow.some((item) => item.badge) && (
+                <span
+                  aria-hidden="true"
+                  className="absolute end-4 top-1.5 size-2.5 rounded-pill bg-sand"
+                />
+              )}
+            </button>
+          </div>
+        )}
       </nav>
     );
   }
 
   return (
     <nav aria-label={label} className="flex flex-col gap-1">
-      {items.map(({ href, label, icon, badge }) => {
+      {items.map((item) => {
+        const { href, label, icon, badge } = item;
         const Icon = ICONS[icon];
-        const active = current(href);
+        const active = current(item);
         return (
           <Link
             key={href}

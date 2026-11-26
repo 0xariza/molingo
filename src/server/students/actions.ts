@@ -11,6 +11,7 @@ import {
   learnerStatuses,
   markLeadLost,
   newLearnerSchema,
+  removeLearner,
   setLearnerStatus,
   updateLearner,
 } from "./learners";
@@ -92,6 +93,20 @@ export async function setLearnerStatusAction(form: FormData): Promise<void> {
   if (!parsed.success) return;
   await setLearnerStatus(teacherId, parsed.data.id, parsed.data.status);
   refresh();
+}
+
+export type RemoveLearnerState = { error?: "not_found" | "has_records" };
+
+export async function removeLearnerAction(
+  _: RemoveLearnerState,
+  form: FormData,
+): Promise<RemoveLearnerState> {
+  const { teacherId } = await requireTeacher();
+  const id = z.uuid().safeParse(text(form, "id"));
+  if (!id.success) return { error: "not_found" };
+  const result = await removeLearner(teacherId, id.data);
+  if (!result.ok) return { error: result.error };
+  return redirect({ href: "/admin/students", locale: formLocale(form) });
 }
 
 export async function markLeadLostAction(form: FormData): Promise<void> {

@@ -152,7 +152,7 @@ export function HomeHero({ teacherHref }: { teacherHref: string }) {
           <h1 className="text-[clamp(2.75rem,6vw,4.75rem)] leading-[1.15]">
             {t("title1")}
             <br />
-            <span className="text-cinnamon">{t("title2")}</span>
+            <span className="text-cinnamon-ink">{t("title2")}</span>
           </h1>
           <p className="max-w-xl text-[clamp(1.125rem,1.5vw,1.25rem)] leading-relaxed">
             {t("lead")}
@@ -235,7 +235,7 @@ export function LoopSection() {
           <h2 className={h2}>
             {t("title1")}
             <br />
-            <span className="text-cinnamon">{t("title2")}</span>
+            <span className="text-cinnamon-ink">{t("title2")}</span>
           </h2>
           <p className="max-w-155 text-[19px] leading-relaxed">{t("lead")}</p>
         </div>
@@ -246,10 +246,10 @@ export function LoopSection() {
 }
 
 const BARS = [
-  { key: "teaching", color: "bg-ocean", before: 45.5, after: 45.5 },
-  { key: "scheduling", color: "bg-cinnamon", before: 20.5, after: 4.5 },
-  { key: "payments", color: "bg-sand", before: 15.9, after: 2.3 },
-  { key: "homework", color: "bg-teal", before: 18.2, after: 4.5 },
+  { key: "teaching", color: "bg-ocean text-white", before: 45.5, after: 45.5 },
+  { key: "scheduling", color: "bg-cinnamon text-ocean", before: 20.5, after: 4.5 },
+  { key: "payments", color: "bg-sand text-ocean", before: 15.9, after: 2.3 },
+  { key: "homework", color: "bg-teal text-white", before: 18.2, after: 4.5 },
 ] as const;
 
 export function TimeSection() {
@@ -266,7 +266,7 @@ export function TimeSection() {
             key={b.key}
             title={t(`chart.${b.key}`)}
             style={{ width: `${b[when]}%` }}
-            className={`${b.color} flex items-center justify-center overflow-hidden text-xs font-bold whitespace-nowrap text-white`}
+            className={`${b.color} flex items-center justify-center overflow-hidden text-xs font-bold whitespace-nowrap`}
           >
             {b.key === "teaching" || when === "before" ? t(`chart.${b.key}`) : null}
           </div>
